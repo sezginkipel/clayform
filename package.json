@@ -22,8 +22,8 @@
   },
   "files": [
     "dist",
-    "templates",
     "README.md",
+    "NOTICE",
     "LICENSE"
   ],
   "engines": {
@@ -60,5 +60,13 @@
     "tsx": "^4.20.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sezginkipel/clayform.git"
+  },
+  "homepage": "https://github.com/sezginkipel/clayform#readme",
+  "bugs": {
+    "url": "https://github.com/sezginkipel/clayform/issues"
   }
 }

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "notes": "Fixed prompt set for comparing agent 3D tools. Each tool gets the same model, the same prompt text and the same time/turn budget. Outputs are judged blind from identical renders.",
+  "budget": { "turns": 30, "triangles": 5000 },
+  "prompts": [
+    { "id": "goblin_merchant", "category": "character", "prompt": "A friendly goblin merchant with big pointed ears, a round belly and a backpack. Game-ready, stylized.", "expects": { "clips": ["idle", "walk"] } },
+    { "id": "knight", "category": "character", "prompt": "A small cartoon knight in plate armor with a helmet visor, holding a sword in the right hand.", "expects": { "clips": ["walk"] } },
+    { "id": "sitting_cat", "category": "creature", "prompt": "A chubby cat sitting upright with its tail wrapped around its paws.", "expects": {} },
+    { "id": "stegosaurus", "category": "creature", "prompt": "A stylized stegosaurus with back plates and a spiked tail that can walk.", "expects": { "clips": ["walk"] } },
+    { "id": "owl", "category": "creature", "prompt": "A round owl with big eyes, ear tufts and folded wings, perched on a branch.", "expects": {} },
+    { "id": "jellyfish", "category": "creature", "prompt": "A glowing jellyfish with a dome bell and trailing tentacles that pulses.", "expects": { "clips": ["swim"] } },
+    { "id": "pickup_truck", "category": "vehicle", "prompt": "A toy pickup truck with an open cargo bed, headlights and wheels that turn.", "expects": { "clips": ["drive"] } },
+    { "id": "prop_plane", "category": "vehicle", "prompt": "A small propeller airplane with a spinning propeller.", "expects": { "clips": ["spin"] } },
+    { "id": "pirate_ship", "category": "vehicle", "prompt": "A chunky pirate ship with a hull, two masts and sails.", "expects": {} },
+    { "id": "lighthouse", "category": "building", "prompt": "A striped lighthouse on a rock with a glowing lamp room.", "expects": {} },
+    { "id": "windmill", "category": "building", "prompt": "A medieval windmill with a stone base, wooden cap and four sails that rotate.", "expects": { "clips": ["spin"] } },
+    { "id": "battle_axe", "category": "weapon", "prompt": "A double-bladed battle axe with a wrapped wooden handle.", "expects": {} },
+    { "id": "magic_staff", "category": "prop", "prompt": "A wizard staff with a crooked top holding a glowing orb, with sparkles around the orb.", "expects": { "effects": true } },
+    { "id": "campfire", "category": "prop", "prompt": "A campfire: crossed logs in a ring of stones, with fire and a little smoke.", "expects": { "effects": true } },
+    { "id": "stool", "category": "prop", "prompt": "A three-legged wooden stool with a round seat.", "expects": {} },
+    { "id": "potted_cactus", "category": "nature", "prompt": "A saguaro cactus with two arms in a terracotta pot.", "expects": {} },
+    { "id": "pine_tree", "category": "nature", "prompt": "A stylized pine tree with stacked layers of branches.", "expects": {} },
+    { "id": "robot_dog", "category": "creature", "prompt": "A four-legged robot dog with an antenna and glowing eyes that walks.", "expects": { "clips": ["walk"] } },
+    { "id": "gold_chest", "category": "prop", "prompt": "An open treasure chest overflowing with gold coins.", "expects": {} },
+    { "id": "cartoon_rocket", "category": "vehicle", "prompt": "A cartoon rocket with fins and a round window, with a smoke trail from its engine.", "expects": { "effects": true } }
+  ]
+}

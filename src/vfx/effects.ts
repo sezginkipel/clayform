@@ -40,7 +40,7 @@ export interface ResolvedEffect {
 type Preset = Omit<ResolvedEffect, 'id' | 'colors' | 'frames' | 'tile' | 'seed' | 'loop'> & { colors: string[] };
 
 export const PRESETS: Record<string, Preset> = {
-	fire: { count: 160, lifetime: [0.45, 0.95], speed: [0.35, 0.8], direction: [0, 1, 0], spread: 16, gravity: -1.4, drag: 0.9, size: [0.16, 0.03], colors: ['#fff6c8', '#ffc043', '#ff6a1f', '#8a2410'], alpha: [0.9, 0], emitter: { shape: 'disc', size: 0.12 }, blend: 'additive', burst: false, duration: 1, stretch: 0 },
+	fire: { count: 110, lifetime: [0.45, 0.95], speed: [0.35, 0.8], direction: [0, 1, 0], spread: 16, gravity: -1.4, drag: 0.9, size: [0.14, 0.03], colors: ['#ffe7a0', '#ffb43a', '#ff5f1c', '#7a200e'], alpha: [0.45, 0], emitter: { shape: 'disc', size: 0.12 }, blend: 'additive', burst: false, duration: 1, stretch: 0 },
 	smoke: { count: 55, lifetime: [1.6, 2.6], speed: [0.2, 0.4], direction: [0, 1, 0], spread: 18, gravity: -0.35, drag: 0.5, size: [0.14, 0.6], colors: ['#5f5f62', '#8e8e90', '#c4c4c4'], alpha: [0.5, 0], emitter: { shape: 'disc', size: 0.1 }, blend: 'alpha', burst: false, duration: 2, stretch: 0 },
 	sparks: { count: 110, lifetime: [0.3, 0.8], speed: [1.6, 3.4], direction: [0, 1, 0], spread: 55, gravity: 6, drag: 0.3, size: [0.028, 0.01], colors: ['#fffbe2', '#ffd35a', '#ff7b1c'], alpha: [1, 0], emitter: { shape: 'point', size: 0 }, blend: 'additive', burst: false, duration: 1, stretch: 0.045 },
 	magic: { count: 140, lifetime: [0.8, 1.6], speed: [0.15, 0.55], direction: [0, 1, 0], spread: 180, gravity: -0.6, drag: 1.2, size: [0.07, 0], colors: ['#f1ecff', '#a887ff', '#56d5ff'], alpha: [1, 0], emitter: { shape: 'sphere', size: 0.25 }, blend: 'additive', burst: false, duration: 1.5, stretch: 0 },

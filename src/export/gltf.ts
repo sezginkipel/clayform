@@ -166,8 +166,25 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			return { attributes: attrs, indices: w.accessor(arr, 'SCALAR', n > 65535 ? UINT : USHORT, { target: ELEMENT_ARRAY_BUFFER }), material: mi, mode: 4 };
 		});
 		triangles += m.indices.length / 3;
-		meshes.push({ name: m.name, primitives });
+		meshes.push({ name: exportName(m.name), primitives });
 		return meshes.length - 1;
+	};
+
+	// Engines treat "." specially in animation paths (three.js strips it), so twins
+	// export as "<id>_mirror"; collisions with a real part id get a number.
+	const taken = new Set<string>();
+	const safeName = (n: string) => {
+		const base = n.replace(/\.m$/, '_mirror').replace(/[^A-Za-z0-9_-]/g, '_');
+		let name = base, i = 2;
+		while (taken.has(name)) name = `${base}${i++}`;
+		taken.add(name);
+		return name;
+	};
+	for (const p of prims) if (!p.twin) taken.add(p.id);
+	const nameOf = new Map<string, string>();
+	const exportName = (n: string) => {
+		if (!nameOf.has(n)) nameOf.set(n, prims.some((p) => p.id === n && !p.twin) || n === 'root' || n === 'body' ? n : safeName(n));
+		return nameOf.get(n)!;
 	};
 
 	/* --------------------------------------------------------- skeleton */
@@ -176,7 +193,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	const jointNode: number[] = [];
 	if (rig) {
 		rig.joints.forEach((jt) => {
-			nodes.push({ name: jt.name, translation: jt.local });
+			nodes.push({ name: exportName(jt.name), translation: jt.local });
 			jointNode.push(nodes.length - 1);
 		});
 		rig.joints.forEach((jt, i) => {
@@ -192,7 +209,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 
 	for (const m of b.meshes) {
 		const mesh = writeMesh(m);
-		const node: Record<string, unknown> = { name: m.name, mesh };
+		const node: Record<string, unknown> = { name: exportName(m.name) + (rig ? '_mesh' : ''), mesh };
 		if (rig) node.skin = skinIndex;
 		nodes.push(node);
 		sceneNodes.push(nodes.length - 1);

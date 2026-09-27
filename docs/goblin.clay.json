@@ -1,0 +1,268 @@
+{
+  "format": "clayform/1",
+  "name": "Goblin",
+  "notes": "Stylized character ~1.1 m. Roles drive walk/idle/wave. Recolor via palette; swap head/hair shapes for species.",
+  "palette": {
+    "skin": "#7fb04a",
+    "shirt": "#6b4a2b",
+    "pants": "#3d3322",
+    "shoes": "#5b3b2a",
+    "hair": "#4a2f22",
+    "eye": "#1f1d22"
+  },
+  "settings": {
+    "resolution": 110,
+    "symmetry": "x"
+  },
+  "parts": [
+    {
+      "id": "body",
+      "role": "body",
+      "shape": {
+        "type": "ellipsoid",
+        "radii": [
+          0.19,
+          0.24,
+          0.15
+        ]
+      },
+      "position": [
+        0,
+        0.62,
+        0
+      ],
+      "material": {
+        "color": "shirt"
+      }
+    },
+    {
+      "id": "head",
+      "role": "head",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.2
+      },
+      "attach": {
+        "to": "body",
+        "side": "top",
+        "embed": 0.18
+      },
+      "blend": 0.05,
+      "material": {
+        "color": "skin"
+      }
+    },
+    {
+      "id": "hair",
+      "shape": {
+        "type": "ellipsoid",
+        "radii": [
+          0.212,
+          0.15,
+          0.214
+        ]
+      },
+      "position": [
+        0,
+        -0.02,
+        -0.025
+      ],
+      "attach": {
+        "to": "head",
+        "side": "top",
+        "embed": 1.1
+      },
+      "blend": 0.01,
+      "material": {
+        "color": "hair",
+        "roughness": 0.85
+      },
+      "hidden": true
+    },
+    {
+      "id": "eye",
+      "role": "eye",
+      "shape": {
+        "type": "ellipsoid",
+        "radii": [
+          0.026,
+          0.038,
+          0.02
+        ]
+      },
+      "attach": {
+        "to": "head",
+        "side": "front",
+        "offset": [
+          0.36,
+          0.02
+        ],
+        "embed": 0.55
+      },
+      "material": {
+        "color": "eye",
+        "roughness": 0.2
+      },
+      "mirror": true
+    },
+    {
+      "id": "nose",
+      "shape": {
+        "type": "cone",
+        "height": 0.09,
+        "radius": 0.03
+      },
+      "attach": {
+        "to": "head",
+        "side": "front",
+        "offset": [
+          0,
+          -0.1
+        ],
+        "embed": 0.2,
+        "align": true
+      },
+      "blend": 0.015,
+      "material": {
+        "color": "skin"
+      }
+    },
+    {
+      "id": "arm",
+      "role": "arm",
+      "shape": {
+        "type": "capsule",
+        "length": 0.36,
+        "radius": 0.052
+      },
+      "position": [
+        0.07,
+        -0.12,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        16
+      ],
+      "attach": {
+        "to": "body",
+        "side": "left",
+        "offset": [
+          0,
+          0.42
+        ],
+        "embed": 0.75
+      },
+      "blend": 0.03,
+      "material": {
+        "color": "shirt"
+      },
+      "mirror": true,
+      "pivot": "top"
+    },
+    {
+      "id": "hand",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.058
+      },
+      "attach": {
+        "to": "arm",
+        "side": "bottom",
+        "embed": 0.55
+      },
+      "blend": 0.02,
+      "material": {
+        "color": "skin"
+      }
+    },
+    {
+      "id": "leg",
+      "role": "leg",
+      "shape": {
+        "type": "capsule",
+        "length": 0.34,
+        "radius": 0.068
+      },
+      "attach": {
+        "to": "body",
+        "side": "bottom",
+        "offset": [
+          0.48,
+          0
+        ],
+        "embed": 0.62
+      },
+      "blend": 0.03,
+      "material": {
+        "color": "pants"
+      },
+      "mirror": true
+    },
+    {
+      "id": "foot",
+      "shape": {
+        "type": "ellipsoid",
+        "radii": [
+          0.068,
+          0.045,
+          0.105
+        ]
+      },
+      "position": [
+        0,
+        0,
+        0.035
+      ],
+      "attach": {
+        "to": "leg",
+        "side": "bottom",
+        "embed": 0.55
+      },
+      "blend": 0.02,
+      "material": {
+        "color": "shoes"
+      }
+    },
+    {
+      "id": "ear",
+      "role": "ear",
+      "shape": {
+        "type": "cone",
+        "height": 0.16,
+        "radius": 0.045
+      },
+      "rotation": [
+        0,
+        0,
+        -25
+      ],
+      "attach": {
+        "to": "head",
+        "side": "left",
+        "offset": [
+          0,
+          0.2
+        ],
+        "embed": 0.2,
+        "align": true
+      },
+      "blend": 0.02,
+      "material": {
+        "color": "skin"
+      },
+      "mirror": true
+    }
+  ],
+  "clips": [
+    {
+      "id": "walk",
+      "type": "walk"
+    },
+    {
+      "id": "idle",
+      "type": "idle"
+    }
+  ]
+}

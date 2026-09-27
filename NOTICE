@@ -1,0 +1,6 @@
+Clayform
+Copyright 2026 Sezgin Kipel
+
+This product uses meshoptimizer (MIT, Copyright (c) 2016-2026 Arseny Kapoulkine),
+fflate (MIT, Copyright (c) 2026 Arjun Barrett), zod (MIT) and the Model Context
+Protocol TypeScript SDK (MIT).

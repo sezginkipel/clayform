@@ -19,7 +19,8 @@ async function connect() {
 }
 
 type Block = { type: string; text?: string; data?: string };
-const texts = (r: { content: unknown }) => (r.content as Block[]).filter((c) => c.type === 'text').map((c) => c.text).join('\n');
+const blocks = (r: unknown) => ((r as { content?: Block[] }).content ?? []);
+const texts = (r: unknown) => blocks(r).filter((c) => c.type === 'text').map((c) => c.text).join('\n');
 
 describe('MCP server', () => {
 	it('drives the full agent loop', async () => {
@@ -39,7 +40,7 @@ describe('MCP server', () => {
 		expect(texts(ok)).toMatch(/palette fur/);
 
 		const r = await c.callTool({ name: 'render', arguments: { scene: 'pup', views: ['front'], size: 160 } });
-		const img = (r.content as Block[]).find((b) => b.type === 'image');
+		const img = blocks(r).find((b) => b.type === 'image');
 		expect(img?.data && Buffer.from(img.data, 'base64').subarray(1, 4).toString()).toBe('PNG');
 
 		const undo = await c.callTool({ name: 'history', arguments: { scene: 'pup', action: 'undo' } });

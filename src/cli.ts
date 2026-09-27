@@ -8,6 +8,7 @@
  * clayform export <scene> [-o out.glb] [--triangles N]
  * clayform motion <scene> <clip> [-o png] [--view left]
  * clayform effect <scene> <effect> [-o png]
+ * clayform view <scene|template|file.glb>    local three.js viewer (plays clips)
  * clayform guide                            print the agent manual
  */
 
@@ -141,6 +142,23 @@ async function main() {
 			console.log(`wrote ${out}, its .json and .preview.png`);
 			return;
 		}
+		case 'view': {
+			const { serveViewer, readGlb } = await import('./viewer.js');
+			const target = pos[0];
+			if (!target) die('usage: clayform view <scene.clay.json | template | model.glb> [--port 5231]');
+			let glb: Uint8Array;
+			let title = stem(target!);
+			if (target!.toLowerCase().endsWith('.glb')) glb = readGlb(target!);
+			else {
+				const scene = loadScene(target);
+				title = scene.name;
+				const b = await simplifyBuild(buildScene(scene), flags.get('triangles') ? { triangles: Number(flags.get('triangles')) } : {});
+				glb = exportGlb(b).glb;
+			}
+			const url = await serveViewer(glb, title, Number(flags.get('port') ?? 5231));
+			console.log(`viewing ${title} at ${url} (Ctrl+C to stop)`);
+			return;
+		}
 		case 'guide':
 			console.log(GUIDE);
 			return;
@@ -160,6 +178,7 @@ async function main() {
   clayform export <scene|template> [-o out.glb|.obj] [--triangles N]
   clayform motion <scene> [clip] [-o out.png] [--view left]
   clayform effect <scene> [effect] [-o out.png]
+  clayform view <scene|template|file.glb> [--port 5231]   open a three.js viewer
   clayform guide                        the manual agents read`);
 	}
 }
