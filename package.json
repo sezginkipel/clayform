@@ -34,7 +34,8 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "dev:mcp": "node --import tsx src/cli.ts mcp",
-    "prepublishOnly": "npm run check && npm test && npm run build"
+    "prepublishOnly": "npm run check && npm test && npm run build",
+    "prepare": "npm run build"
   },
   "keywords": [
     "mcp",
