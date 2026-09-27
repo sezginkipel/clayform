@@ -70,8 +70,10 @@ export function critique(b: Build): Report {
 				at: r3(comp.center)
 			});
 		}
-		watertight = isClosed(body);
-		if (!watertight) issues.push({ severity: 'info', code: 'open-edges', message: 'a few non-manifold edges where two surfaces meet within one cell; harmless for rendering, raise resolution if exporting for printing' });
+		const open = openEdges(body);
+		watertight = open.bad === 0;
+		if (open.bad / Math.max(1, open.total) > 0.002)
+			issues.push({ severity: 'info', code: 'open-edges', message: `${open.bad} non-manifold edges (${((open.bad / open.total) * 100).toFixed(2)}%) where surfaces meet within one cell; harmless for games, raise resolution if you need a watertight print` });
 	}
 
 	/* ---------------------------------------------- hidden / lost parts */
@@ -115,7 +117,8 @@ export function critique(b: Build): Report {
 					return false;
 				};
 				if (!moves(dom) && !moves(q.index)) continue;
-				if (primDist(q, x, y, z) < b.cell * 0.9) {
+				// surface nets puts crease vertices ~1 cell off; within 1.5 cells the surfaces are one
+				if (primDist(q, x, y, z) < b.cell * 1.5) {
 					const key = [idOf(dom), q.id].sort().join(' + ');
 					pairs.set(key, (pairs.get(key) ?? 0) + 1);
 				}
@@ -170,8 +173,10 @@ export function critique(b: Build): Report {
 			per.set(p, e);
 		}
 		const mean = sum / Math.max(1, n);
-		if (mean > b.cell * 0.75) {
-			const worst = [...per.entries()].map(([p, e]) => ({ id: idOf(p), m: e.sum / e.n })).sort((a, z) => z.m - a.m).filter((w) => w.m > b.cell).slice(0, 4);
+		// a single lopsided ear vanishes in the global mean — judge parts too
+		const lopsided = [...per.entries()].filter(([, e]) => e.n >= 12 && e.sum / e.n > b.cell * 1.5);
+		if (mean > b.cell * 0.75 || lopsided.length) {
+			const worst = [...per.entries()].filter(([, e]) => e.n >= 12).map(([p, e]) => ({ id: idOf(p), m: e.sum / e.n })).sort((a, z) => z.m - a.m).filter((w) => w.m > b.cell).slice(0, 4);
 			issues.push({
 				severity: 'warn',
 				code: 'asymmetric',
@@ -297,7 +302,7 @@ function components(m: MeshData): Comp[] {
 		.sort((a, b) => b.tris - a.tris);
 }
 
-function isClosed(m: MeshData): boolean {
+function openEdges(m: MeshData): { bad: number; total: number } {
 	const edges = new Map<number, number>();
 	const n = m.positions.length / 3;
 	const idx = m.indices;
@@ -307,8 +312,9 @@ function isClosed(m: MeshData): boolean {
 			const k = a < b ? a * n + b : b * n + a;
 			edges.set(k, (edges.get(k) ?? 0) + 1);
 		}
-	for (const v of edges.values()) if (v !== 2) return false;
-	return true;
+	let bad = 0;
+	for (const v of edges.values()) if (v !== 2) bad++;
+	return { bad, total: edges.size };
 }
 
 /** Volume centroid of closed meshes (divergence theorem). */
