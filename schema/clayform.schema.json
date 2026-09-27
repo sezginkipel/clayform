@@ -1,0 +1,1413 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "format": {
+      "type": "string",
+      "const": "clayform/1",
+      "description": "document version"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "display name; also the glTF scene name"
+    },
+    "notes": {
+      "description": "free text: intent, constraints, what to keep",
+      "type": "string",
+      "maxLength": 2000
+    },
+    "palette": {
+      "description": "named colors parts refer to — recolor a model by editing one entry",
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,31}$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+      }
+    },
+    "settings": {
+      "description": "see Settings",
+      "type": "object",
+      "properties": {
+        "resolution": {
+          "description": "cells along the longest axis (detail vs. triangles), default 96",
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 256
+        },
+        "ground": {
+          "description": "auto lifts/drops the model so it stands on y=0 (default)",
+          "type": "string",
+          "enum": [
+            "auto",
+            "none"
+          ]
+        },
+        "symmetry": {
+          "description": "declare mirror symmetry so critics check it",
+          "type": "string",
+          "enum": [
+            "x",
+            "none"
+          ]
+        },
+        "budget": {
+          "description": "triangle budget for critics",
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 2000000
+        },
+        "ao": {
+          "description": "compute ambient occlusion into vertex shading (default true)",
+          "type": "boolean"
+        },
+        "rig": {
+          "description": "auto: skeleton from parts when clips exist",
+          "type": "string",
+          "enum": [
+            "auto",
+            "none"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "parts": {
+      "maxItems": 256,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$",
+            "description": "unique snake_case id; a mirror twin is id + \".m\" (exported to glTF as id_mirror)"
+          },
+          "role": {
+            "description": "semantic role used by animation and critics: body, head, leg, arm, tail, wing, wheel, rotor, eye, ear, horn, prop …",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,31}$"
+          },
+          "label": {
+            "description": "free text for people",
+            "type": "string",
+            "maxLength": 80
+          },
+          "shape": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "sphere"
+                  },
+                  "radius": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "type",
+                  "radius"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "ellipsoid"
+                  },
+                  "radii": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 3,
+                    "maxItems": 3
+                  }
+                },
+                "required": [
+                  "type",
+                  "radii"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "box"
+                  },
+                  "size": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "description": "full width, height, depth"
+                  },
+                  "rounding": {
+                    "description": "edge radius in meters",
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "type",
+                  "size"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "capsule"
+                  },
+                  "length": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "total length along local Y including both caps"
+                  },
+                  "radius": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "type",
+                  "length",
+                  "radius"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "cylinder"
+                  },
+                  "height": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "along local Y"
+                  },
+                  "radius": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "rounding": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "sides": {
+                    "description": "faceted: 6 = hexagonal prism (crystals, pencils, tiles); default round",
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 16
+                  }
+                },
+                "required": [
+                  "type",
+                  "height",
+                  "radius"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "cone"
+                  },
+                  "height": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "along local Y, base at the bottom"
+                  },
+                  "radius": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "base radius"
+                  },
+                  "topRadius": {
+                    "description": "0 = pointed (default)",
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "rounding": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "sides": {
+                    "description": "faceted: 4 = pyramid, 6 = crystal point; default round",
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 16
+                  }
+                },
+                "required": [
+                  "type",
+                  "height",
+                  "radius"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "torus"
+                  },
+                  "radius": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "ring radius, ring lies in the local XZ plane"
+                  },
+                  "tube": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "type",
+                  "radius",
+                  "tube"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "prism"
+                  },
+                  "size": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "description": "triangular cross-section in XY (peak on top), extruded along Z — roofs, blades"
+                  },
+                  "rounding": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "type",
+                  "size"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "tube"
+                  },
+                  "points": {
+                    "minItems": 2,
+                    "maxItems": 64,
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "description": "local points of a smooth swept tube — tails, limbs, horns, tentacles"
+                  },
+                  "radius": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "minItems": 2,
+                        "maxItems": 64,
+                        "type": "array",
+                        "items": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      }
+                    ],
+                    "description": "one radius, or one per point for tapering"
+                  }
+                },
+                "required": [
+                  "type",
+                  "points",
+                  "radius"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "description": "see Shapes"
+          },
+          "position": {
+            "description": "relative to parent; with attach it is an extra world offset",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "rotation": {
+            "description": "Euler degrees XYZ",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "scale": {
+            "description": "uniform or per local axis; the easy way to stretch a template part",
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3
+              }
+            ]
+          },
+          "parent": {
+            "description": "position/rotation are relative to this part and follow its rotation (ignored when attach is set)",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$"
+          },
+          "attach": {
+            "description": "place on another part's surface; the part keeps its own rotation (use align to point it along the surface normal)",
+            "type": "object",
+            "properties": {
+              "to": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                "description": "id of the part to attach to"
+              },
+              "side": {
+                "type": "string",
+                "enum": [
+                  "top",
+                  "bottom",
+                  "front",
+                  "back",
+                  "left",
+                  "right",
+                  "center"
+                ],
+                "description": "world direction you look at the target from: top=+Y bottom=-Y front=+Z back=-Z left=+X (the model's left) right=-X; center = its center"
+              },
+              "offset": {
+                "description": "slide across that side, -1..1 of the target's half size in world axes (top/bottom: [x, z]; front/back: [x, y]; left/right: [z, y])",
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "minimum": -1,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "number",
+                    "minimum": -1,
+                    "maximum": 1
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "embed": {
+                "description": "how deep this part sinks in: 0 = just touching, 1 = its center sits on the surface, default 0.35, negative = gap",
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1.5
+              },
+              "align": {
+                "description": "rotate this part so its local +Y points along the surface normal (horns, legs, spikes)",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "to",
+              "side"
+            ],
+            "additionalProperties": false
+          },
+          "op": {
+            "description": "add (default) merges, carve cuts away, intersect keeps only the overlap",
+            "type": "string",
+            "enum": [
+              "add",
+              "carve",
+              "intersect"
+            ]
+          },
+          "blend": {
+            "description": "smooth merge radius in meters with everything before it; 0 = hard seam",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "material": {
+            "description": "see Material",
+            "type": "object",
+            "properties": {
+              "color": {
+                "description": "#rrggbb, #rgb or a palette key; default a warm clay",
+                "type": "string",
+                "pattern": "^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[a-z][a-z0-9_]{0,31})$"
+              },
+              "roughness": {
+                "description": "0 = mirror, 1 = matte (default 0.75)",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "metalness": {
+                "description": "0 = dielectric (default), 1 = metal",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "emissive": {
+                "description": "glow color",
+                "type": "string",
+                "pattern": "^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[a-z][a-z0-9_]{0,31})$"
+              },
+              "emissiveStrength": {
+                "description": "glow multiplier (default 1; >1 exports KHR_materials_emissive_strength)",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 20
+              }
+            },
+            "additionalProperties": false
+          },
+          "pattern": {
+            "description": "see Pattern",
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "spots",
+                  "stripes",
+                  "noise",
+                  "gradient"
+                ],
+                "description": "spots (Worley cells), stripes, noise blotches, gradient along an axis"
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[a-z][a-z0-9_]{0,31})$",
+                "description": "the second color painted by the pattern"
+              },
+              "scale": {
+                "description": "feature size in meters (spots/stripes/noise); for gradient the height it fades over",
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "amount": {
+                "description": "0..1 how strongly the pattern color shows (default 1)",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "axis": {
+                "description": "stripes/gradient direction in the part's local axes; around = vertical staves around local Y. default y",
+                "type": "string",
+                "enum": [
+                  "x",
+                  "y",
+                  "z",
+                  "around"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "color"
+            ],
+            "additionalProperties": false
+          },
+          "detail": {
+            "description": "see Detail",
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 0.5,
+                "description": "surface displacement in meters (rock, bark, lumps)"
+              },
+              "scale": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "feature size in meters"
+              }
+            },
+            "required": [
+              "amount",
+              "scale"
+            ],
+            "additionalProperties": false
+          },
+          "mirror": {
+            "description": "add a mirrored twin across X (id + \".m\")",
+            "type": "boolean"
+          },
+          "separate": {
+            "description": "mesh on its own instead of fusing into the body (wheels, props that spin, held items)",
+            "type": "boolean"
+          },
+          "pivot": {
+            "description": "joint location for animation; default: attach point, else top for legs/arms, else center",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "center",
+                  "top",
+                  "bottom",
+                  "front",
+                  "back",
+                  "left",
+                  "right",
+                  "attach"
+                ]
+              },
+              {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3
+              }
+            ]
+          },
+          "hidden": {
+            "description": "not meshed; still usable as an anchor or joint",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "shape"
+        ],
+        "additionalProperties": false
+      },
+      "description": "in blend order: blend and carve act on the parts listed before them"
+    },
+    "sculpts": {
+      "description": "applied in order after all parts",
+      "maxItems": 128,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$",
+            "description": "unique sculpt id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "inflate",
+              "dent",
+              "flatten",
+              "crease",
+              "noise"
+            ],
+            "description": "inflate/dent push out/in, flatten cuts a plane, crease cuts a groove from at to to, noise roughens"
+          },
+          "at": {
+            "description": "where; required except for a global noise",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "to": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                    "description": "id of the part to attach to"
+                  },
+                  "side": {
+                    "type": "string",
+                    "enum": [
+                      "top",
+                      "bottom",
+                      "front",
+                      "back",
+                      "left",
+                      "right",
+                      "center"
+                    ],
+                    "description": "world direction you look at the target from: top=+Y bottom=-Y front=+Z back=-Z left=+X (the model's left) right=-X; center = its center"
+                  },
+                  "offset": {
+                    "description": "slide across that side, -1..1 of the target's half size in world axes (top/bottom: [x, z]; front/back: [x, y]; left/right: [z, y])",
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "minimum": -1,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "number",
+                        "minimum": -1,
+                        "maximum": 1
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "embed": {
+                    "description": "how deep this part sinks in: 0 = just touching, 1 = its center sits on the surface, default 0.35, negative = gap",
+                    "type": "number",
+                    "minimum": -1,
+                    "maximum": 1.5
+                  },
+                  "align": {
+                    "description": "rotate this part so its local +Y points along the surface normal (horns, legs, spikes)",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "to",
+                  "side"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "point": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "description": "world position"
+                  }
+                },
+                "required": [
+                  "point"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "to": {
+            "description": "crease end point",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "to": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                    "description": "id of the part to attach to"
+                  },
+                  "side": {
+                    "type": "string",
+                    "enum": [
+                      "top",
+                      "bottom",
+                      "front",
+                      "back",
+                      "left",
+                      "right",
+                      "center"
+                    ],
+                    "description": "world direction you look at the target from: top=+Y bottom=-Y front=+Z back=-Z left=+X (the model's left) right=-X; center = its center"
+                  },
+                  "offset": {
+                    "description": "slide across that side, -1..1 of the target's half size in world axes (top/bottom: [x, z]; front/back: [x, y]; left/right: [z, y])",
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "minimum": -1,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "number",
+                        "minimum": -1,
+                        "maximum": 1
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "embed": {
+                    "description": "how deep this part sinks in: 0 = just touching, 1 = its center sits on the surface, default 0.35, negative = gap",
+                    "type": "number",
+                    "minimum": -1,
+                    "maximum": 1.5
+                  },
+                  "align": {
+                    "description": "rotate this part so its local +Y points along the surface normal (horns, legs, spikes)",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "to",
+                  "side"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "point": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "description": "world position"
+                  }
+                },
+                "required": [
+                  "point"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "radius": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "area of influence in meters"
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "meters: push for inflate/dent/noise, groove depth for crease, how deep flatten cuts"
+          },
+          "normal": {
+            "description": "flatten plane normal; default: the surface normal at `at`",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "scale": {
+            "description": "noise feature size",
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "mirror": {
+            "description": "also apply at the mirrored position across X",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "radius",
+          "amount"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "clips": {
+      "description": "animations; the rig is built automatically",
+      "maxItems": 32,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$",
+            "description": "clip id, becomes the glTF animation name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "walk",
+              "run",
+              "hop",
+              "fly",
+              "swim",
+              "drive",
+              "spin",
+              "hover",
+              "wave",
+              "nod",
+              "keyframes"
+            ],
+            "description": "the motion intent; see Clip types"
+          },
+          "speed": {
+            "description": "cycle speed multiplier",
+            "type": "number",
+            "minimum": 0.05,
+            "maximum": 10
+          },
+          "amplitude": {
+            "description": "motion size multiplier",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "duration": {
+            "description": "seconds; default one natural cycle",
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 60
+          },
+          "target": {
+            "description": "part to drive for wave/nod/spin (default: auto)",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$"
+          },
+          "tracks": {
+            "description": "keyframes (type \"keyframes\") or layered on top of a procedural clip",
+            "maxItems": 128,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "part": {
+                  "type": "string",
+                  "description": "part id (twins: \"id.m\")"
+                },
+                "keys": {
+                  "minItems": 1,
+                  "maxItems": 256,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "t": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "seconds"
+                      },
+                      "rotation": {
+                        "description": "degrees around the part's pivot, world axes",
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "items": false,
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      "offset": {
+                        "description": "meters, added to rest position",
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "items": false,
+                        "minItems": 3,
+                        "maxItems": 3
+                      }
+                    },
+                    "required": [
+                      "t"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "description": "keys sorted by t; eased in and out"
+                }
+              },
+              "required": [
+                "part",
+                "keys"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "fps": {
+            "description": "sample rate for export (default 30)",
+            "type": "integer",
+            "minimum": 4,
+            "maximum": 60
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "effects": {
+      "description": "particle effects baked to flipbooks",
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$",
+            "description": "effect id"
+          },
+          "preset": {
+            "description": "starting parameters; every other field overrides it",
+            "type": "string",
+            "enum": [
+              "fire",
+              "smoke",
+              "sparks",
+              "magic",
+              "explosion",
+              "dust",
+              "snow",
+              "rain",
+              "bubbles",
+              "heal"
+            ]
+          },
+          "count": {
+            "description": "particles alive at once (approx.)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4000
+          },
+          "lifetime": {
+            "description": "seconds [min, max]",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "speed": {
+            "description": "m/s [min, max]",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "direction": {
+            "description": "main emission direction (default up)",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "spread": {
+            "description": "cone half-angle in degrees",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 180
+          },
+          "gravity": {
+            "description": "m/s² along -Y (negative floats up)",
+            "type": "number",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "drag": {
+            "description": "linear drag, 1/s",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "size": {
+            "description": "particle size in meters [start, end]",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "colors": {
+            "description": "color over life",
+            "minItems": 1,
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[a-z][a-z0-9_]{0,31})$"
+            }
+          },
+          "alpha": {
+            "description": "opacity [start, end]",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "emitter": {
+            "description": "where particles are born: point, sphere, disc (flat, XZ) or box, with a size in meters",
+            "type": "object",
+            "properties": {
+              "shape": {
+                "type": "string",
+                "enum": [
+                  "point",
+                  "sphere",
+                  "disc",
+                  "box"
+                ]
+              },
+              "size": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "shape"
+            ],
+            "additionalProperties": false
+          },
+          "blend": {
+            "description": "additive for glowing effects, alpha for smoke and dust",
+            "type": "string",
+            "enum": [
+              "additive",
+              "alpha"
+            ]
+          },
+          "burst": {
+            "description": "emit everything at t=0 instead of continuously",
+            "type": "boolean"
+          },
+          "duration": {
+            "description": "seconds baked",
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 10
+          },
+          "frames": {
+            "description": "flipbook frames (default 16)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "tile": {
+            "description": "flipbook tile size in px",
+            "type": "integer",
+            "minimum": 32,
+            "maximum": 512
+          },
+          "seed": {
+            "description": "change for a different but repeatable variation",
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "at": {
+            "description": "where it sits on the model (preview only)",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "to": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                    "description": "id of the part to attach to"
+                  },
+                  "side": {
+                    "type": "string",
+                    "enum": [
+                      "top",
+                      "bottom",
+                      "front",
+                      "back",
+                      "left",
+                      "right",
+                      "center"
+                    ],
+                    "description": "world direction you look at the target from: top=+Y bottom=-Y front=+Z back=-Z left=+X (the model's left) right=-X; center = its center"
+                  },
+                  "offset": {
+                    "description": "slide across that side, -1..1 of the target's half size in world axes (top/bottom: [x, z]; front/back: [x, y]; left/right: [z, y])",
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "minimum": -1,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "number",
+                        "minimum": -1,
+                        "maximum": 1
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "embed": {
+                    "description": "how deep this part sinks in: 0 = just touching, 1 = its center sits on the surface, default 0.35, negative = gap",
+                    "type": "number",
+                    "minimum": -1,
+                    "maximum": 1.5
+                  },
+                  "align": {
+                    "description": "rotate this part so its local +Y points along the surface normal (horns, legs, spikes)",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "to",
+                  "side"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "point": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "description": "world position"
+                  }
+                },
+                "required": [
+                  "point"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "format",
+    "name",
+    "parts"
+  ],
+  "additionalProperties": false,
+  "$id": "https://github.com/sezginkipel/clayform/blob/main/schema/clayform.schema.json",
+  "title": "Clayform scene (clayform/1)"
+}

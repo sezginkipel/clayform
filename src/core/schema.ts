@@ -101,19 +101,19 @@ export type Target = z.infer<typeof Target>;
 /* ---------------------------------------------------------------- materials */
 
 export const Material = z.strictObject({
-	color: Color.optional(),
-	roughness: num.min(0).max(1).optional(),
-	metalness: num.min(0).max(1).optional(),
+	color: Color.optional().describe('#rrggbb, #rgb or a palette key; default a warm clay'),
+	roughness: num.min(0).max(1).optional().describe('0 = mirror, 1 = matte (default 0.75)'),
+	metalness: num.min(0).max(1).optional().describe('0 = dielectric (default), 1 = metal'),
 	emissive: Color.optional().describe('glow color'),
-	emissiveStrength: num.min(0).max(20).optional()
+	emissiveStrength: num.min(0).max(20).optional().describe('glow multiplier (default 1; >1 exports KHR_materials_emissive_strength)')
 });
 export type Material = z.infer<typeof Material>;
 
 export const Pattern = z.strictObject({
-	kind: z.enum(['spots', 'stripes', 'noise', 'gradient']),
-	color: Color,
+	kind: z.enum(['spots', 'stripes', 'noise', 'gradient']).describe('spots (Worley cells), stripes, noise blotches, gradient along an axis'),
+	color: Color.describe('the second color painted by the pattern'),
 	scale: pos.optional().describe('feature size in meters (spots/stripes/noise); for gradient the height it fades over'),
-	amount: num.min(0).max(1).optional(),
+	amount: num.min(0).max(1).optional().describe('0..1 how strongly the pattern color shows (default 1)'),
 	axis: z.enum(['x', 'y', 'z', 'around']).optional().describe('stripes/gradient direction in the part\'s local axes; around = vertical staves around local Y. default y')
 });
 
@@ -125,43 +125,43 @@ export const Detail = z.strictObject({
 export const PIVOTS = ['center', 'top', 'bottom', 'front', 'back', 'left', 'right', 'attach'] as const;
 
 export const Part = z.strictObject({
-	id: Id,
+	id: Id.describe('unique snake_case id; a mirror twin is id + ".m" (exported to glTF as id_mirror)'),
 	role: z
 		.string()
 		.regex(/^[a-z][a-z0-9_]{0,31}$/)
 		.optional()
 		.describe('semantic role used by animation and critics: body, head, leg, arm, tail, wing, wheel, rotor, eye, ear, horn, prop …'),
-	label: z.string().max(80).optional(),
-	shape: Shape,
+	label: z.string().max(80).optional().describe('free text for people'),
+	shape: Shape.describe('see Shapes'),
 	position: Vec3.optional().describe('relative to parent; with attach it is an extra world offset'),
 	rotation: Vec3.optional().describe('Euler degrees XYZ'),
-	scale: z.union([pos, z.tuple([pos, pos, pos])]).optional(),
+	scale: z.union([pos, z.tuple([pos, pos, pos])]).optional().describe('uniform or per local axis; the easy way to stretch a template part'),
 	parent: Id.optional().describe('position/rotation are relative to this part and follow its rotation (ignored when attach is set)'),
 	attach: Anchor.optional().describe('place on another part\'s surface; the part keeps its own rotation (use align to point it along the surface normal)'),
 	op: z.enum(['add', 'carve', 'intersect']).optional().describe('add (default) merges, carve cuts away, intersect keeps only the overlap'),
 	blend: num.min(0).max(1).optional().describe('smooth merge radius in meters with everything before it; 0 = hard seam'),
-	material: Material.optional(),
-	pattern: Pattern.optional(),
-	detail: Detail.optional(),
+	material: Material.optional().describe('see Material'),
+	pattern: Pattern.optional().describe('see Pattern'),
+	detail: Detail.optional().describe('see Detail'),
 	mirror: z.boolean().optional().describe('add a mirrored twin across X (id + ".m")'),
 	separate: z.boolean().optional().describe('mesh on its own instead of fusing into the body (wheels, props that spin, held items)'),
 	pivot: z.union([z.enum(PIVOTS), Vec3]).optional().describe('joint location for animation; default: attach point, else top for legs/arms, else center'),
-	hidden: z.boolean().optional()
+	hidden: z.boolean().optional().describe('not meshed; still usable as an anchor or joint')
 });
 export type Part = z.infer<typeof Part>;
 
 /* -------------------------------------------------------------------- sculpt */
 
 export const Sculpt = z.strictObject({
-	id: Id,
-	kind: z.enum(['inflate', 'dent', 'flatten', 'crease', 'noise']),
+	id: Id.describe('unique sculpt id'),
+	kind: z.enum(['inflate', 'dent', 'flatten', 'crease', 'noise']).describe('inflate/dent push out/in, flatten cuts a plane, crease cuts a groove from at to to, noise roughens'),
 	at: Target.optional().describe('where; required except for a global noise'),
 	to: Target.optional().describe('crease end point'),
 	radius: pos.describe('area of influence in meters'),
 	amount: num.min(0).max(1).describe('meters: push for inflate/dent/noise, groove depth for crease, how deep flatten cuts'),
 	normal: Vec3.optional().describe('flatten plane normal; default: the surface normal at `at`'),
 	scale: pos.optional().describe('noise feature size'),
-	mirror: z.boolean().optional()
+	mirror: z.boolean().optional().describe('also apply at the mirrored position across X')
 });
 export type Sculpt = z.infer<typeof Sculpt>;
 
@@ -175,17 +175,17 @@ export const Key = z.strictObject({
 	offset: Vec3.optional().describe('meters, added to rest position')
 });
 
-export const Track = z.strictObject({ part: Id, keys: z.array(Key).min(1).max(256) });
+export const Track = z.strictObject({ part: z.string().describe('part id (twins: "id.m")'), keys: z.array(Key).min(1).max(256).describe('keys sorted by t; eased in and out') });
 
 export const Clip = z.strictObject({
-	id: Id,
-	type: z.enum(CLIP_TYPES),
+	id: Id.describe('clip id, becomes the glTF animation name'),
+	type: z.enum(CLIP_TYPES).describe('the motion intent; see Clip types'),
 	speed: num.min(0.05).max(10).optional().describe('cycle speed multiplier'),
 	amplitude: num.min(0).max(4).optional().describe('motion size multiplier'),
 	duration: num.min(0.1).max(60).optional().describe('seconds; default one natural cycle'),
 	target: Id.optional().describe('part to drive for wave/nod/spin (default: auto)'),
 	tracks: z.array(Track).max(128).optional().describe('keyframes (type "keyframes") or layered on top of a procedural clip'),
-	fps: z.number().int().min(4).max(60).optional()
+	fps: z.number().int().min(4).max(60).optional().describe('sample rate for export (default 30)')
 });
 export type Clip = z.infer<typeof Clip>;
 
@@ -196,27 +196,28 @@ export const EFFECT_PRESETS = ['fire', 'smoke', 'sparks', 'magic', 'explosion', 
 const Range = z.tuple([num, num]);
 
 export const Effect = z.strictObject({
-	id: Id,
-	preset: z.enum(EFFECT_PRESETS).optional(),
+	id: Id.describe('effect id'),
+	preset: z.enum(EFFECT_PRESETS).optional().describe('starting parameters; every other field overrides it'),
 	count: z.number().int().min(1).max(4000).optional().describe('particles alive at once (approx.)'),
 	lifetime: Range.optional().describe('seconds [min, max]'),
 	speed: Range.optional().describe('m/s [min, max]'),
-	direction: Vec3.optional(),
+	direction: Vec3.optional().describe('main emission direction (default up)'),
 	spread: num.min(0).max(180).optional().describe('cone half-angle in degrees'),
 	gravity: num.min(-50).max(50).optional().describe('m/s² along -Y (negative floats up)'),
-	drag: num.min(0).max(10).optional(),
+	drag: num.min(0).max(10).optional().describe('linear drag, 1/s'),
 	size: Range.optional().describe('particle size in meters [start, end]'),
 	colors: z.array(Color).min(1).max(8).optional().describe('color over life'),
 	alpha: Range.optional().describe('opacity [start, end]'),
 	emitter: z
 		.strictObject({ shape: z.enum(['point', 'sphere', 'disc', 'box']), size: num.min(0).optional() })
-		.optional(),
-	blend: z.enum(['additive', 'alpha']).optional(),
+		.optional()
+		.describe('where particles are born: point, sphere, disc (flat, XZ) or box, with a size in meters'),
+	blend: z.enum(['additive', 'alpha']).optional().describe('additive for glowing effects, alpha for smoke and dust'),
 	burst: z.boolean().optional().describe('emit everything at t=0 instead of continuously'),
 	duration: num.min(0.1).max(10).optional().describe('seconds baked'),
-	frames: z.number().int().min(1).max(64).optional(),
+	frames: z.number().int().min(1).max(64).optional().describe('flipbook frames (default 16)'),
 	tile: z.number().int().min(32).max(512).optional().describe('flipbook tile size in px'),
-	seed: z.number().int().optional(),
+	seed: z.number().int().optional().describe('change for a different but repeatable variation'),
 	at: Target.optional().describe('where it sits on the model (preview only)')
 });
 export type Effect = z.infer<typeof Effect>;
@@ -228,21 +229,21 @@ export const Settings = z.strictObject({
 	ground: z.enum(['auto', 'none']).optional().describe('auto lifts/drops the model so it stands on y=0 (default)'),
 	symmetry: z.enum(['x', 'none']).optional().describe('declare mirror symmetry so critics check it'),
 	budget: z.number().int().min(100).max(2_000_000).optional().describe('triangle budget for critics'),
-	ao: z.boolean().optional(),
+	ao: z.boolean().optional().describe('compute ambient occlusion into vertex shading (default true)'),
 	rig: z.enum(['auto', 'none']).optional().describe('auto: skeleton from parts when clips exist')
 });
 export type Settings = z.infer<typeof Settings>;
 
 export const Scene = z.strictObject({
-	format: z.literal(FORMAT),
-	name: z.string().min(1).max(80),
-	notes: z.string().max(2000).optional(),
-	palette: z.record(z.string().regex(/^[a-z][a-z0-9_]{0,31}$/), z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)).optional(),
-	settings: Settings.optional(),
-	parts: z.array(Part).max(256),
-	sculpts: z.array(Sculpt).max(128).optional(),
-	clips: z.array(Clip).max(32).optional(),
-	effects: z.array(Effect).max(16).optional()
+	format: z.literal(FORMAT).describe('document version'),
+	name: z.string().min(1).max(80).describe('display name; also the glTF scene name'),
+	notes: z.string().max(2000).optional().describe('free text: intent, constraints, what to keep'),
+	palette: z.record(z.string().regex(/^[a-z][a-z0-9_]{0,31}$/), z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)).optional().describe('named colors parts refer to — recolor a model by editing one entry'),
+	settings: Settings.optional().describe('see Settings'),
+	parts: z.array(Part).max(256).describe('in blend order: blend and carve act on the parts listed before them'),
+	sculpts: z.array(Sculpt).max(128).optional().describe('applied in order after all parts'),
+	clips: z.array(Clip).max(32).optional().describe('animations; the rig is built automatically'),
+	effects: z.array(Effect).max(16).optional().describe('particle effects baked to flipbooks')
 });
 export type Scene = z.infer<typeof Scene>;
 

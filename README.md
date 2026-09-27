@@ -152,6 +152,13 @@ const glb = exportGlb(await simplifyBuild(build, { triangles: 4000 })).glb;
 6. **Export**: quadric simplification (meshoptimizer) that keeps color, normal and material
    borders, then GLB with one primitive per material, a joint per part, and sampled animations.
 
+## Documentation
+
+- [Getting started](docs/getting-started.md) · [Concepts](docs/concepts.md) · [MCP tools](docs/mcp-tools.md) · [Critics](docs/critics.md)
+- [Animation](docs/animation.md) · [Effects](docs/effects.md) · [Export](docs/export.md) · [CLI and library](docs/cli-and-library.md)
+- [Architecture](docs/architecture.md) · [FAQ](docs/faq.md) · [Scene reference](docs/reference.md) · [Templates](docs/templates.md)
+- JSON Schema for `.clay.json` files: [`schema/clayform.schema.json`](schema/clayform.schema.json)
+
 ## Limits (today)
 
 - The look is **stylized**: smooth, clay-like, vertex-colored. There are no UV textures or
@@ -167,19 +174,19 @@ const glb = exportGlb(await simplifyBuild(build, { triangles: 4000 })).glb;
 
 ## Roadmap
 
-- Image/text-to-3D hand-off (open-weight models or hosted APIs), imported meshes as parts
-- Texture baking (UVs via xatlas) and a texture atlas export
-- Two-segment limbs with simple IK for walk cycles on uneven ground
-- A browser viewer (`clayform view`) for people
-- Publishing the bench run against other agent 3D tools
+Next up: publishing the bench, imported meshes as parts and image-to-3D hand-off (v0.2), IK and
+foot planting (v0.3), kits and multi-object scenes (v0.4), textures (v0.5). See
+[ROADMAP.md](ROADMAP.md), [milestones](https://github.com/sezginkipel/clayform/milestones) and the
+[changelog](CHANGELOG.md).
 
 ## Development
 
 ```bash
-npm test                              # 34 tests, including the Khronos glTF validator
+npm test                              # includes the Khronos glTF validator and runs every docs example
 npm run check                         # types
 npx tsx scripts/gallery.ts            # regenerate docs/gallery.png
 npx tsx scripts/docs-images.ts        # regenerate the README images
+npx tsx scripts/gen-docs.ts           # regenerate docs/reference.md, docs/templates.md, the JSON Schema
 npx tsx scripts/bench.ts <dir>        # score a bench run
 ```
 

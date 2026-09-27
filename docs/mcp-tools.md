@@ -1,0 +1,110 @@
+# MCP tools
+
+The server speaks MCP over stdio (`clayform mcp`). Tools return text, and `render`,
+`preview_motion` and `preview_effect` also return PNG images. Errors come back as tool errors
+with the reason and a fix, never as a crash.
+
+## `guide`
+
+`{ topic?: "manual" | "schema" }`. The agent manual, or the full JSON Schema. Read it once per session.
+
+## `list_templates`
+
+No arguments. One line per template: id, title, tags, what to change. See [templates](templates.md).
+
+## `new_scene`
+
+`{ name, template? }`. Creates a scene (id = a slug of the name) and returns a part summary
+with resolved world positions plus the critics.
+
+## `list_scenes` · `get_scene`
+
+`get_scene { scene, format?: "summary" | "json" }`. The summary lists each part with shape, placement,
+world center and size. `json` returns the document.
+
+## `edit`
+
+`{ scene, ops: Op[], render?: boolean }`. Applies ops in order, **all or nothing**. It returns what
+changed and the critics, plus a three-quarter image when `render: true`.
+
+| op | fields |
+|---|---|
+| `add_part` | `part`, `after?` (a part id, or `"start"`) |
+| `update_part` | `id`, `set` |
+| `remove_part` | `id`, `cascade?` (also remove parts attached to it) |
+| `rename_part` | `id`, `to` (references follow) |
+| `duplicate_part` | `id`, `as`, `set?` |
+| `add_sculpt` · `update_sculpt` · `remove_sculpt` | `sculpt` / `id`, `set` / `id` |
+| `add_clip` · `update_clip` · `remove_clip` | `clip` / `id`, `set` / `id` |
+| `add_effect` · `update_effect` · `remove_effect` | `effect` / `id`, `set` / `id` |
+| `set_settings` | `set` |
+| `set_palette` | `set` (a `null` value removes a color) |
+| `set_meta` | `name?`, `notes?` |
+| `replace` | `scene` (a whole document) |
+
+`set` merges objects, replaces arrays, and `null` removes a field. Giving a new `shape.type`
+replaces the shape.
+
+<!-- verify: ops quadruped -->
+```json
+[
+  { "op": "update_part", "id": "tail", "set": { "shape": { "radius": [0.05, 0.045, 0.03] } } },
+  { "op": "duplicate_part", "id": "ear", "as": "ear_tuft", "set": { "shape": { "radii": [0.02, 0.05, 0.015] }, "attach": { "embed": 0.9 } } },
+  { "op": "add_clip", "clip": { "id": "happy", "type": "hop", "speed": 1.4 } }
+]
+```
+
+A failing batch returns, for example:
+
+```
+nothing was changed:
+op 1 (remove_part): no part "ghost"
+```
+
+## `render`
+
+`{ scene, views?, mode?, size? }`
+
+- `views`: `front`, `back`, `left`, `right`, `top`, `bottom`, `three_quarter`,
+  `three_quarter_back`, or `{ "yaw": deg, "pitch": deg }`. The default is front, left, top,
+  three-quarter. Front, side and top views are orthographic (for proportions), and the
+  three-quarter views are perspective.
+- `mode`: `shaded` (default), `parts` (a color per part, with a legend in the image and in the
+  text), `clay`, `normals`, `depth`.
+- `size`: tile size in pixels, 128–768.
+
+## `inspect`
+
+`{ scene }`. The part summary, [critics](critics.md), and a ground-contact check for every clip.
+
+## `preview_motion`
+
+`{ scene, clip, frames?, view? }`. A film strip of a clip (default 6 frames from the left)
+with frame times, the joints that move, and the lowest point reached.
+
+## `preview_effect`
+
+`{ scene, effect }`. Up to 8 baked frames on a background that suits the blend mode.
+
+## `export`
+
+`{ scene, format?, path?, triangles?, effect?, bakeAo? }`
+
+| format | writes |
+|---|---|
+| `glb` (default) | meshes, materials, vertex colors; a skin and animations when the scene has clips |
+| `obj` | static geometry with vertex colors |
+| `json` | the scene document |
+| `flipbook` | an effect as a sprite sheet PNG plus a JSON of frames, fps and blend |
+
+Triangles are reduced while keeping the shape within 0.4% of its size, or down to `triangles`
+if given. See [export](export.md).
+
+## `history`
+
+`{ scene, action: "undo" | "redo" | "snapshot" | "restore" | "list", label? }`. Every `edit`
+is one undo step. Snapshots are named and also saved to disk.
+
+## `import_scene`
+
+`{ path? , json?, name? }`. Loads a `.clay.json` into the workspace.
