@@ -27,17 +27,20 @@ Clayform changes the medium instead:
 
 ## Quick start
 
-Requires Node 20+.
+Requires Node 20+. Clayform installs straight from GitHub (it builds itself on install):
 
 ```bash
-git clone https://github.com/sezginkipel/clayform.git
-cd clayform && npm install && npm run build
-claude mcp add clayform -- node "$(pwd)/dist/cli.js" mcp
+claude mcp add clayform -- npx -y github:sezginkipel/clayform mcp
 ```
 
-Any MCP client works. The command is `node /path/to/clayform/dist/cli.js mcp`, and
-scenes are saved in `./.clayform/` (change it with `--workspace <dir>` or the
-`CLAYFORM_WORKSPACE` environment variable). Then ask your agent for something:
+For any other MCP client, the command is `npx -y github:sezginkipel/clayform mcp`.
+Scenes are saved in `./.clayform/` (change it with `--workspace <dir>` or the
+`CLAYFORM_WORKSPACE` environment variable).
+
+To install a fixed version, use the prebuilt tarball from
+[Releases](https://github.com/sezginkipel/clayform/releases):
+`npm install https://github.com/sezginkipel/clayform/releases/download/v0.1.0/clayform-0.1.0.tgz`.
+To work on the code: `git clone`, then `npm install` and `npm test`. Then ask your agent for something:
 *"Make a goblin from the biped template, green skin, pointy ears, and export it
 with a walk cycle."*
 
