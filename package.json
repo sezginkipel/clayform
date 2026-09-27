@@ -1,0 +1,64 @@
+{
+  "name": "clayform",
+  "version": "0.1.0",
+  "description": "An agent-native 3D workshop: AI agents model, sculpt, rig, animate and bake effects through a semantic scene document, a headless renderer they can look through, and critics that measure what they cannot see. No Blender required.",
+  "license": "Apache-2.0",
+  "author": "Sezgin Kipel <sezginkipel@gmail.com>",
+  "type": "module",
+  "bin": {
+    "clayform": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/server.d.ts",
+      "default": "./dist/mcp/server.js"
+    }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "dev:mcp": "node --import tsx src/cli.ts mcp",
+    "prepublishOnly": "npm run check && npm test && npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "3d",
+    "sdf",
+    "ai-agents",
+    "gltf",
+    "procedural",
+    "sculpting",
+    "animation",
+    "vfx",
+    "game-assets"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.1",
+    "fflate": "^0.8.3",
+    "meshoptimizer": "^1.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "gltf-validator": "^2.0.0-dev.3.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

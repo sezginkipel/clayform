@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.clayform/
+out/
+*.log
+.env*
+.dev.vars
+.admin-credentials.local
+bench/runs/
+scratch/
