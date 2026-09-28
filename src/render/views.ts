@@ -88,6 +88,8 @@ export interface SheetOptions {
 	title?: string;
 	/** return per-pixel part ids with each tile */
 	ids?: boolean;
+	/** supersampling (default 2) */
+	ssaa?: number;
 }
 
 export interface Sheet {
@@ -121,7 +123,7 @@ export function renderTiles(b: Build, o: SheetOptions = {}): { tiles: Image[]; n
 			groundRadius: foot * 1.6,
 			groundCenter: [(bounds.min[0] + bounds.max[0]) / 2, (bounds.min[2] + bounds.max[2]) / 2],
 			shadow: true,
-			ssaa: 2,
+			ssaa: o.ssaa ?? 2,
 			partColors: (i) => partColor(i),
 			ids: o.ids
 		})

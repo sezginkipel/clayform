@@ -27,6 +27,7 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `ground` | `auto` · `none` | auto lifts/drops the model so it stands on y=0 (default) |
 | `symmetry` | `x` · `none` | declare mirror symmetry so critics check it |
 | `budget` | integer (≥100, ≤2000000) | triangle budget for critics |
+| `screenHeight` | integer (≥16, ≤2048) | how tall the model appears in the game, in pixels; critics flag details a player cannot see at that size |
 | `ao` | boolean | compute ambient occlusion into vertex shading (default true) |
 | `edges` | `soft` · `sharp` | soft (default) rounds edges to the cell size, good for organic shapes; sharp keeps real corners and edges (crates, blades, buildings, robots) |
 | `rig` | `auto` · `none` | auto: skeleton from parts when clips exist |

@@ -190,12 +190,12 @@ const chest = S('Treasure chest', {
 
 const barrel = S('Barrel', {
 	notes: 'Wooden barrel ~0.8 m: an ellipsoid trimmed flat by intersect, vertical staves, iron hoops.',
-	palette: { wood: '#9a6a3f', wood_dark: '#7a5230', iron: '#5c5e63' },
+	palette: { wood: '#9a6a3f', wood_dark: '#7a5230', lid: '#4a2e18', iron: '#5c5e63' },
 	settings: { resolution: 110 },
 	parts: [
 		{ id: 'belly', role: 'body', shape: { type: 'ellipsoid', radii: [0.33, 0.52, 0.33] }, position: [0, 0.4, 0], material: { color: 'wood', roughness: 0.85 }, pattern: { kind: 'stripes', color: 'wood_dark', scale: 0.07, amount: 0.55, axis: 'around' } },
 		{ id: 'trim', shape: { type: 'cylinder', height: 0.8, radius: 0.5 }, position: [0, 0.4, 0], op: 'intersect', blend: 0.015 },
-		{ id: 'head', shape: { type: 'cylinder', height: 0.06, radius: 0.19, rounding: 0.01 }, position: [0, 0.8, 0], op: 'carve', material: { color: 'wood_dark' } },
+		{ id: 'head', shape: { type: 'cylinder', height: 0.06, radius: 0.19, rounding: 0.01 }, position: [0, 0.8, 0], op: 'carve', material: { color: 'lid' } },
 		{ id: 'hoop_top', shape: { type: 'torus', radius: 0.279, tube: 0.017 }, position: [0, 0.68, 0], material: { color: 'iron', metalness: 0.9, roughness: 0.45 } },
 		{ id: 'hoop_mid', shape: { type: 'torus', radius: 0.33, tube: 0.017 }, position: [0, 0.4, 0], material: { color: 'iron', metalness: 0.9, roughness: 0.45 } },
 		{ id: 'hoop_bottom', shape: { type: 'torus', radius: 0.279, tube: 0.017 }, position: [0, 0.12, 0], material: { color: 'iron', metalness: 0.9, roughness: 0.45 } }

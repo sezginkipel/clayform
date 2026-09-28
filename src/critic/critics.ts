@@ -7,6 +7,7 @@
  */
 
 import { bodyField, primDist } from '../core/compile.js';
+import { colorBlend, sameSilhouette, tinyDetail } from './readability.js';
 import type { Build, MeshData } from '../core/build.js';
 import type { V3 } from '../core/math.js';
 
@@ -213,6 +214,11 @@ export function critique(b: Build): Report {
 			}
 		}
 	}
+
+	/* ------------------------------------------------------- readability */
+	issues.push(...colorBlend(b));
+	if (c.scene.settings?.screenHeight) issues.push(...tinyDetail(b, c.scene.settings.screenHeight));
+	issues.push(...sameSilhouette(b));
 
 	/* ------------------------------------------------------------ budget */
 	const budget = c.scene.settings?.budget;

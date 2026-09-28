@@ -63,8 +63,8 @@ export function referenceMask(img: Rgba): Mask {
 	return { w, h, on };
 }
 
-export function modelMask(b: Build, view: View, size = 384): Mask {
-	const { tiles } = renderTiles(b, { views: [view], size, ids: true, ground: false });
+export function modelMask(b: Build, view: View, size = 384, ssaa = 2): Mask {
+	const { tiles } = renderTiles(b, { views: [view], size, ids: true, ground: false, ssaa });
 	const ids = tiles[0].ids!;
 	const on = new Uint8Array(ids.length);
 	for (let i = 0; i < ids.length; i++) on[i] = ids[i] >= 0 ? 1 : 0;

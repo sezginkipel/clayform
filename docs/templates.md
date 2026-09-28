@@ -205,7 +205,7 @@ Wooden barrel ~0.8 m: an ellipsoid trimmed flat by intersect, vertical staves, i
 - tags: prop, container
 - parts: `belly`, `trim`, `head`, `hoop_top`, `hoop_mid`, `hoop_bottom`
 - roles: body
-- palette: `wood` #9a6a3f, `wood_dark` #7a5230, `iron` #5c5e63
+- palette: `wood` #9a6a3f, `wood_dark` #7a5230, `lid` #4a2e18, `iron` #5c5e63
 
 ## Potion — `potion`
 

@@ -93,7 +93,8 @@ set_settings{set} · set_palette{set} · set_meta{name?, notes?} · replace{scen
 ## Settings
 resolution (cells on the longest axis, default 96; raise for thin parts) · edges soft|sharp
 (sharp keeps real corners: crates, blades, buildings, robots) · ground auto|none ·
-symmetry "x" (critics check it) · budget (triangle budget) · ao · rig auto|none.
+symmetry "x" (critics check it) · budget (triangle budget) · screenHeight (px the model is tall in
+the game; critics flag details a player cannot see) · ao · rig auto|none.
 
 ## Tips
 - Recolor with the palette: change \`palette.skin\` once.

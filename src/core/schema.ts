@@ -235,6 +235,7 @@ export const Settings = z.strictObject({
 	ground: z.enum(['auto', 'none']).optional().describe('auto lifts/drops the model so it stands on y=0 (default)'),
 	symmetry: z.enum(['x', 'none']).optional().describe('declare mirror symmetry so critics check it'),
 	budget: z.number().int().min(100).max(2_000_000).optional().describe('triangle budget for critics'),
+	screenHeight: z.number().int().min(16).max(2048).optional().describe('how tall the model appears in the game, in pixels; critics flag details a player cannot see at that size'),
 	ao: z.boolean().optional().describe('compute ambient occlusion into vertex shading (default true)'),
 	edges: z.enum(['soft', 'sharp']).optional().describe('soft (default) rounds edges to the cell size, good for organic shapes; sharp keeps real corners and edges (crates, blades, buildings, robots)'),
 	rig: z.enum(['auto', 'none']).optional().describe('auto: skeleton from parts when clips exist')
