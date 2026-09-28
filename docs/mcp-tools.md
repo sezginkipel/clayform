@@ -73,6 +73,29 @@ op 1 (remove_part): no part "ghost"
   text), `clay`, `normals`, `depth`.
 - `size`: tile size in pixels, 128–768.
 
+Add `compare: "previous"` to see the state before the last edit (top row) and now (bottom row)
+with one camera. The text lists which parts were added, removed or changed.
+
+## `measure`
+
+`{ scene, queries: Query[] }`. Exact answers instead of judging from a picture. Meters, in the
+grounded world the renders show.
+
+| query | answers |
+|---|---|
+| `{ "between": ["hand", "leg"] }` | the surface-to-surface distance and closest points; a negative number is how deep they overlap. It is measured on the parts' own shapes, so it works for parts that blend together |
+| `{ "part": "head" }` | size, center, bounds, and whether it touches the ground |
+| `{ "ratio": ["head", "body"], "axis": "y" }` | size of one over the other along `x`, `y`, `z` or `max` |
+| `{ "pixel": { "view": "front", "x": 190, "y": 60, "size": 384 } }` | which part is at that pixel of a `render` tile of that view and size |
+
+Real output for the robot template, for the queries `[{"part":"head"}, {"ratio":["head","torso"],"axis":"x"}, {"between":["claw","leg"]}]`:
+
+```
+head: size 34.0 cm × 26.4 cm × 28.2 cm, center [0, 0.9475, 0.0009], from [-0.1702, 0.8157, -0.1401] to [0.1702, 1.0792, 0.1419]
+head / torso along x: 0.7329 (34.0 cm / 46.4 cm)
+claw to leg: 9.5 cm apart, closest points [0.2702, 0.3513, -0.0066] and [0.175, 0.3513, -0.0066]
+```
+
 ## `inspect`
 
 `{ scene }`. The part summary, [critics](critics.md), and a ground-contact check for every clip.

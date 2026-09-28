@@ -69,9 +69,16 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 			scene,
 			views: z.array(view).max(8).optional(),
 			mode: z.enum(['shaded', 'parts', 'clay', 'normals', 'depth']).optional(),
-			size: z.number().int().min(128).max(768).optional().describe('tile size in px')
+			size: z.number().int().min(128).max(768).optional().describe('tile size in px'),
+			compare: z.enum(['previous']).optional().describe('"previous": the state before the last edit (top row) and now (bottom row), same camera, plus which parts changed')
 		}
 	}, (a) => t.render(a));
+
+	server.registerTool('measure', {
+		title: 'Measure exactly',
+		description: 'Exact answers instead of guessing from pictures. queries: {between: [a, b]} surface distance (negative = overlap depth) and closest points · {part: id} size, center, bounds, ground contact · {ratio: [a, b], axis: x|y|z|max} size of a over b · {pixel: {view, x, y, size?}} which part is at that pixel of a render tile. Meters, grounded world.',
+		inputSchema: { scene, queries: z.array(z.record(z.string(), z.unknown())).min(1).max(40) }
+	}, (a) => t.measure(a));
 
 	server.registerTool('inspect', {
 		title: 'Measure the model',

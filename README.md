@@ -90,8 +90,9 @@ WARN [asymmetric] declared X symmetry is off by 1.3 cm on average; worst: orb (4
 | `list_templates` | 19 tuned starting points: biped, quadruped, bird, fish, slime, robot, snowman, car, spaceship, cottage, tree, rock, mushroom, crystal, sword, chest, barrel, potion, torch |
 | `new_scene` · `list_scenes` · `get_scene` · `import_scene` | Scenes in the workspace; `get_scene` summarizes parts with resolved world positions |
 | `edit` | Atomic batch of ops (add/update/remove/rename/duplicate parts, sculpts, clips, effects, settings, palette). Returns what changed and the critics |
-| `render` | Labelled multi-view PNG; modes `shaded`, `parts`, `clay`, `normals`, `depth` |
+| `render` | Labelled multi-view PNG; modes `shaded`, `parts`, `clay`, `normals`, `depth`; `compare: "previous"` shows before and after the last edit |
 | `inspect` | Part summary, critics, and a check of every clip (ground contact, parts passing through each other) |
+| `measure` | Exact distances, overlaps, sizes, proportions, and which part is at a pixel |
 | `preview_motion` | A clip as a labelled film strip |
 | `preview_effect` | An effect's frames |
 | `export` | `glb` · `obj` · `json` · `flipbook` (sprite sheet PNG + JSON), with an optional triangle budget |

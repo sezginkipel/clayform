@@ -52,12 +52,16 @@ export interface RasterOptions {
 	shadow: boolean;
 	ssaa: number;
 	partColors?: (prim: number) => RGB;
+	/** also return the part (prim index) seen at each output pixel, -1 for none */
+	ids?: boolean;
 }
 
 export interface Image {
 	width: number;
 	height: number;
 	data: Uint8Array;
+	/** prim index per output pixel (when requested), -1 = background */
+	ids?: Int32Array;
 }
 
 const KEY: V3 = norm([0.5, 0.85, 0.6]);
@@ -236,7 +240,17 @@ export function rasterize(draws: Drawable[], shades: Shade[], cam: Camera, o: Ra
 			img[q + 2] = Math.round(clamp(cb * inv, 0, 1) * 255);
 			img[q + 3] = 255;
 		}
-	return { width: o.width, height: o.height, data: img };
+	let ids: Int32Array | undefined;
+	if (o.ids) {
+		ids = new Int32Array(o.width * o.height).fill(-1);
+		const h = s >> 1;
+		for (let y = 0; y < o.height; y++)
+			for (let x = 0; x < o.width; x++) {
+				const p = (y * s + h) * W + x * s + h;
+				if (triId[p] >= 0) ids[y * o.width + x] = draws[drawId[p]].triPrim[triId[p]];
+			}
+	}
+	return { width: o.width, height: o.height, data: img, ids };
 }
 
 /* ---------------------------------------------------------------- shading */

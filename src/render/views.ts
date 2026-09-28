@@ -86,6 +86,8 @@ export interface SheetOptions {
 	/** override the framing bounds (e.g. whole animation) */
 	bounds?: Bounds;
 	title?: string;
+	/** return per-pixel part ids with each tile */
+	ids?: boolean;
 }
 
 export interface Sheet {
@@ -120,7 +122,8 @@ export function renderTiles(b: Build, o: SheetOptions = {}): { tiles: Image[]; n
 			groundCenter: [(bounds.min[0] + bounds.max[0]) / 2, (bounds.min[2] + bounds.max[2]) / 2],
 			shadow: true,
 			ssaa: 2,
-			partColors: (i) => partColor(i)
+			partColors: (i) => partColor(i),
+			ids: o.ids
 		})
 	);
 	return { tiles, names: views.map(viewName) };

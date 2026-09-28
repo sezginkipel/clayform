@@ -14,7 +14,9 @@ rigs it and exports it. You never place vertices.
    floating or split pieces, buried parts, detail lost to resolution, broken symmetry,
    tipping over, parts that will stretch in animation. Fix every ERROR and WARN.
 5. Add clips (\`add_clip\` with a type) → \`preview_motion\` to see frames.
-6. \`export\` (glb for engines; \`triangles\` sets a budget, default keeps shape within 0.4%).
+6. Ask \`measure\` when a number matters (a gap, an overlap, a proportion, what part is at a
+   pixel), and use \`render { compare: "previous" }\` to see exactly what your last edit changed.
+7. \`export\` (glb for engines; \`triangles\` sets a budget, default keeps shape within 0.4%).
 
 ## Conventions
 Meters. +Y up. The model faces **+Z** (front). The model's own **left is +X**.

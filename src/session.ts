@@ -138,6 +138,12 @@ export class Workspace {
 		return [...(this.scenes.get(id)?.snapshots.keys() ?? [])];
 	}
 
+	/** The scene as it was before the last edit, if any. */
+	previous(id: string): Scene | null {
+		const e = this.scenes.get(id);
+		return e?.undo.length ? e.undo[e.undo.length - 1] : null;
+	}
+
 	history(id: string) {
 		const e = this.scenes.get(id);
 		return { undo: e?.undo.length ?? 0, redo: e?.redo.length ?? 0 };

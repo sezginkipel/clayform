@@ -16,6 +16,12 @@ import type { RenderMode } from '../render/raster.js';
 import { describe, Workspace } from '../session.js';
 import { TEMPLATES } from '../templates/index.js';
 import { bakeEffect, resolveEffect } from '../vfx/effects.js';
+import { measureBetween, measurePart, measureRatio, partAtPixel } from '../measure.js';
+import { buildScene } from '../core/build.js';
+import { renderTiles } from '../render/views.js';
+import { drawText } from '../render/font.js';
+import { encodePng } from '../render/png.js';
+import type { Scene as SceneDoc } from '../core/schema.js';
 import { z } from 'zod';
 import { Scene } from '../core/schema.js';
 
@@ -99,8 +105,9 @@ export class Tools {
 		});
 	}
 
-	render(args: { scene: string; views?: unknown; mode?: RenderMode; size?: number }): Promise<Result> {
+	render(args: { scene: string; views?: unknown; mode?: RenderMode; size?: number; compare?: 'previous' }): Promise<Result> {
 		return wrap(() => {
+			if (args.compare === 'previous') return this.compare(args);
 			const b = this.ws.build(args.scene);
 			const views = parseViews(args.views);
 			const size = Math.max(128, Math.min(768, Math.round(args.size ?? (views && views.length === 1 ? 512 : 384))));
@@ -110,6 +117,69 @@ export class Tools {
 			if (sheet.legend.length) lines.push(`parts: ${sheet.legend.map((l) => `${l.id}=${l.color}`).join(' ')}`);
 			lines.push(formatReport(rep));
 			return { content: [png(sheet.png), text(lines.join('\n'))] };
+		});
+	}
+
+	private compare(args: { scene: string; views?: unknown; mode?: RenderMode; size?: number }): Result {
+		const before = this.ws.previous(args.scene);
+		if (!before) return fail('there is no earlier version to compare with — this scene has not been edited yet (or the edits were undone)');
+		const after = this.ws.get(args.scene);
+		const bb = buildScene(before), ba = this.ws.build(args.scene);
+		const views = parseViews(args.views) ?? ['front', 'three_quarter'];
+		const size = Math.max(128, Math.min(512, Math.round(args.size ?? 300)));
+		// one camera for both states
+		const bounds = {
+			min: [0, 1, 2].map((a) => Math.min(bb.min[a], ba.min[a])) as [number, number, number],
+			max: [0, 1, 2].map((a) => Math.max(bb.max[a], ba.max[a])) as [number, number, number]
+		};
+		const rows = [bb, ba].map((b) => renderTiles(b, { views, size, mode: args.mode ?? 'shaded', bounds }).tiles);
+		const gap = 4, W = views.length * size + (views.length - 1) * gap, H = size * 2 + gap;
+		const buf = new Uint8Array(W * H * 4).fill(250);
+		rows.forEach((tiles, r) =>
+			tiles.forEach((t, i) => {
+				const ox = i * (size + gap), oy = r * (size + gap);
+				for (let y = 0; y < size; y++) buf.set(t.data.subarray(y * size * 4, (y + 1) * size * 4), ((oy + y) * W + ox) * 4);
+				drawText(buf, W, H, ox + 8, oy + 8, `${r ? 'after' : 'before'} ${typeof views[i] === 'string' ? views[i] : 'custom'}`, [70, 70, 76], 2);
+			})
+		);
+		for (let i = 3; i < buf.length; i += 4) buf[i] = 255;
+		return { content: [png(encodePng(buf, W, H)), text(`top row: before the last edit · bottom row: now\n${changedParts(before, after)}\n${formatReport(critique(ba))}`)] };
+	}
+
+	measure(args: { scene: string; queries: unknown[] }): Promise<Result> {
+		return wrap(() => {
+			if (!Array.isArray(args.queries) || !args.queries.length) return fail('queries must be a non-empty array, e.g. [{"between":["hand","leg"]}]');
+			const b = this.ws.build(args.scene);
+			const cm = (m: number) => `${(m * 100).toFixed(1)} cm`;
+			const lines = args.queries.map((q, i) => {
+				const Q = q as Record<string, any>;
+				try {
+					if (Array.isArray(Q.between)) {
+						const r = measureBetween(b, String(Q.between[0]), String(Q.between[1]));
+						return r.distance < 0
+							? `${r.a} and ${r.b} overlap by ${cm(-r.distance)} (deepest near [${r.pointA.join(', ')}])`
+							: `${r.a} to ${r.b}: ${cm(r.distance)} apart, closest points [${r.pointA.join(', ')}] and [${r.pointB.join(', ')}]`;
+					}
+					if (typeof Q.part === 'string') {
+						const r = measurePart(b, Q.part);
+						return `${r.id}: size ${r.size.map(cm).join(' × ')}, center [${r.center.join(', ')}], from [${r.min.join(', ')}] to [${r.max.join(', ')}]${r.touchesGround ? ', touches the ground' : ''}${r.visible ? '' : ' — not visible (buried or too small), bounds are its shape'}`;
+					}
+					if (Array.isArray(Q.ratio)) {
+						const axis = (Q.axis ?? 'y') as 'x' | 'y' | 'z' | 'max';
+						const r = measureRatio(b, String(Q.ratio[0]), String(Q.ratio[1]), axis);
+						return `${Q.ratio[0]} / ${Q.ratio[1]} along ${axis}: ${r.ratio} (${cm(r.a)} / ${cm(r.b)})`;
+					}
+					if (Q.pixel && typeof Q.pixel === 'object') {
+						const view = parseViews([Q.pixel.view ?? 'front'])![0];
+						const id = partAtPixel(b, view, Number(Q.pixel.x), Number(Q.pixel.y), Number(Q.pixel.size ?? 384));
+						return `pixel (${Q.pixel.x}, ${Q.pixel.y}) in ${Q.pixel.view ?? 'front'} at ${Q.pixel.size ?? 384} px: ${id ?? 'background'}`;
+					}
+					return `query ${i}: use one of {between: [a, b]}, {part: id}, {ratio: [a, b], axis}, {pixel: {view, x, y, size}}`;
+				} catch (e) {
+					return `query ${i}: ${e instanceof Error ? e.message : String(e)}`;
+				}
+			});
+			return { content: [text(lines.join('\n'))] };
 		});
 	}
 
@@ -219,4 +289,27 @@ export class Tools {
 			return { content: [text(`imported as "${r.id}"\n\n${describe(r.scene)}`)] };
 		});
 	}
+}
+
+/** JSON with sorted keys, so two equal parts compare equal whatever order their fields were written in. */
+function stable(v: unknown): string {
+	if (Array.isArray(v)) return `[${v.map(stable).join(",")}]`;
+	if (v && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`).join(",")}}`;
+	return JSON.stringify(v);
+}
+
+function changedParts(before: SceneDoc, after: SceneDoc): string {
+	const b = new Map(before.parts.map((p) => [p.id, stable(p)]));
+	const a = new Map(after.parts.map((p) => [p.id, stable(p)]));
+	const added = [...a.keys()].filter((k) => !b.has(k));
+	const removed = [...b.keys()].filter((k) => !a.has(k));
+	const changed = [...a.keys()].filter((k) => b.has(k) && b.get(k) !== a.get(k));
+	const other = (['sculpts', 'clips', 'effects', 'palette', 'settings'] as const).filter((k) => stable(before[k] ?? null) !== stable(after[k] ?? null));
+	const bits = [
+		added.length ? `added ${added.join(', ')}` : '',
+		removed.length ? `removed ${removed.join(', ')}` : '',
+		changed.length ? `changed ${changed.join(', ')}` : '',
+		other.length ? `also changed: ${other.join(', ')}` : ''
+	].filter(Boolean);
+	return bits.length ? bits.join(' · ') : 'no part changed';
 }
