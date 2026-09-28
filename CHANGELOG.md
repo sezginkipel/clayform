@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.8.0 — 2026-09-29
+
+- **Planted feet.** Walks and runs move each foot along the ground while it is down and swing
+  it forward through the air. Legs with knees use two-bone IK. Rigid legs turn at the hip while
+  the root drops just enough for the feet to reach, and the swinging leg tips outward to clear
+  the ground. Boots and paws stay level. The walking speed is exported as the animation's
+  `extras.speed`, and the motion critic follows the sole from touchdown to lift-off and reports
+  sliding. On the templates' walks a foot moves at most 0.3 cm while it is down, except the baby
+  dragon's right front foot at 1.1 cm. (#7)
+- **Follow-through.** Tails, ears, antennas and hair trail behind the body on a damped spring,
+  baked into the clip. Loops still loop. `secondary: false` turns it off. (#9)
+- **Game actions.** `attack`, `jump`, `sit`, `turn` and `die`, built from roles so any model gets
+  them, each with a film-strip test on the biped and the quadruped. `sit` and `die` keep the
+  lowest point on the ground the whole way. (#10)
+- **Blends.** A `blend` clip crossfades from one clip into another and ends exactly where the
+  second one starts. The animation docs say how to blend the clips in Godot, Unity and Unreal
+  (walk and run share a phase). (#8)
+- The knight and the baby dragon have an attack. Their held sword and staff now ride on the
+  hand, and a held item on a mirrored arm is no longer doubled.
+- Fixes: leg angles near straight-down no longer flip the quaternion sign between frames, and
+  sampled rotations stay in one hemisphere so engines never interpolate the long way round.
+
 ## 0.7.0 — 2026-09-29
 
 - **Baked textures.** `texture: 1024` (CLI `--texture 1024`) unwraps the model into charts that

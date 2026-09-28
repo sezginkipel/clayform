@@ -58,7 +58,7 @@ A consistent set of assets that imports into Godot, Unity or Unreal without hand
 
 - UV unwrapping and baked textures, a shared atlas, toon and flat-shaded export options
 
-## v0.8 — Motion that holds up
+## ✅ v0.8 — Motion that holds up (released 2026-09-29)
 
 - Two-bone IK and foot planting, clip blending, secondary motion, more clip types
 
