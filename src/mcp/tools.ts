@@ -23,6 +23,7 @@ import { fitReference } from '../reference.js';
 import { findLibraryParts } from '../library/parts.js';
 import { critiqueLayout, describeLayout, mergeBuilds } from '../layout.js';
 import type { Build } from '../core/build.js';
+import { userPath } from '../core/files.js';
 import { resolveAsset } from '../core/meshload.js';
 import { buildSceneAsync } from '../core/parallel.js';
 import { renderTiles } from '../render/views.js';
@@ -112,7 +113,14 @@ export class Tools {
 			if (!Array.isArray(args.ops) || !args.ops.length) return fail('ops must be a non-empty array — see guide (Edit ops)');
 			const r = this.ws.edit(args.scene, args.ops);
 			if (!r.ok) return fail(`nothing was changed:\n${r.error}`);
-			const b = await this.ws.buildAsync(args.scene);
+			let b;
+			try {
+				b = await this.ws.buildAsync(args.scene);
+			} catch (e) {
+				// an edit that cannot build (a missing mesh file, a path outside the workspace) is taken back
+				this.ws.undo(args.scene);
+				return fail(`nothing was changed — the edited scene does not build:\n${e instanceof Error ? e.message : String(e)}`);
+			}
 			const rep = critique(b);
 			const out: Content[] = [text(`${r.changes.join('\n')}\n\n${formatReport(rep)}`)];
 			if (args.render) out.push(png(renderSheet(b, { views: ['three_quarter'], size: 384 }).png));
@@ -243,7 +251,7 @@ export class Tools {
 			const simplified = new Map<string, Build>();
 			for (const [ref, b] of lb.builds) simplified.set(ref, await simplifyBuild(b, args.triangles ? { triangles: args.triangles } : {}));
 			const merged = mergeBuilds(lb, simplified);
-			const out = resolve(args.path ?? `${this.ws.exportsDir()}/${args.layout}.glb`);
+			const out = args.path ? userPath(args.path) : resolve(`${this.ws.exportsDir()}/${args.layout}.glb`);
 			mkdirSync(dirname(out), { recursive: true });
 			const r = exportGlb(merged, { rig: false });
 			writeFileSync(out, r.glb);
@@ -299,7 +307,7 @@ export class Tools {
 		return wrap(async () => {
 			const scene = this.ws.get(args.scene);
 			const fmt = args.format ?? 'glb';
-			const out = resolve(args.path ?? `${this.ws.exportsDir()}/${args.scene}${fmt === 'flipbook' ? `-${args.effect ?? 'effect'}.png` : `.${fmt}`}`);
+			const out = args.path ? userPath(args.path) : resolve(`${this.ws.exportsDir()}/${args.scene}${fmt === 'flipbook' ? `-${args.effect ?? 'effect'}.png` : `.${fmt}`}`);
 			mkdirSync(dirname(out), { recursive: true });
 			if (fmt === 'json') {
 				writeFileSync(out, JSON.stringify(scene, null, 2));
@@ -344,7 +352,7 @@ export class Tools {
 				items.push({ name: id, build: await simplifyBuild(full, args.triangles ? { triangles: args.triangles } : {}) });
 			}
 			const kit = exportKit(items, { atlas: args.atlas, embed: args.embed, shading: args.shading, bands: args.bands, outline: args.outline, collision: args.collision, naming: args.engine });
-			const dir = resolve(args.dir ?? `${this.ws.exportsDir()}/kit`);
+			const dir = args.dir ? userPath(args.dir) : resolve(`${this.ws.exportsDir()}/kit`);
 			mkdirSync(dir, { recursive: true });
 			if (!args.embed) writeFileSync(`${dir}/atlas.png`, kit.atlas.png);
 			for (const f of kit.files) writeFileSync(`${dir}/${f.name}.glb`, f.result.glb);

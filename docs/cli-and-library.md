@@ -13,6 +13,8 @@ Wherever a command takes a scene, you can also give a template id.
 | `clayform inspect <scene>` | part summary, critics and clip checks. Exit code 2 on errors, so it can gate CI |
 | `clayform export <scene> [-o out.glb\|out.obj] [--triangles N] [--texture 1024] [--shading flat\|toon] [--outline 0.01]` | export |
 | `clayform kit <scene> [more …] [-o dir] [--atlas 2048] [--embed]` | several models sharing one [texture atlas](export.md#kits) |
+| `clayform serve [--port 8787] [--token T] [--workspace dir]` | the MCP tools over HTTP, a sandboxed workspace per session ([hosting](mcp-tools.md#hosting-over-http)) |
+| `clayform migrate <scene.clay.json> [-o out]` | upgrade a file from an older format ([format stability](format.md)) |
 | `clayform motion <scene> [clip] [-o png] [--view left] [--frames 6]` | film strip |
 | `clayform effect <scene> [effect] [-o png]` | flipbook + `.json` + `.preview.png` |
 | `clayform view <scene\|template\|file.glb> [--port 5231] [--watch]` | local three.js viewer that plays clips. `--watch` reloads when the scene file changes, and when an edit is invalid it keeps the last good version and shows the error |

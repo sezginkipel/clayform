@@ -6,6 +6,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { buildScene, type Build } from './core/build.js';
+import { userPath } from './core/files.js';
 import { buildSceneAsync } from './core/parallel.js';
 import { compile } from './core/compile.js';
 import { applyOps } from './core/ops.js';
@@ -77,7 +78,7 @@ export class Workspace {
 	}
 
 	load(path: string): { id: string; scene: Scene } {
-		return this.import(JSON.parse(readFileSync(resolve(path), 'utf8')));
+		return this.import(JSON.parse(readFileSync(userPath(path), 'utf8')));
 	}
 
 	get(id: string): Scene {
@@ -191,7 +192,7 @@ export class Workspace {
 		if (this.scenes.has(ref)) return this.scenes.get(ref)!.scene;
 		const t = getTemplate(ref);
 		if (t) return t.scene;
-		const file = resolve(ref);
+		const file = userPath(ref);
 		if (existsSync(file)) {
 			const r = parseScene(JSON.parse(readFileSync(file, 'utf8')));
 			if (!r.ok) throw new Error(`${ref} is not a valid scene:\n${r.error}`);

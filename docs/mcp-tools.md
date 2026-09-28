@@ -4,6 +4,33 @@ The server speaks MCP over stdio (`clayform mcp`). Tools return text, and `rende
 `preview_motion` and `preview_effect` also return PNG images. Errors come back as tool errors
 with the reason and a fix, never as a crash.
 
+## Hosting over HTTP
+
+`clayform serve` speaks MCP over streamable HTTP instead of stdio, for a server that several
+agents or people use:
+
+```bash
+CLAYFORM_TOKEN=change-me clayform serve --port 8787
+```
+
+```bash
+claude mcp add --transport http clayform http://127.0.0.1:8787/mcp --header "Authorization: Bearer change-me"
+```
+
+- **One workspace per session.** Each MCP session gets its own folder under
+  `<workspace>/sessions/<id>` (default workspace `.clayform-hosted`), so sessions never see each
+  other's scenes. The folder is removed when the client ends the session, or after `--idle`
+  minutes without a request (default 30). `--keep` keeps the folders.
+- **Paths stay inside it.** Every path a tool is given (export paths, `import_scene`, reference
+  images, mesh sources and style sheets named in a scene, scene files named in a layout) is
+  resolved inside the session's folder. Anything that points outside is refused with a message
+  saying so, and an edit that would reach outside is taken back.
+- **A token for anything public.** With `--token` (or `CLAYFORM_TOKEN`) every request needs
+  `Authorization: Bearer <token>`. The server refuses to listen on a non-loopback address
+  without one. On loopback it also checks the `Host` header, which blocks DNS-rebinding pages.
+- **Limits.** At most `--max-sessions` sessions at once (default 16). Builds are CPU-heavy, so
+  put a hosted server behind whatever rate limiting you already use.
+
 ## `guide`
 
 `{ topic?: "manual" | "schema" }`. The agent manual, or the full JSON Schema. Read it once per session.

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * clayform mcp [--workspace dir]            start the MCP server on stdio
+ * clayform serve [--port 8787] [--token T]   MCP over streamable HTTP, one workspace per session
  * clayform templates                        list templates
  * clayform new <template> [-o file]         write a template as a scene file
  * clayform render <scene> [-o png] [--views a,b] [--mode parts] [--size 384]
@@ -92,6 +93,21 @@ async function main() {
 		case 'mcp': {
 			const { serveStdio } = await import('./mcp/server.js');
 			await serveStdio(flags.get('workspace'));
+			return;
+		}
+		case 'serve': {
+			const { serveHttp } = await import('./mcp/http.js');
+			const num = (k: string) => (flags.has(k) ? Number(flags.get(k)) : undefined);
+			const h = await serveHttp({
+				port: num('port'),
+				host: flags.get('host'),
+				workspace: flags.get('workspace'),
+				token: flags.get('token') ?? process.env.CLAYFORM_TOKEN,
+				maxSessions: num('max-sessions'),
+				idleMinutes: num('idle'),
+				keep: flags.has('keep')
+			});
+			console.log(`Clayform MCP over HTTP at ${h.url}${flags.get('token') ?? process.env.CLAYFORM_TOKEN ? ' (bearer token required)' : ''} · one workspace per session`);
 			return;
 		}
 		case 'templates':
@@ -290,6 +306,8 @@ async function main() {
 			console.log(`clayform ${VERSION} — agent-native 3D workshop
 
   clayform mcp [--workspace dir]        start the MCP server (stdio)
+  clayform serve [--port 8787] [--host 127.0.0.1] [--token T] [--workspace dir] [--max-sessions 16] [--idle 30] [--keep]
+                                        MCP over streamable HTTP, a sandboxed workspace per session
   clayform templates                    list templates
   clayform new <template> [-o file]     write a template as a .clay.json
   clayform render <scene|template> [-o out.png] [--views front,left] [--mode parts] [--size 384]

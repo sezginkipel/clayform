@@ -10,6 +10,7 @@ import { availableParallelism } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import { bodyMesh, buildScene, finishBuild, prepareContext, type Build, type BuildOptions, type VertexAttrs } from './build.js';
 import { blockCounts, blockLayers, connect, denseBlocks, gridDims } from './mesher.js';
+import { fileRoot } from './files.js';
 import type { Scene } from './schema.js';
 
 interface Job {
@@ -116,6 +117,8 @@ export async function buildSceneAsync(scene: Scene, opts: BuildOptions = {}): Pr
 async function parallelBuild(p: Pool, scene: Scene, opts: BuildOptions): Promise<Build> {
 	const t0 = performance.now();
 	const ctx = prepareContext(scene, opts);
+	// workers resolve mesh sources and style sheets under the same session root
+	const root = fileRoot();
 	if (!ctx.body) return buildScene(scene, opts);
 	const f = ctx.body.field;
 	const layers = blockLayers(f, ctx.cell);
@@ -125,7 +128,7 @@ async function parallelBuild(p: Pool, scene: Scene, opts: BuildOptions): Promise
 	// 1. the distance grid, slab by slab, written by the workers into shared memory
 	const shared = new SharedArrayBuffer(nx * ny * nz * 4);
 	const vals = new Float32Array(shared);
-	const slabs = await Promise.all(split(layers, p.size * 2).map(([l0, l1]) => p.run({ task: 'sample', scene, opts, l0, l1, shared })));
+	const slabs = await Promise.all(split(layers, p.size * 2).map(([l0, l1]) => p.run({ task: 'sample', scene, opts, root, l0, l1, shared })));
 	const [bx, by, bz] = blockCounts(f, ctx.cell);
 	const dense = new Uint8Array(bx * by * bz);
 	let samples = 0;
@@ -135,7 +138,7 @@ async function parallelBuild(p: Pool, scene: Scene, opts: BuildOptions): Promise
 	}
 	// 2. vertices, block range by block range (concatenated in order, so the result matches a serial build)
 	const blocks = denseBlocks(dense);
-	const placedParts = await Promise.all(split(blocks.length, p.size * 2).map(([a, b]) => p.run({ task: 'place', scene, opts, shared, blocks: Int32Array.from(blocks.slice(a, b)) })));
+	const placedParts = await Promise.all(split(blocks.length, p.size * 2).map(([a, b]) => p.run({ task: 'place', scene, opts, root, shared, blocks: Int32Array.from(blocks.slice(a, b)) })));
 	let nv = 0;
 	for (const q of placedParts) nv += q.cells.length;
 	const cells = new Int32Array(nv), positions = new Float32Array(nv * 3);
@@ -152,7 +155,7 @@ async function parallelBuild(p: Pool, scene: Scene, opts: BuildOptions): Promise
 	const ranges = split(n, p.size * 2);
 	const parts = await Promise.all(ranges.map(([v0, v1]) => {
 		const positions = raw.positions.slice(v0 * 3, v1 * 3);
-		return p.run({ task: 'attributes', scene, opts, positions }, [positions.buffer as ArrayBuffer]);
+		return p.run({ task: 'attributes', scene, opts, root, positions }, [positions.buffer as ArrayBuffer]);
 	}));
 	const at: VertexAttrs = {
 		normals: new Float32Array(n * 3), colors: new Float32Array(n * 3), ao: new Float32Array(n),

@@ -7,23 +7,24 @@
 import { parentPort } from 'node:worker_threads';
 import { prepareContext, vertexAttributes, type BuildContext, type BuildOptions } from './build.js';
 import { gridDims, placeVertices, sampleSlab } from './mesher.js';
+import { withFileRoot } from './files.js';
 import type { Scene } from './schema.js';
 
 const cache: { key: string; ctx: BuildContext }[] = [];
 
-function contextFor(scene: Scene, opts: BuildOptions): BuildContext {
-	const key = JSON.stringify(scene) + '|' + JSON.stringify(opts);
+function contextFor(scene: Scene, opts: BuildOptions, root: string | undefined): BuildContext {
+	const key = JSON.stringify(scene) + '|' + JSON.stringify(opts) + '|' + (root ?? '');
 	const hit = cache.find((c) => c.key === key);
 	if (hit) return hit.ctx;
-	const ctx = prepareContext(scene, opts);
+	const ctx = root ? withFileRoot(root, () => prepareContext(scene, opts)) : prepareContext(scene, opts);
 	cache.unshift({ key, ctx });
 	cache.length = Math.min(cache.length, 2);
 	return ctx;
 }
 
-parentPort!.on('message', (m: { id: number; task: 'sample' | 'place' | 'attributes'; scene: Scene; opts: BuildOptions; l0?: number; l1?: number; positions?: Float32Array; shared?: SharedArrayBuffer; blocks?: Int32Array }) => {
+parentPort!.on('message', (m: { id: number; task: 'sample' | 'place' | 'attributes'; scene: Scene; opts: BuildOptions; root?: string; l0?: number; l1?: number; positions?: Float32Array; shared?: SharedArrayBuffer; blocks?: Int32Array }) => {
 	try {
-		const ctx = contextFor(m.scene, m.opts);
+		const ctx = contextFor(m.scene, m.opts, m.root);
 		if (m.task === 'sample') {
 			const r = sampleSlab(ctx.body!.field, ctx.cell, m.l0!, m.l1!);
 			// write straight into the shared grid; only the small dense flags travel back

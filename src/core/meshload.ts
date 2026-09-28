@@ -10,6 +10,7 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
+import { fileRoot, userPath } from './files.js';
 import { m4Compose, m4Identity, m4Mul, type M4 } from './math.js';
 
 export interface TriMesh {
@@ -31,6 +32,8 @@ export interface MeshField {
 /* ---------------------------------------------------------------- paths */
 
 export function resolveAsset(src: string): string {
+	// a hosted session reads only inside its workspace
+	if (fileRoot()) return userPath(src);
 	if (isAbsolute(src)) return src;
 	const tries = [resolve(src)];
 	if (process.env.CLAYFORM_WORKSPACE) tries.push(join(resolve(process.env.CLAYFORM_WORKSPACE), src));

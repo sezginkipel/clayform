@@ -35,6 +35,8 @@ claude mcp add clayform -- npx -y @s1444/clayform mcp
 
 For any other MCP client, the command is `npx -y @s1444/clayform mcp`.
 You can also run directly from GitHub: `npx -y github:sezginkipel/clayform mcp`.
+To host it for several agents, `clayform serve` speaks MCP over HTTP with a sandboxed workspace per
+session ([hosting](docs/mcp-tools.md#hosting-over-http)).
 Scenes are saved in `./.clayform/` (change it with `--workspace <dir>` or the
 `CLAYFORM_WORKSPACE` environment variable).
 
