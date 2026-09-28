@@ -33,12 +33,9 @@ Progress is tracked in [GitHub milestones](https://github.com/sezginkipel/clayfo
 
 ## v0.4 — Match a reference
 
-Give the agent a concept sketch or photo and it can move a model toward it with a number that
-goes up and concrete directions, without a generative model.
-
-- **Silhouette fit per view**: IoU against a reference image, with an overlay of what is missing and what is extra
-- **Where and how it differs**: band-by-band width comparison turned into sentences that name the part
-- **Image/text → 3D hand-off** (opt-in): generate an organic base and import it as a mesh part
+- ✅ **Silhouette fit per view** (0.4.0): IoU against a reference image, with an overlay of what is missing and what is extra
+- ✅ **Where and how it differs** (0.4.0): band-by-band width comparison turned into sentences that name the part
+- **Image/text → 3D hand-off** (opt-in): generate an organic base and import it as a mesh part. Needs a provider and a key, so it is not started
 
 ## v0.5 — Readable in a game
 

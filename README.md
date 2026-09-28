@@ -178,7 +178,7 @@ const glb = exportGlb(await simplifyBuild(build, { triangles: 4000 })).glb;
 
 ## Roadmap
 
-Next up: fitting a model to a reference image (v0.4), readability critics for game cameras
+Next up: image-to-3D hand-off (v0.4), readability critics for game cameras
 (v0.5), style-consistent asset packs for engines (v0.6), textures (v0.7), IK and foot planting
 (v0.8), and a published bench (v0.9). See
 [ROADMAP.md](ROADMAP.md), [milestones](https://github.com/sezginkipel/clayform/milestones) and the

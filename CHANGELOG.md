@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — 2026-09-28
+
+- **`compare_reference`** fits the model to a sketch or photo seen from one side. The reference is
+  registered onto the model by the scale and shift that overlap them best, so a change to one part
+  stays at that part. It returns an IoU score, an overlay (orange = only in the reference, blue =
+  only in the model) and sentences that name the parts that are too wide or narrow. (#25, #26)
+- Reference backgrounds are found by a flood fill from the border, so light areas inside the object
+  still count as the object.
+- `clayform compare <scene> <reference.png>` does the same from the command line.
+- A PNG decoder (8-bit gray, RGB, RGBA and palette images).
+
 ## 0.3.0 — 2026-09-28
 
 - **Sharp edges.** `settings.edges: "sharp"` places vertices by dual contouring, so box corners land
