@@ -258,6 +258,26 @@ async function main() {
 			}
 			return;
 		}
+		case 'migrate': {
+			if (!pos[0]) die('usage: clayform migrate <scene.clay.json> [-o out.clay.json]');
+			let raw: unknown;
+			try {
+				raw = JSON.parse(readFileSync(pos[0]!, 'utf8'));
+			} catch (e) {
+				die(`cannot read ${pos[0]}: ${(e as Error).message}`);
+			}
+			const r = parseScene(raw);
+			if (!r.ok) die(`${pos[0]} cannot be upgraded:\n${r.error}`);
+			const ok = r as { ok: true; scene: Scene; migrated?: string[] };
+			if (!ok.migrated) {
+				console.log(`${pos[0]} is already ${ok.scene.format}; nothing to do`);
+				return;
+			}
+			const out = flags.get('out') ?? pos[0]!;
+			writeFileSync(out, JSON.stringify(ok.scene, null, 2));
+			console.log(`wrote ${out}\n${ok.migrated.map((m) => '• ' + m).join('\n')}`);
+			return;
+		}
 		case 'guide':
 			console.log(GUIDE);
 			return;
@@ -282,6 +302,7 @@ async function main() {
   clayform view <scene|template|file.glb> [--port 5231] [--watch]   three.js viewer, live reload
   clayform compare <scene> <ref.png> [--view front] [-o overlay.png]   fit to a reference image
   clayform layout <file.layout.json> [--render out.png] [--export out.glb]   place many objects
+  clayform migrate <scene.clay.json> [-o out]   upgrade a file written in an older format
   clayform guide                        the manual agents read`);
 	}
 }

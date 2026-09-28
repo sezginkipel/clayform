@@ -12,13 +12,14 @@ and exports glTF.
 | [Critics](critics.md) | know what each critic code means and how to fix it |
 | [Matching a reference](matching-a-reference.md) | move a model toward a sketch or photo with a score and directions |
 | [Layouts](layouts.md) | place many objects together: rows, grids, circles, scatters |
-| [Animation](animation.md) | rig, clips, pivots, keyframes, motion checks |
+| [Animation](animation.md) | rig, planted feet, follow-through, game actions, blends, motion checks |
 | [Effects](effects.md) | particle presets, parameters, flipbook output |
-| [Export](export.md) | glTF structure, triangle budgets, naming, engines |
+| [Export](export.md) | glTF structure, triangle budgets, textures, toon, kits, naming, engines |
 | [CLI and library](cli-and-library.md) | use Clayform without an agent |
 | [Architecture](architecture.md) | how it works inside, and where to change things |
 | [FAQ](faq.md) | common questions and honest limits |
 | [Scene reference](reference.md) | every field (generated from the schema) |
+| [Format stability](format.md) | what `clayform/1` promises, and how old files are upgraded |
 | [Templates](templates.md) | the starting points, with renders |
 | [Part library](parts.md) | reusable eyes, ears, noses, horns, tails, wings, limbs, wheels, windows, doors, hats … |
 

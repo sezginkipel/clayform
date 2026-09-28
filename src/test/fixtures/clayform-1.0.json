@@ -1,0 +1,9380 @@
+{
+ "note": "Every scene, layout and style Clayform shipped at 1.0. Later versions must load all of them. Do not edit: add a new corpus file for a new format instead.",
+ "scenes": {
+  "biped": {
+   "format": "clayform/1",
+   "name": "Biped character",
+   "notes": "Stylized character ~1.1 m. Roles drive walk/idle/wave. Recolor via palette; swap head/hair shapes for species.",
+   "palette": {
+    "skin": "#f0c4a0",
+    "shirt": "#3f7cb3",
+    "pants": "#3a3f4b",
+    "shoes": "#5b3b2a",
+    "hair": "#4a2f22",
+    "eye": "#1f1d22"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.19,
+       0.24,
+       0.15
+      ]
+     },
+     "position": [
+      0,
+      0.62,
+      0
+     ],
+     "material": {
+      "color": "shirt"
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.2
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "embed": 0.18
+     },
+     "blend": 0.05,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "hair",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.212,
+       0.15,
+       0.214
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "embed": 1.1
+     },
+     "position": [
+      0,
+      -0.02,
+      -0.025
+     ],
+     "blend": 0.01,
+     "material": {
+      "color": "hair",
+      "roughness": 0.85
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.026,
+       0.038,
+       0.02
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.36,
+       0.02
+      ],
+      "embed": 0.55
+     },
+     "mirror": true,
+     "material": {
+      "color": "eye",
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.028
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.2
+      ],
+      "embed": 0.5
+     },
+     "blend": 0.015,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "arm",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.36,
+      "radius": 0.052
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0,
+       0.42
+      ],
+      "embed": 0.75
+     },
+     "position": [
+      0.07,
+      -0.12,
+      0
+     ],
+     "rotation": [
+      0,
+      0,
+      16
+     ],
+     "pivot": "top",
+     "blend": 0.03,
+     "mirror": true,
+     "material": {
+      "color": "shirt"
+     }
+    },
+    {
+     "id": "hand",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.058
+     },
+     "attach": {
+      "to": "arm",
+      "side": "bottom",
+      "embed": 0.55
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "leg",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.34,
+      "radius": 0.068
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.48,
+       0
+      ],
+      "embed": 0.62
+     },
+     "blend": 0.03,
+     "mirror": true,
+     "material": {
+      "color": "pants"
+     }
+    },
+    {
+     "id": "foot",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.068,
+       0.045,
+       0.105
+      ]
+     },
+     "attach": {
+      "to": "leg",
+      "side": "bottom",
+      "embed": 0.55
+     },
+     "position": [
+      0,
+      0,
+      0.035
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "shoes"
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk"
+    },
+    {
+     "id": "idle",
+     "type": "idle"
+    }
+   ]
+  },
+  "quadruped": {
+   "format": "clayform/1",
+   "name": "Quadruped",
+   "notes": "Dog-like quadruped ~0.8 m long. Change ears, snout and tail for cat, fox, cow, dino.",
+   "palette": {
+    "fur": "#c98b52",
+    "belly": "#f1dcc0",
+    "nose": "#2a2224",
+    "eye": "#1c1a1e"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "capsule",
+      "length": 0.62,
+      "radius": 0.16
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      0.42,
+      0
+     ],
+     "material": {
+      "color": "fur"
+     },
+     "pattern": {
+      "kind": "gradient",
+      "color": "belly",
+      "scale": 0.12,
+      "amount": 0
+     }
+    },
+    {
+     "id": "neck",
+     "shape": {
+      "type": "capsule",
+      "length": 0.24,
+      "radius": 0.09
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       0.35
+      ],
+      "embed": 0.6
+     },
+     "rotation": [
+      -35,
+      0,
+      0
+     ],
+     "blend": 0.07,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.13
+     },
+     "attach": {
+      "to": "neck",
+      "side": "top",
+      "embed": 0.35
+     },
+     "position": [
+      0,
+      0,
+      0.03
+     ],
+     "blend": 0.05,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "snout",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.06,
+       0.09
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.3
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "belly"
+     }
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.028
+     },
+     "attach": {
+      "to": "snout",
+      "side": "front",
+      "offset": [
+       0,
+       0.35
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "nose",
+      "roughness": 0.3
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.022
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.42,
+       0.25
+      ],
+      "embed": 0.5
+     },
+     "mirror": true,
+     "material": {
+      "color": "eye",
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "ear",
+     "role": "ear",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.045,
+       0.085,
+       0.022
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "offset": [
+       0.55,
+       -0.1
+      ],
+      "embed": 0.3
+     },
+     "rotation": [
+      0,
+      0,
+      -20
+     ],
+     "blend": 0.02,
+     "mirror": true,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "leg_front",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.34,
+      "radius": 0.055
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.55,
+       0.62
+      ],
+      "embed": 0.55
+     },
+     "blend": 0.05,
+     "mirror": true,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "leg_back",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.34,
+      "radius": 0.06
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.55,
+       -0.62
+      ],
+      "embed": 0.55
+     },
+     "blend": 0.05,
+     "mirror": true,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "paw_front",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.06,
+       0.035,
+       0.07
+      ]
+     },
+     "attach": {
+      "to": "leg_front",
+      "side": "bottom",
+      "embed": 0.5
+     },
+     "position": [
+      0,
+      0,
+      0.02
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "belly"
+     }
+    },
+    {
+     "id": "paw_back",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.062,
+       0.035,
+       0.072
+      ]
+     },
+     "attach": {
+      "to": "leg_back",
+      "side": "bottom",
+      "embed": 0.5
+     },
+     "position": [
+      0,
+      0,
+      0.02
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "belly"
+     }
+    },
+    {
+     "id": "tail",
+     "role": "tail",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0.09,
+        -0.1
+       ],
+       [
+        0,
+        0.2,
+        -0.16
+       ]
+      ],
+      "radius": [
+       0.045,
+       0.035,
+       0.02
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "back",
+      "offset": [
+       0,
+       0.5
+      ],
+      "embed": 0.2
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "fur"
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk"
+    },
+    {
+     "id": "idle",
+     "type": "idle"
+    }
+   ]
+  },
+  "bird": {
+   "format": "clayform/1",
+   "name": "Bird",
+   "notes": "Round stylized bird ~0.35 m. fly and hop clips work out of the box.",
+   "palette": {
+    "feather": "#e2574c",
+    "wing": "#b83a33",
+    "belly": "#f6e2c8",
+    "beak": "#f2b233",
+    "eye": "#161418"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.12,
+       0.13,
+       0.14
+      ]
+     },
+     "position": [
+      0,
+      0.2,
+      0
+     ],
+     "material": {
+      "color": "feather"
+     }
+    },
+    {
+     "id": "chest",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.085,
+       0.095,
+       0.05
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       -0.2
+      ],
+      "embed": 1.15
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "belly"
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.085
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "offset": [
+       0,
+       0.35
+      ],
+      "embed": 0.4
+     },
+     "blend": 0.05,
+     "material": {
+      "color": "feather"
+     }
+    },
+    {
+     "id": "beak",
+     "shape": {
+      "type": "cone",
+      "height": 0.07,
+      "radius": 0.028
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.1
+      ],
+      "align": true,
+      "embed": 0.3
+     },
+     "material": {
+      "color": "beak",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.014
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.5,
+       0.25
+      ],
+      "embed": 0.4
+     },
+     "mirror": true,
+     "material": {
+      "color": "eye",
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "wing",
+     "role": "wing",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.022,
+       0.065,
+       0.095
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       -0.15,
+       0.1
+      ],
+      "embed": 0.75
+     },
+     "rotation": [
+      -15,
+      0,
+      -6
+     ],
+     "pivot": "attach",
+     "blend": 0.02,
+     "mirror": true,
+     "material": {
+      "color": "wing"
+     }
+    },
+    {
+     "id": "tail",
+     "role": "tail",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.06,
+       0.018,
+       0.08
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "back",
+      "offset": [
+       0,
+       0.15
+      ],
+      "embed": 0.45
+     },
+     "rotation": [
+      -30,
+      0,
+      0
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "wing"
+     }
+    },
+    {
+     "id": "leg",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.08,
+      "radius": 0.012
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.35,
+       0
+      ],
+      "embed": 0.3
+     },
+     "mirror": true,
+     "material": {
+      "color": "beak"
+     }
+    },
+    {
+     "id": "toes",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.02,
+       0.01,
+       0.035
+      ]
+     },
+     "attach": {
+      "to": "leg",
+      "side": "bottom",
+      "embed": 0.5
+     },
+     "position": [
+      0,
+      0,
+      0.012
+     ],
+     "material": {
+      "color": "beak"
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "fly",
+     "type": "fly"
+    },
+    {
+     "id": "hop",
+     "type": "hop"
+    }
+   ]
+  },
+  "fish": {
+   "format": "clayform/1",
+   "name": "Fish",
+   "notes": "Stylized fish ~0.5 m, faces +Z. swim clip sways the tail.",
+   "palette": {
+    "scale": "#f08a2c",
+    "fin": "#f4c55a",
+    "eye": "#141214",
+    "white": "#fbf6ee"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x",
+    "ground": "none"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.08,
+       0.13,
+       0.22
+      ]
+     },
+     "position": [
+      0,
+      0.3,
+      0
+     ],
+     "material": {
+      "color": "scale"
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "white",
+      "scale": 0.06,
+      "amount": 0.9
+     }
+    },
+    {
+     "id": "tail",
+     "role": "tail",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.18,
+       0.12,
+       0.02
+      ],
+      "rounding": 0.006
+     },
+     "attach": {
+      "to": "body",
+      "side": "back",
+      "embed": 0.3
+     },
+     "rotation": [
+      0,
+      90,
+      90
+     ],
+     "pivot": "attach",
+     "blend": 0.03,
+     "material": {
+      "color": "fin"
+     }
+    },
+    {
+     "id": "fin_top",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.16,
+       0.08,
+       0.015
+      ],
+      "rounding": 0.005
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "offset": [
+       0,
+       -0.1
+      ],
+      "embed": 0.3
+     },
+     "rotation": [
+      0,
+      90,
+      0
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "fin"
+     }
+    },
+    {
+     "id": "fin",
+     "role": "wing",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.012,
+       0.035,
+       0.06
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0.3,
+       -0.3
+      ],
+      "embed": 0.4
+     },
+     "rotation": [
+      -30,
+      0,
+      -20
+     ],
+     "blend": 0.015,
+     "mirror": true,
+     "material": {
+      "color": "fin"
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.022
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0.62,
+       0.25
+      ],
+      "embed": 0.4
+     },
+     "mirror": true,
+     "material": {
+      "color": "eye",
+      "roughness": 0.15
+     }
+    },
+    {
+     "id": "mouth",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.03,
+       0.012,
+       0.03
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       -0.15
+      ],
+      "embed": 0.6
+     },
+     "op": "carve",
+     "blend": 0.01,
+     "material": {
+      "color": "#6a2d1c"
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "swim",
+     "type": "swim"
+    }
+   ]
+  },
+  "slime": {
+   "format": "clayform/1",
+   "name": "Slime",
+   "notes": "Blob creature ~0.5 m sculpted with inflate/dent — a sculpting example.",
+   "palette": {
+    "goo": "#6fd06a",
+    "eye": "#1a1a1e",
+    "white": "#ffffff"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "blob",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.28,
+       0.22,
+       0.26
+      ]
+     },
+     "position": [
+      0,
+      0.2,
+      0
+     ],
+     "material": {
+      "color": "goo",
+      "roughness": 0.25
+     }
+    },
+    {
+     "id": "puddle",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.34,
+       0.06,
+       0.32
+      ]
+     },
+     "position": [
+      0,
+      0.04,
+      0
+     ],
+     "blend": 0.1,
+     "material": {
+      "color": "goo",
+      "roughness": 0.25
+     }
+    },
+    {
+     "id": "eye_white",
+     "role": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.055
+     },
+     "attach": {
+      "to": "blob",
+      "side": "front",
+      "offset": [
+       0.36,
+       0.3
+      ],
+      "embed": 0.5
+     },
+     "mirror": true,
+     "material": {
+      "color": "white",
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "pupil",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.028
+     },
+     "attach": {
+      "to": "eye_white",
+      "side": "front",
+      "embed": 0.55
+     },
+     "material": {
+      "color": "eye",
+      "roughness": 0.1
+     }
+    }
+   ],
+   "sculpts": [
+    {
+     "id": "top_bump",
+     "kind": "inflate",
+     "at": {
+      "to": "blob",
+      "side": "top",
+      "offset": [
+       0.2,
+       -0.1
+      ]
+     },
+     "radius": 0.16,
+     "amount": 0.05
+    },
+    {
+     "id": "mouth",
+     "kind": "crease",
+     "at": {
+      "to": "blob",
+      "side": "front",
+      "offset": [
+       -0.25,
+       -0.15
+      ]
+     },
+     "to": {
+      "to": "blob",
+      "side": "front",
+      "offset": [
+       0.25,
+       -0.15
+      ]
+     },
+     "radius": 0.02,
+     "amount": 0.015
+    }
+   ],
+   "clips": [
+    {
+     "id": "hop",
+     "type": "hop"
+    }
+   ]
+  },
+  "robot": {
+   "format": "clayform/1",
+   "name": "Robot",
+   "notes": "Boxy robot ~1.2 m with glowing eyes and antenna.",
+   "palette": {
+    "metal": "#c7ccd4",
+    "dark": "#3a3e46",
+    "glow": "#5ff0c8",
+    "accent": "#f0a33a"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x",
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "torso",
+     "role": "body",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.46,
+       0.44,
+       0.3
+      ],
+      "rounding": 0.07
+     },
+     "position": [
+      0,
+      0.64,
+      0
+     ],
+     "material": {
+      "color": "metal",
+      "metalness": 0.7,
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "chest_light",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.03,
+      "radius": 0.05
+     },
+     "attach": {
+      "to": "torso",
+      "side": "front",
+      "offset": [
+       0,
+       0.3
+      ],
+      "embed": 0.5
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "material": {
+      "color": "accent",
+      "emissive": "accent",
+      "emissiveStrength": 1.5
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.34,
+       0.26,
+       0.28
+      ],
+      "rounding": 0.06
+     },
+     "attach": {
+      "to": "torso",
+      "side": "top",
+      "embed": -0.05
+     },
+     "material": {
+      "color": "metal",
+      "metalness": 0.7,
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "neck",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.08,
+      "radius": 0.06
+     },
+     "attach": {
+      "to": "torso",
+      "side": "top",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "dark",
+      "metalness": 0.6,
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "visor",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.26,
+       0.08,
+       0.04
+      ],
+      "rounding": 0.03
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       0.1
+      ],
+      "embed": 0.6
+     },
+     "material": {
+      "color": "dark",
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.025
+     },
+     "attach": {
+      "to": "visor",
+      "side": "front",
+      "offset": [
+       0.45,
+       0
+      ],
+      "embed": 0.6
+     },
+     "mirror": true,
+     "material": {
+      "color": "glow",
+      "emissive": "glow",
+      "emissiveStrength": 2.5
+     }
+    },
+    {
+     "id": "antenna",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.14,
+      "radius": 0.015
+     },
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "embed": 0.2
+     },
+     "material": {
+      "color": "dark",
+      "metalness": 0.6
+     }
+    },
+    {
+     "id": "antenna_tip",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.028
+     },
+     "attach": {
+      "to": "antenna",
+      "side": "top",
+      "embed": 0.3
+     },
+     "material": {
+      "color": "accent",
+      "emissive": "accent",
+      "emissiveStrength": 1.5
+     }
+    },
+    {
+     "id": "arm",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.38,
+      "radius": 0.05
+     },
+     "attach": {
+      "to": "torso",
+      "side": "left",
+      "offset": [
+       0,
+       0.55
+      ],
+      "embed": 0.4
+     },
+     "position": [
+      0.035,
+      -0.14,
+      0
+     ],
+     "rotation": [
+      0,
+      0,
+      6
+     ],
+     "pivot": "top",
+     "mirror": true,
+     "material": {
+      "color": "dark",
+      "metalness": 0.6,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "claw",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.1,
+       0.09,
+       0.1
+      ],
+      "rounding": 0.035
+     },
+     "attach": {
+      "to": "arm",
+      "side": "bottom",
+      "embed": 0.4
+     },
+     "material": {
+      "color": "metal",
+      "metalness": 0.7,
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "leg",
+     "role": "leg",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.12,
+       0.34,
+       0.14
+      ],
+      "rounding": 0.04
+     },
+     "attach": {
+      "to": "torso",
+      "side": "bottom",
+      "offset": [
+       0.5,
+       0
+      ],
+      "embed": 0.15
+     },
+     "mirror": true,
+     "material": {
+      "color": "dark",
+      "metalness": 0.6,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "foot",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.15,
+       0.07,
+       0.22
+      ],
+      "rounding": 0.03
+     },
+     "attach": {
+      "to": "leg",
+      "side": "bottom",
+      "embed": 0.4
+     },
+     "position": [
+      0,
+      0,
+      0.03
+     ],
+     "material": {
+      "color": "metal",
+      "metalness": 0.7,
+      "roughness": 0.35
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk"
+    },
+    {
+     "id": "wave",
+     "type": "wave"
+    }
+   ]
+  },
+  "snowman": {
+   "format": "clayform/1",
+   "name": "Snowman",
+   "notes": "Classic three-ball snowman ~1.6 m.",
+   "palette": {
+    "snow": "#f3f5f8",
+    "carrot": "#ea7a2e",
+    "coal": "#232326",
+    "stick": "#6b4a2b",
+    "scarf": "#c8403a"
+   },
+   "settings": {
+    "resolution": 100,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "base",
+     "role": "body",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.4
+     },
+     "material": {
+      "color": "snow",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "torso",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.3
+     },
+     "attach": {
+      "to": "base",
+      "side": "top",
+      "embed": 0.4
+     },
+     "blend": 0.06,
+     "material": {
+      "color": "snow",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.2
+     },
+     "attach": {
+      "to": "torso",
+      "side": "top",
+      "embed": 0.3
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "snow",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "scarf",
+     "shape": {
+      "type": "torus",
+      "radius": 0.15,
+      "tube": 0.045
+     },
+     "attach": {
+      "to": "torso",
+      "side": "top",
+      "embed": 1
+     },
+     "position": [
+      0,
+      0.02,
+      0
+     ],
+     "material": {
+      "color": "scarf",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "cone",
+      "height": 0.18,
+      "radius": 0.035
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "align": true,
+      "embed": 0.1
+     },
+     "material": {
+      "color": "carrot"
+     }
+    },
+    {
+     "id": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.025
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.4,
+       0.3
+      ],
+      "embed": 0.4
+     },
+     "mirror": true,
+     "material": {
+      "color": "coal"
+     }
+    },
+    {
+     "id": "button",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.03
+     },
+     "attach": {
+      "to": "torso",
+      "side": "front",
+      "offset": [
+       0,
+       -0.1
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "coal"
+     }
+    },
+    {
+     "id": "arm",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.45,
+      "radius": 0.026
+     },
+     "attach": {
+      "to": "torso",
+      "side": "left",
+      "align": true,
+      "embed": 0.9
+     },
+     "mirror": true,
+     "material": {
+      "color": "stick"
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "wave",
+     "type": "wave"
+    }
+   ]
+  },
+  "car": {
+   "format": "clayform/1",
+   "name": "Toy car",
+   "notes": "Chunky toy car ~1.2 m. Wheels are separate so they spin in the drive clip.",
+   "palette": {
+    "paint": "#d64533",
+    "trim": "#2b2d33",
+    "glass": "#9fd3e6",
+    "tire": "#26272b",
+    "rim": "#d9d9de",
+    "light": "#fff2b0"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "chassis",
+     "role": "body",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.62,
+       0.26,
+       1.2
+      ],
+      "rounding": 0.1
+     },
+     "position": [
+      0,
+      0.32,
+      0
+     ],
+     "material": {
+      "color": "paint",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "cabin",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.52,
+       0.26,
+       0.6
+      ],
+      "rounding": 0.1
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "top",
+      "offset": [
+       0,
+       -0.12
+      ],
+      "embed": 0.35
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "paint",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "windshield",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.42,
+       0.15,
+       0.1
+      ],
+      "rounding": 0.025
+     },
+     "attach": {
+      "to": "cabin",
+      "side": "front",
+      "offset": [
+       0,
+       0.12
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "glass",
+      "roughness": 0.1,
+      "metalness": 0.2
+     }
+    },
+    {
+     "id": "window",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.1,
+       0.14,
+       0.42
+      ],
+      "rounding": 0.025
+     },
+     "attach": {
+      "to": "cabin",
+      "side": "left",
+      "offset": [
+       0,
+       0.12
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "mirror": true,
+     "material": {
+      "color": "glass",
+      "roughness": 0.1,
+      "metalness": 0.2
+     }
+    },
+    {
+     "id": "bumper",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.64,
+       0.08,
+       0.08
+      ],
+      "rounding": 0.035
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "front",
+      "offset": [
+       0,
+       -0.45
+      ],
+      "embed": 0.5
+     },
+     "material": {
+      "color": "trim",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "bumper_back",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.64,
+       0.08,
+       0.08
+      ],
+      "rounding": 0.035
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "back",
+      "offset": [
+       0,
+       -0.45
+      ],
+      "embed": 0.5
+     },
+     "material": {
+      "color": "trim",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "headlight",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.03,
+      "radius": 0.045
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "front",
+      "offset": [
+       0.62,
+       0.15
+      ],
+      "embed": 0.4
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "mirror": true,
+     "material": {
+      "color": "light",
+      "emissive": "light",
+      "emissiveStrength": 1.1
+     }
+    },
+    {
+     "id": "wheel_front",
+     "role": "wheel",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.12,
+      "radius": 0.15,
+      "rounding": 0.04
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "left",
+      "offset": [
+       0.62,
+       -0.55
+      ],
+      "embed": 0.55
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "separate": true,
+     "mirror": true,
+     "material": {
+      "color": "tire",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "wheel_back",
+     "role": "wheel",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.12,
+      "radius": 0.15,
+      "rounding": 0.04
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "left",
+      "offset": [
+       -0.62,
+       -0.55
+      ],
+      "embed": 0.55
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "separate": true,
+     "mirror": true,
+     "material": {
+      "color": "tire",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "hubcap_front",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.02,
+      "radius": 0.07,
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "wheel_front",
+      "side": "left",
+      "embed": 0.5
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "separate": true,
+     "material": {
+      "color": "rim",
+      "metalness": 0.9,
+      "roughness": 0.3
+     }
+    },
+    {
+     "id": "hubcap_back",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.02,
+      "radius": 0.07,
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "wheel_back",
+      "side": "left",
+      "embed": 0.5
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "separate": true,
+     "material": {
+      "color": "rim",
+      "metalness": 0.9,
+      "roughness": 0.3
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "drive",
+     "type": "drive"
+    }
+   ]
+  },
+  "spaceship": {
+   "format": "clayform/1",
+   "name": "Spaceship",
+   "notes": "Arcade fighter ~1.6 m long, faces +Z. Glowing engines.",
+   "palette": {
+    "hull": "#e9ecef",
+    "accent": "#2f6fdb",
+    "glass": "#27354d",
+    "glow": "#58c8ff"
+   },
+   "settings": {
+    "resolution": 130,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "hull",
+     "role": "body",
+     "shape": {
+      "type": "capsule",
+      "length": 1.5,
+      "radius": 0.2
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      0.5,
+      0
+     ],
+     "scale": [
+      1,
+      1,
+      0.8
+     ],
+     "material": {
+      "color": "hull",
+      "roughness": 0.3,
+      "metalness": 0.3
+     }
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "cone",
+      "height": 0.4,
+      "radius": 0.16
+     },
+     "attach": {
+      "to": "hull",
+      "side": "front",
+      "embed": 0.55,
+      "align": true
+     },
+     "blend": 0.1,
+     "material": {
+      "color": "hull",
+      "roughness": 0.3,
+      "metalness": 0.3
+     }
+    },
+    {
+     "id": "cockpit",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.13,
+       0.1,
+       0.26
+      ]
+     },
+     "attach": {
+      "to": "hull",
+      "side": "top",
+      "offset": [
+       0,
+       0.25
+      ],
+      "embed": 0.55
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "glass",
+      "roughness": 0.05,
+      "metalness": 0.5
+     }
+    },
+    {
+     "id": "wing",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.9,
+       0.62,
+       0.05
+      ],
+      "rounding": 0.012
+     },
+     "attach": {
+      "to": "hull",
+      "side": "left",
+      "offset": [
+       -0.35,
+       -0.1
+      ],
+      "embed": 0.9
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0.1,
+      0,
+      0
+     ],
+     "blend": 0.05,
+     "mirror": true,
+     "material": {
+      "color": "accent",
+      "roughness": 0.35,
+      "metalness": 0.3
+     }
+    },
+    {
+     "id": "fin",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.34,
+       0.26,
+       0.045
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "hull",
+      "side": "top",
+      "offset": [
+       0,
+       -0.65
+      ],
+      "embed": 0.4
+     },
+     "rotation": [
+      0,
+      90,
+      0
+     ],
+     "blend": 0.03,
+     "material": {
+      "color": "accent",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "engine",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.3,
+      "radius": 0.08,
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "hull",
+      "side": "back",
+      "offset": [
+       0.5,
+       -0.1
+      ],
+      "embed": 0.8
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "mirror": true,
+     "blend": 0.03,
+     "material": {
+      "color": "hull",
+      "metalness": 0.6,
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "flame",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.04,
+      "radius": 0.06
+     },
+     "attach": {
+      "to": "engine",
+      "side": "back",
+      "embed": 0.6
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "material": {
+      "color": "glow",
+      "emissive": "glow",
+      "emissiveStrength": 3
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "hover",
+     "type": "hover"
+    }
+   ]
+  },
+  "house": {
+   "format": "clayform/1",
+   "name": "Cottage",
+   "notes": "Small cottage ~2.4 m tall. Door and windows are carved; chimney on the roof.",
+   "palette": {
+    "wall": "#efe3cf",
+    "roof": "#b4533b",
+    "wood": "#7a4d30",
+    "glass": "#8ec6dd",
+    "stone": "#8f8a84"
+   },
+   "settings": {
+    "resolution": 120,
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "walls",
+     "role": "body",
+     "shape": {
+      "type": "box",
+      "size": [
+       2,
+       1.4,
+       1.6
+      ],
+      "rounding": 0.04
+     },
+     "position": [
+      0,
+      0.7,
+      0
+     ],
+     "material": {
+      "color": "wall",
+      "roughness": 0.9
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.06
+     }
+    },
+    {
+     "id": "roof",
+     "shape": {
+      "type": "prism",
+      "size": [
+       2.35,
+       0.95,
+       1.9
+      ],
+      "rounding": 0.03
+     },
+     "attach": {
+      "to": "walls",
+      "side": "top",
+      "embed": 0.05
+     },
+     "rotation": [
+      0,
+      90,
+      0
+     ],
+     "scale": [
+      1,
+      1,
+      1.22
+     ],
+     "material": {
+      "color": "roof",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "door",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.46,
+       0.82,
+       0.3
+      ],
+      "rounding": 0.05
+     },
+     "attach": {
+      "to": "walls",
+      "side": "front",
+      "offset": [
+       -0.35,
+       -0.42
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "wood"
+     }
+    },
+    {
+     "id": "window",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.4,
+       0.36,
+       0.3
+      ],
+      "rounding": 0.03
+     },
+     "attach": {
+      "to": "walls",
+      "side": "front",
+      "offset": [
+       0.45,
+       0.12
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "glass",
+      "roughness": 0.15
+     }
+    },
+    {
+     "id": "window_side",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.3,
+       0.36,
+       0.4
+      ],
+      "rounding": 0.03
+     },
+     "attach": {
+      "to": "walls",
+      "side": "left",
+      "offset": [
+       0,
+       0.12
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "glass",
+      "roughness": 0.15
+     }
+    },
+    {
+     "id": "chimney",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.26,
+       0.6,
+       0.26
+      ],
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "roof",
+      "side": "top",
+      "offset": [
+       0.55,
+       0.35
+      ],
+      "embed": 0.75
+     },
+     "material": {
+      "color": "stone"
+     },
+     "detail": {
+      "amount": 0.008,
+      "scale": 0.05
+     }
+    },
+    {
+     "id": "step",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.7,
+       0.1,
+       0.3
+      ],
+      "rounding": 0.03
+     },
+     "attach": {
+      "to": "walls",
+      "side": "front",
+      "offset": [
+       -0.35,
+       -0.93
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "stone"
+     }
+    }
+   ]
+  },
+  "tree": {
+   "format": "clayform/1",
+   "name": "Tree",
+   "notes": "Stylized tree ~2.6 m: tapered trunk + three canopy blobs with surface noise.",
+   "palette": {
+    "bark": "#6f4a2e",
+    "leaf": "#4f9a45",
+    "leaf_dark": "#3b7a37"
+   },
+   "settings": {
+    "resolution": 110
+   },
+   "parts": [
+    {
+     "id": "trunk",
+     "role": "body",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0.03,
+        0.6,
+        0
+       ],
+       [
+        -0.02,
+        1.2,
+        0.02
+       ]
+      ],
+      "radius": [
+       0.16,
+       0.11,
+       0.09
+      ]
+     },
+     "material": {
+      "color": "bark",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.01,
+      "scale": 0.05
+     }
+    },
+    {
+     "id": "root",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.2,
+       0.07,
+       0.2
+      ]
+     },
+     "position": [
+      0,
+      0.07,
+      0
+     ],
+     "blend": 0.12,
+     "material": {
+      "color": "bark",
+      "roughness": 0.95
+     }
+    },
+    {
+     "id": "canopy",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.62
+     },
+     "position": [
+      0,
+      1.62,
+      0
+     ],
+     "blend": 0.1,
+     "material": {
+      "color": "leaf",
+      "roughness": 0.9
+     },
+     "pattern": {
+      "kind": "noise",
+      "color": "leaf_dark",
+      "scale": 0.25,
+      "amount": 0.7
+     },
+     "detail": {
+      "amount": 0.05,
+      "scale": 0.18
+     }
+    },
+    {
+     "id": "canopy_left",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.42
+     },
+     "attach": {
+      "to": "canopy",
+      "side": "left",
+      "offset": [
+       0.2,
+       -0.3
+      ],
+      "embed": 0.8
+     },
+     "blend": 0.14,
+     "material": {
+      "color": "leaf",
+      "roughness": 0.9
+     },
+     "pattern": {
+      "kind": "noise",
+      "color": "leaf_dark",
+      "scale": 0.25,
+      "amount": 0.7
+     },
+     "detail": {
+      "amount": 0.05,
+      "scale": 0.18
+     }
+    },
+    {
+     "id": "canopy_right",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.46
+     },
+     "attach": {
+      "to": "canopy",
+      "side": "right",
+      "offset": [
+       -0.25,
+       -0.2
+      ],
+      "embed": 0.8
+     },
+     "blend": 0.14,
+     "material": {
+      "color": "leaf",
+      "roughness": 0.9
+     },
+     "pattern": {
+      "kind": "noise",
+      "color": "leaf_dark",
+      "scale": 0.25,
+      "amount": 0.7
+     },
+     "detail": {
+      "amount": 0.05,
+      "scale": 0.18
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "sway",
+     "type": "idle"
+    }
+   ]
+  },
+  "rock": {
+   "format": "clayform/1",
+   "name": "Rock",
+   "notes": "Boulder with a smaller stone, noise displacement, moss and a flattened base.",
+   "palette": {
+    "stone": "#8d8a85",
+    "moss": "#6e8a4b"
+   },
+   "settings": {
+    "resolution": 96
+   },
+   "parts": [
+    {
+     "id": "boulder",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.5,
+       0.34,
+       0.42
+      ]
+     },
+     "rotation": [
+      0,
+      20,
+      6
+     ],
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "pattern": {
+      "kind": "noise",
+      "color": "moss",
+      "scale": 0.3,
+      "amount": 0.35
+     },
+     "detail": {
+      "amount": 0.045,
+      "scale": 0.16
+     }
+    },
+    {
+     "id": "stone",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.22,
+       0.16,
+       0.2
+      ]
+     },
+     "attach": {
+      "to": "boulder",
+      "side": "left",
+      "offset": [
+       0.35,
+       0.15
+      ],
+      "embed": 0.5
+     },
+     "rotation": [
+      10,
+      -15,
+      0
+     ],
+     "blend": 0.03,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.03,
+      "scale": 0.12
+     }
+    }
+   ],
+   "sculpts": [
+    {
+     "id": "base",
+     "kind": "flatten",
+     "at": {
+      "point": [
+       0,
+       -0.34,
+       0
+      ]
+     },
+     "normal": [
+      0,
+      -1,
+      0
+     ],
+     "radius": 1.3,
+     "amount": 0.1
+    }
+   ]
+  },
+  "mushroom": {
+   "format": "clayform/1",
+   "name": "Mushroom",
+   "notes": "Toadstool ~0.5 m with spotted cap.",
+   "palette": {
+    "cap": "#d63d34",
+    "spot": "#fbf4e6",
+    "stem": "#f1e6d2",
+    "gill": "#d8c6a9"
+   },
+   "settings": {
+    "resolution": 100
+   },
+   "parts": [
+    {
+     "id": "cap",
+     "role": "head",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.26,
+       0.15,
+       0.26
+      ]
+     },
+     "attach": {
+      "to": "stem",
+      "side": "top",
+      "embed": 0.55
+     },
+     "material": {
+      "color": "cap",
+      "roughness": 0.45
+     },
+     "pattern": {
+      "kind": "spots",
+      "color": "spot",
+      "scale": 0.08,
+      "amount": 1
+     }
+    },
+    {
+     "id": "underside",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.23,
+       0.06,
+       0.23
+      ]
+     },
+     "attach": {
+      "to": "cap",
+      "side": "bottom",
+      "embed": 0.7
+     },
+     "op": "carve",
+     "blend": 0.03,
+     "material": {
+      "color": "gill"
+     }
+    },
+    {
+     "id": "stem",
+     "role": "body",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0.01,
+        0.16,
+        0
+       ],
+       [
+        0,
+        0.3,
+        0.01
+       ]
+      ],
+      "radius": [
+       0.085,
+       0.065,
+       0.06
+      ]
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "stem"
+     }
+    }
+   ]
+  },
+  "crystal": {
+   "format": "clayform/1",
+   "name": "Crystal cluster",
+   "notes": "Glowing crystal cluster ~0.7 m on a rock base.",
+   "palette": {
+    "crystal": "#7fd8ff",
+    "core": "#3a8fe0",
+    "rock": "#6f6a66"
+   },
+   "settings": {
+    "resolution": 130,
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "base",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.34,
+       0.12,
+       0.3
+      ]
+     },
+     "material": {
+      "color": "rock",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.025,
+      "scale": 0.08
+     }
+    },
+    {
+     "id": "spire",
+     "shape": {
+      "type": "cone",
+      "height": 0.62,
+      "radius": 0.1,
+      "topRadius": 0,
+      "rounding": 0.01,
+      "sides": 6
+     },
+     "attach": {
+      "to": "base",
+      "side": "top",
+      "embed": 0.25
+     },
+     "material": {
+      "color": "crystal",
+      "roughness": 0.1,
+      "emissive": "core",
+      "emissiveStrength": 1.2
+     }
+    },
+    {
+     "id": "shard_a",
+     "shape": {
+      "type": "cone",
+      "height": 0.4,
+      "radius": 0.07,
+      "rounding": 0.008,
+      "sides": 6
+     },
+     "attach": {
+      "to": "base",
+      "side": "top",
+      "offset": [
+       0.5,
+       0.3
+      ],
+      "embed": 0.3
+     },
+     "rotation": [
+      10,
+      0,
+      -24
+     ],
+     "material": {
+      "color": "crystal",
+      "roughness": 0.1,
+      "emissive": "core",
+      "emissiveStrength": 1.2
+     }
+    },
+    {
+     "id": "shard_b",
+     "shape": {
+      "type": "cone",
+      "height": 0.34,
+      "radius": 0.06,
+      "rounding": 0.008,
+      "sides": 5
+     },
+     "attach": {
+      "to": "base",
+      "side": "top",
+      "offset": [
+       -0.5,
+       -0.2
+      ],
+      "embed": 0.3
+     },
+     "rotation": [
+      -14,
+      0,
+      26
+     ],
+     "material": {
+      "color": "crystal",
+      "roughness": 0.1,
+      "emissive": "core",
+      "emissiveStrength": 1.2
+     }
+    },
+    {
+     "id": "shard_c",
+     "shape": {
+      "type": "cone",
+      "height": 0.26,
+      "radius": 0.05,
+      "rounding": 0.006,
+      "sides": 6
+     },
+     "attach": {
+      "to": "base",
+      "side": "top",
+      "offset": [
+       0.1,
+       -0.6
+      ],
+      "embed": 0.3
+     },
+     "rotation": [
+      -30,
+      0,
+      5
+     ],
+     "material": {
+      "color": "crystal",
+      "roughness": 0.1,
+      "emissive": "core",
+      "emissiveStrength": 1.2
+     }
+    }
+   ]
+  },
+  "sword": {
+   "format": "clayform/1",
+   "name": "Sword",
+   "notes": "Hero sword ~1 m, lying along Y. Blade metal, gold guard, leather grip.",
+   "palette": {
+    "steel": "#c9ced6",
+    "gold": "#d9a441",
+    "leather": "#6b3f26",
+    "gem": "#4bb0e0"
+   },
+   "settings": {
+    "resolution": 200,
+    "ground": "auto",
+    "symmetry": "x",
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "grip",
+     "role": "body",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.2,
+      "radius": 0.022,
+      "rounding": 0.01
+     },
+     "position": [
+      0,
+      0.14,
+      0
+     ],
+     "material": {
+      "color": "leather",
+      "roughness": 0.85
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "#4e2c1a",
+      "scale": 0.02,
+      "amount": 0.8
+     }
+    },
+    {
+     "id": "pommel",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.035
+     },
+     "attach": {
+      "to": "grip",
+      "side": "bottom",
+      "embed": 0.35
+     },
+     "material": {
+      "color": "gold",
+      "metalness": 1,
+      "roughness": 0.3
+     }
+    },
+    {
+     "id": "guard",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.26,
+       0.035,
+       0.05
+      ],
+      "rounding": 0.016
+     },
+     "attach": {
+      "to": "grip",
+      "side": "top",
+      "embed": 0.2
+     },
+     "material": {
+      "color": "gold",
+      "metalness": 1,
+      "roughness": 0.3
+     }
+    },
+    {
+     "id": "gem",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.018
+     },
+     "attach": {
+      "to": "guard",
+      "side": "front",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "gem",
+      "roughness": 0.1,
+      "emissive": "gem",
+      "emissiveStrength": 0.6
+     }
+    },
+    {
+     "id": "blade",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.07,
+       0.62,
+       0.014
+      ],
+      "rounding": 0.006
+     },
+     "attach": {
+      "to": "guard",
+      "side": "top",
+      "embed": 0.1
+     },
+     "material": {
+      "color": "steel",
+      "metalness": 1,
+      "roughness": 0.22
+     }
+    },
+    {
+     "id": "tip",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.07,
+       0.12,
+       0.014
+      ],
+      "rounding": 0.003
+     },
+     "attach": {
+      "to": "blade",
+      "side": "top",
+      "embed": 0.35
+     },
+     "blend": 0.004,
+     "material": {
+      "color": "steel",
+      "metalness": 1,
+      "roughness": 0.22
+     }
+    }
+   ],
+   "sculpts": [
+    {
+     "id": "fuller",
+     "kind": "crease",
+     "at": {
+      "to": "blade",
+      "side": "front",
+      "offset": [
+       0,
+       -0.8
+      ]
+     },
+     "to": {
+      "to": "blade",
+      "side": "front",
+      "offset": [
+       0,
+       0.8
+      ]
+     },
+     "radius": 0.008,
+     "amount": 0.004
+    }
+   ]
+  },
+  "chest": {
+   "format": "clayform/1",
+   "name": "Treasure chest",
+   "notes": "Wooden chest ~0.9 m: half-round lid, metal bands, gold lock. Carve order matters — lid_cut only trims the lid parts listed before it.",
+   "palette": {
+    "wood": "#8a5a34",
+    "wood_dark": "#6e4527",
+    "band": "#6d6f75",
+    "gold": "#e0b04a"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x",
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "lid",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.9,
+      "radius": 0.28,
+      "rounding": 0.03
+     },
+     "attach": {
+      "to": "box",
+      "side": "top",
+      "embed": 1
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "scale": [
+      0.6,
+      1,
+      1
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.85
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "wood_dark",
+      "scale": 0.05,
+      "amount": 0.45,
+      "axis": "y"
+     }
+    },
+    {
+     "id": "lid_band",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.07,
+      "radius": 0.3,
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "box",
+      "side": "top",
+      "offset": [
+       0.66,
+       0
+      ],
+      "embed": 1
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "scale": [
+      0.6,
+      1,
+      1
+     ],
+     "mirror": true,
+     "material": {
+      "color": "band",
+      "metalness": 0.9,
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "lid_cut",
+     "shape": {
+      "type": "box",
+      "size": [
+       1.2,
+       0.4,
+       0.8
+      ]
+     },
+     "attach": {
+      "to": "box",
+      "side": "top",
+      "embed": 1
+     },
+     "position": [
+      0,
+      -0.2,
+      0
+     ],
+     "op": "carve"
+    },
+    {
+     "id": "box",
+     "role": "body",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.9,
+       0.46,
+       0.56
+      ],
+      "rounding": 0.03
+     },
+     "position": [
+      0,
+      0.23,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.85
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "wood_dark",
+      "scale": 0.05,
+      "amount": 0.45
+     }
+    },
+    {
+     "id": "band",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.07,
+       0.5,
+       0.6
+      ],
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "box",
+      "side": "center",
+      "embed": 1
+     },
+     "position": [
+      0.3,
+      0.004,
+      0
+     ],
+     "mirror": true,
+     "material": {
+      "color": "band",
+      "metalness": 0.9,
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "lock",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.1,
+       0.12,
+       0.04
+      ],
+      "rounding": 0.015
+     },
+     "attach": {
+      "to": "box",
+      "side": "front",
+      "offset": [
+       0,
+       0.82
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "gold",
+      "metalness": 1,
+      "roughness": 0.3
+     }
+    }
+   ]
+  },
+  "barrel": {
+   "format": "clayform/1",
+   "name": "Barrel",
+   "notes": "Wooden barrel ~0.8 m: an ellipsoid trimmed flat by intersect, vertical staves, iron hoops.",
+   "palette": {
+    "wood": "#9a6a3f",
+    "wood_dark": "#7a5230",
+    "lid": "#4a2e18",
+    "iron": "#5c5e63"
+   },
+   "settings": {
+    "resolution": 110
+   },
+   "parts": [
+    {
+     "id": "belly",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.33,
+       0.52,
+       0.33
+      ]
+     },
+     "position": [
+      0,
+      0.4,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.85
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "wood_dark",
+      "scale": 0.07,
+      "amount": 0.55,
+      "axis": "around"
+     }
+    },
+    {
+     "id": "trim",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.8,
+      "radius": 0.5
+     },
+     "position": [
+      0,
+      0.4,
+      0
+     ],
+     "op": "intersect",
+     "blend": 0.015
+    },
+    {
+     "id": "head",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.06,
+      "radius": 0.19,
+      "rounding": 0.01
+     },
+     "position": [
+      0,
+      0.8,
+      0
+     ],
+     "op": "carve",
+     "material": {
+      "color": "lid"
+     }
+    },
+    {
+     "id": "hoop_top",
+     "shape": {
+      "type": "torus",
+      "radius": 0.279,
+      "tube": 0.017
+     },
+     "position": [
+      0,
+      0.68,
+      0
+     ],
+     "material": {
+      "color": "iron",
+      "metalness": 0.9,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "hoop_mid",
+     "shape": {
+      "type": "torus",
+      "radius": 0.33,
+      "tube": 0.017
+     },
+     "position": [
+      0,
+      0.4,
+      0
+     ],
+     "material": {
+      "color": "iron",
+      "metalness": 0.9,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "hoop_bottom",
+     "shape": {
+      "type": "torus",
+      "radius": 0.279,
+      "tube": 0.017
+     },
+     "position": [
+      0,
+      0.12,
+      0
+     ],
+     "material": {
+      "color": "iron",
+      "metalness": 0.9,
+      "roughness": 0.45
+     }
+    }
+   ]
+  },
+  "potion": {
+   "format": "clayform/1",
+   "name": "Potion",
+   "notes": "Glowing potion bottle ~0.3 m.",
+   "palette": {
+    "glass": "#cfe7ef",
+    "liquid": "#9b5cff",
+    "cork": "#a8784c"
+   },
+   "settings": {
+    "resolution": 120
+   },
+   "parts": [
+    {
+     "id": "bottle",
+     "role": "body",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.11
+     },
+     "position": [
+      0,
+      0.11,
+      0
+     ],
+     "material": {
+      "color": "liquid",
+      "roughness": 0.1,
+      "emissive": "liquid",
+      "emissiveStrength": 0.9
+     }
+    },
+    {
+     "id": "neck",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.1,
+      "radius": 0.035,
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "bottle",
+      "side": "top",
+      "embed": 0.35
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "glass",
+      "roughness": 0.05
+     }
+    },
+    {
+     "id": "rim",
+     "shape": {
+      "type": "torus",
+      "radius": 0.036,
+      "tube": 0.01
+     },
+     "attach": {
+      "to": "neck",
+      "side": "top",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "glass",
+      "roughness": 0.05
+     }
+    },
+    {
+     "id": "cork",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.05,
+      "radius": 0.03,
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "neck",
+      "side": "top",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "cork",
+      "roughness": 0.9
+     }
+    }
+   ],
+   "effects": [
+    {
+     "id": "sparkle",
+     "preset": "magic",
+     "count": 60,
+     "emitter": {
+      "shape": "sphere",
+      "size": 0.12
+     }
+    }
+   ]
+  },
+  "torch": {
+   "format": "clayform/1",
+   "name": "Torch",
+   "notes": "Wall-less standing torch ~0.7 m with a fire effect on top.",
+   "palette": {
+    "wood": "#7a5032",
+    "iron": "#4d4f55",
+    "ember": "#ff8a3a"
+   },
+   "settings": {
+    "resolution": 110
+   },
+   "parts": [
+    {
+     "id": "handle",
+     "role": "body",
+     "shape": {
+      "type": "cone",
+      "height": 0.55,
+      "radius": 0.028,
+      "topRadius": 0.045,
+      "rounding": 0.01
+     },
+     "position": [
+      0,
+      0.275,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "bowl",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.1,
+      "radius": 0.08,
+      "rounding": 0.015
+     },
+     "attach": {
+      "to": "handle",
+      "side": "top",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "iron",
+      "metalness": 0.8,
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "coals",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.06
+     },
+     "attach": {
+      "to": "bowl",
+      "side": "top",
+      "embed": 0.6
+     },
+     "material": {
+      "color": "ember",
+      "emissive": "ember",
+      "emissiveStrength": 2
+     },
+     "detail": {
+      "amount": 0.01,
+      "scale": 0.02
+     }
+    }
+   ],
+   "effects": [
+    {
+     "id": "flame",
+     "preset": "fire",
+     "at": {
+      "to": "coals",
+      "side": "top"
+     }
+    }
+   ]
+  },
+  "knight": {
+   "format": "clayform/1",
+   "name": "Knight",
+   "notes": "Small armored knight ~1.1 m holding a sword. Metal via palette; the sword is separate.",
+   "palette": {
+    "steel": "#b8bec8",
+    "steel_dark": "#7d8490",
+    "cloth": "#b83a33",
+    "leather": "#6b3f26",
+    "gold": "#d9a441",
+    "eye": "#1f1d22"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.2,
+       0.25,
+       0.16
+      ]
+     },
+     "position": [
+      0,
+      0.62,
+      0
+     ],
+     "material": {
+      "color": "steel",
+      "metalness": 0.85,
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "belt",
+     "shape": {
+      "type": "torus",
+      "radius": 0.17,
+      "tube": 0.025
+     },
+     "attach": {
+      "to": "body",
+      "side": "center",
+      "embed": 1
+     },
+     "position": [
+      0,
+      -0.02,
+      0
+     ],
+     "material": {
+      "color": "leather"
+     }
+    },
+    {
+     "id": "tabard",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.2,
+       0.3,
+       0.05
+      ],
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "embed": 0.6
+     },
+     "material": {
+      "color": "cloth"
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.19
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "embed": 0.18
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "steel",
+      "metalness": 0.85,
+      "roughness": 0.3
+     }
+    },
+    {
+     "id": "visor",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.24,
+       0.035,
+       0.1
+      ],
+      "rounding": 0.012
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       0.05
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "eye"
+     }
+    },
+    {
+     "id": "plume",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0.08,
+        -0.05
+       ],
+       [
+        0,
+        0.1,
+        -0.16
+       ]
+      ],
+      "radius": [
+       0.03,
+       0.035,
+       0.02
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "embed": 0.4
+     },
+     "material": {
+      "color": "cloth"
+     }
+    },
+    {
+     "id": "arm",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.34,
+      "radius": 0.055
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0,
+       0.42
+      ],
+      "embed": 0.75
+     },
+     "position": [
+      0.07,
+      -0.12,
+      0
+     ],
+     "rotation": [
+      0,
+      0,
+      16
+     ],
+     "pivot": "top",
+     "blend": 0.03,
+     "mirror": true,
+     "material": {
+      "color": "steel",
+      "metalness": 0.85,
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "hand",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.058
+     },
+     "attach": {
+      "to": "arm",
+      "side": "bottom",
+      "embed": 0.55
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "steel_dark",
+      "metalness": 0.8,
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "leg",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.34,
+      "radius": 0.07
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.48,
+       0
+      ],
+      "embed": 0.62
+     },
+     "blend": 0.03,
+     "mirror": true,
+     "material": {
+      "color": "steel_dark",
+      "metalness": 0.8,
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "boot",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.11
+      ]
+     },
+     "attach": {
+      "to": "leg",
+      "side": "bottom",
+      "embed": 0.55
+     },
+     "position": [
+      0,
+      0,
+      0.035
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "steel",
+      "metalness": 0.85,
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "blade",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.05,
+       0.38,
+       0.012
+      ],
+      "rounding": 0.004
+     },
+     "parent": "hand",
+     "position": [
+      0,
+      -0.09,
+      0
+     ],
+     "mirror": false,
+     "separate": true,
+     "material": {
+      "color": "steel",
+      "metalness": 1,
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "guard",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.04,
+       0.03,
+       0.17
+      ],
+      "rounding": 0.012
+     },
+     "attach": {
+      "to": "blade",
+      "side": "top",
+      "embed": 0.5
+     },
+     "separate": true,
+     "material": {
+      "color": "gold",
+      "metalness": 1,
+      "roughness": 0.3
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk"
+    },
+    {
+     "id": "idle",
+     "type": "idle"
+    },
+    {
+     "id": "attack",
+     "type": "attack"
+    }
+   ]
+  },
+  "wizard": {
+   "format": "clayform/1",
+   "name": "Wizard",
+   "notes": "Robed wizard ~1.3 m with a long beard and a tall hat. Recolor the robe via palette.",
+   "palette": {
+    "robe": "#3b4f9e",
+    "robe_dark": "#2b3a78",
+    "skin": "#f0c4a0",
+    "beard": "#e8e6e0",
+    "hat": "#3b2f6b",
+    "staff": "#6b4a2b",
+    "gem": "#7fe3ff"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "robe",
+     "role": "body",
+     "shape": {
+      "type": "cone",
+      "height": 0.8,
+      "radius": 0.32,
+      "topRadius": 0.13,
+      "rounding": 0.04
+     },
+     "position": [
+      0,
+      0.4,
+      0
+     ],
+     "material": {
+      "color": "robe",
+      "roughness": 0.85
+     },
+     "pattern": {
+      "kind": "gradient",
+      "color": "robe_dark",
+      "scale": 0.8,
+      "amount": 0.6
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.15
+     },
+     "attach": {
+      "to": "robe",
+      "side": "top",
+      "embed": 0.2
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "beard",
+     "shape": {
+      "type": "cone",
+      "height": 0.15,
+      "radius": 0.09,
+      "rounding": 0.03
+     },
+     "position": [
+      0,
+      -0.02,
+      0
+     ],
+     "rotation": [
+      180,
+      0,
+      0
+     ],
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.4
+      ],
+      "embed": 0.8
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "beard",
+      "roughness": 0.95
+     }
+    },
+    {
+     "id": "sleeve",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.32,
+      "radius": 0.06
+     },
+     "position": [
+      0.09,
+      -0.1,
+      0
+     ],
+     "rotation": [
+      0,
+      0,
+      32
+     ],
+     "attach": {
+      "to": "robe",
+      "side": "left",
+      "offset": [
+       0,
+       0.75
+      ],
+      "embed": 0.8
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "robe",
+      "roughness": 0.85
+     },
+     "mirror": true,
+     "pivot": "top"
+    },
+    {
+     "id": "hand",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.045
+     },
+     "attach": {
+      "to": "sleeve",
+      "side": "bottom",
+      "embed": 0.3
+     },
+     "blend": 0.01,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "staff",
+     "shape": {
+      "type": "cylinder",
+      "height": 1.25,
+      "radius": 0.02,
+      "rounding": 0.01
+     },
+     "position": [
+      0.005,
+      0.205,
+      0
+     ],
+     "parent": "hand",
+     "material": {
+      "color": "staff",
+      "roughness": 0.8
+     },
+     "mirror": false,
+     "separate": true
+    },
+    {
+     "id": "orb",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.055
+     },
+     "attach": {
+      "to": "staff",
+      "side": "top",
+      "embed": 0.3
+     },
+     "material": {
+      "color": "gem",
+      "roughness": 0.1,
+      "emissive": "gem",
+      "emissiveStrength": 1.4
+     },
+     "separate": true
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.022,
+       0.03,
+       0.016
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.4,
+       0.15
+      ]
+     },
+     "material": {
+      "color": "#1b1a1f",
+      "roughness": 0.15
+     },
+     "mirror": true
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.03,
+       0.026,
+       0.028
+      ]
+     },
+     "scale": 1.2,
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.1
+      ]
+     },
+     "blend": 0.015,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "hat",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.025,
+      "radius": 0.2,
+      "rounding": 0.01
+     },
+     "scale": 1.3,
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "embed": 0.3
+     },
+     "material": {
+      "color": "hat"
+     }
+    },
+    {
+     "id": "hat_cone",
+     "shape": {
+      "type": "cone",
+      "height": 0.32,
+      "radius": 0.13,
+      "rounding": 0.01
+     },
+     "scale": 1.3,
+     "attach": {
+      "to": "hat",
+      "side": "top",
+      "embed": 0.1
+     },
+     "blend": 0.01,
+     "material": {
+      "color": "#3b2f6b"
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "idle",
+     "type": "idle"
+    }
+   ],
+   "effects": [
+    {
+     "id": "sparkle",
+     "preset": "magic",
+     "count": 50,
+     "emitter": {
+      "shape": "sphere",
+      "size": 0.08
+     },
+     "at": {
+      "to": "orb",
+      "side": "center"
+     }
+    }
+   ]
+  },
+  "cat": {
+   "format": "clayform/1",
+   "name": "Cat",
+   "notes": "Sitting-height cat on four legs ~0.6 m long with pointed ears and a thin tail.",
+   "palette": {
+    "fur": "#9a9a9f",
+    "fur_dark": "#5f5f66",
+    "belly": "#e8e3db",
+    "nose": "#e08a9a",
+    "eye": "#2a6b3a"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "capsule",
+      "length": 0.5,
+      "radius": 0.12
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      0.3,
+      0
+     ],
+     "material": {
+      "color": "fur"
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "fur_dark",
+      "scale": 0.05,
+      "amount": 0.7,
+      "axis": "z"
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.11
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       0.6
+      ],
+      "embed": 0.4
+     },
+     "blend": 0.05,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "muzzle",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.05,
+       0.035,
+       0.035
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.35
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "belly"
+     }
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.014
+     },
+     "attach": {
+      "to": "muzzle",
+      "side": "front",
+      "offset": [
+       0,
+       0.5
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "nose",
+      "roughness": 0.3
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.022,
+       0.026,
+       0.015
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.42,
+       0.2
+      ],
+      "embed": 0.5
+     },
+     "mirror": true,
+     "material": {
+      "color": "eye",
+      "roughness": 0.15
+     }
+    },
+    {
+     "id": "ear",
+     "role": "ear",
+     "shape": {
+      "type": "cone",
+      "height": 0.08,
+      "radius": 0.04,
+      "sides": 3
+     },
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "offset": [
+       0.5,
+       -0.1
+      ],
+      "embed": 0.2
+     },
+     "rotation": [
+      0,
+      0,
+      -12
+     ],
+     "blend": 0.015,
+     "mirror": true,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "leg_front",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.22,
+      "radius": 0.04
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.5,
+       0.6
+      ],
+      "embed": 0.5
+     },
+     "blend": 0.04,
+     "mirror": true,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "leg_back",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.22,
+      "radius": 0.045
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.5,
+       -0.6
+      ],
+      "embed": 0.5
+     },
+     "blend": 0.04,
+     "mirror": true,
+     "material": {
+      "color": "fur"
+     }
+    },
+    {
+     "id": "paw_front",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.045,
+       0.028,
+       0.055
+      ]
+     },
+     "attach": {
+      "to": "leg_front",
+      "side": "bottom",
+      "embed": 0.5
+     },
+     "position": [
+      0,
+      0,
+      0.015
+     ],
+     "blend": 0.015,
+     "material": {
+      "color": "belly"
+     }
+    },
+    {
+     "id": "paw_back",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.048,
+       0.028,
+       0.058
+      ]
+     },
+     "attach": {
+      "to": "leg_back",
+      "side": "bottom",
+      "embed": 0.5
+     },
+     "position": [
+      0,
+      0,
+      0.015
+     ],
+     "blend": 0.015,
+     "material": {
+      "color": "belly"
+     }
+    },
+    {
+     "id": "tail",
+     "role": "tail",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        0.05,
+        -0.12
+       ],
+       [
+        0,
+        0.18,
+        -0.2
+       ],
+       [
+        0,
+        0.3,
+        -0.17
+       ]
+      ],
+      "radius": [
+       0.025,
+       0.022,
+       0.02,
+       0.016
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "back",
+      "offset": [
+       0,
+       0.5
+      ],
+      "embed": 0.2
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "fur_dark"
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk"
+    },
+    {
+     "id": "idle",
+     "type": "idle"
+    }
+   ]
+  },
+  "frog": {
+   "format": "clayform/1",
+   "name": "Frog",
+   "notes": "Squat cartoon frog ~0.35 m with big eyes on top and folded legs; hop clip included.",
+   "palette": {
+    "skin": "#5fae4a",
+    "belly": "#d8e8a0",
+    "eye": "#1b1a1f",
+    "white": "#fbfbf5",
+    "mouth": "#3b1f2b"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.17,
+       0.11,
+       0.15
+      ]
+     },
+     "position": [
+      0,
+      0.11,
+      0
+     ],
+     "material": {
+      "color": "skin",
+      "roughness": 0.4
+     },
+     "pattern": {
+      "kind": "gradient",
+      "color": "belly",
+      "scale": 0.1,
+      "amount": 0
+     }
+    },
+    {
+     "id": "belly",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.12,
+       0.07,
+       0.06
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       -0.3
+      ],
+      "embed": 0.9
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "belly",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.05
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "offset": [
+       0.45,
+       0.45
+      ],
+      "embed": 0.4
+     },
+     "blend": 0.03,
+     "mirror": true,
+     "material": {
+      "color": "skin",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "eye_white",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.035
+     },
+     "attach": {
+      "to": "eye",
+      "side": "front",
+      "embed": 0.6
+     },
+     "material": {
+      "color": "white",
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "pupil",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.018
+     },
+     "attach": {
+      "to": "eye_white",
+      "side": "front",
+      "embed": 0.55
+     },
+     "material": {
+      "color": "eye",
+      "roughness": 0.1
+     }
+    },
+    {
+     "id": "mouth",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.1,
+       0.012,
+       0.04
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       0.1
+      ],
+      "embed": 0.75
+     },
+     "op": "carve",
+     "blend": 0.005,
+     "material": {
+      "color": "mouth"
+     }
+    },
+    {
+     "id": "thigh",
+     "role": "leg",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.06,
+       0.05,
+       0.1
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       -0.4,
+       -0.5
+      ],
+      "embed": 0.5
+     },
+     "blend": 0.03,
+     "mirror": true,
+     "material": {
+      "color": "skin",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "foot",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.05,
+       0.015,
+       0.08
+      ]
+     },
+     "attach": {
+      "to": "thigh",
+      "side": "bottom",
+      "embed": 0.4
+     },
+     "position": [
+      0.02,
+      0,
+      0.06
+     ],
+     "blend": 0.015,
+     "material": {
+      "color": "skin",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "hand",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.1,
+      "radius": 0.025
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0.55,
+       -0.7
+      ],
+      "embed": 0.4
+     },
+     "blend": 0.02,
+     "mirror": true,
+     "material": {
+      "color": "skin",
+      "roughness": 0.4
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "hop",
+     "type": "hop"
+    }
+   ]
+  },
+  "penguin": {
+   "format": "clayform/1",
+   "name": "Penguin",
+   "notes": "Round penguin ~0.5 m with flippers, a beak and orange feet.",
+   "palette": {
+    "black": "#23262d",
+    "white": "#f3f3f0",
+    "orange": "#f2a33a"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.16,
+       0.23,
+       0.15
+      ]
+     },
+     "position": [
+      0,
+      0.25,
+      0
+     ],
+     "material": {
+      "color": "black",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "front",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.12,
+       0.18,
+       0.06
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       -0.15
+      ],
+      "embed": 1.1
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "white",
+      "roughness": 0.6
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.11
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "embed": 0.35
+     },
+     "blend": 0.06,
+     "material": {
+      "color": "black",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "face",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.08,
+       0.06,
+       0.04
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.1
+      ],
+      "embed": 0.9
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "white",
+      "roughness": 0.6
+     }
+    },
+    {
+     "id": "beak",
+     "shape": {
+      "type": "cone",
+      "height": 0.06,
+      "radius": 0.022
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.2
+      ],
+      "embed": 0.2,
+      "align": true
+     },
+     "material": {
+      "color": "orange",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "flipper",
+     "role": "wing",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.02,
+       0.1,
+       0.045
+      ]
+     },
+     "rotation": [
+      0,
+      0,
+      -18
+     ],
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0,
+       0.2
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "black",
+      "roughness": 0.5
+     },
+     "mirror": true,
+     "pivot": "attach"
+    },
+    {
+     "id": "foot",
+     "role": "leg",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.045,
+       0.018,
+       0.07
+      ]
+     },
+     "position": [
+      0,
+      0,
+      0.03
+     ],
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.45,
+       0.2
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "orange",
+      "roughness": 0.4
+     },
+     "mirror": true
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.022,
+       0.03,
+       0.016
+      ]
+     },
+     "scale": 0.8,
+     "attach": {
+      "to": "face",
+      "side": "front",
+      "offset": [
+       0.4,
+       0.4
+      ]
+     },
+     "material": {
+      "color": "#1b1a1f",
+      "roughness": 0.15
+     },
+     "mirror": true
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk",
+     "amplitude": 0.6
+    }
+   ]
+  },
+  "teddy": {
+   "format": "clayform/1",
+   "name": "Teddy bear",
+   "notes": "Plush teddy bear ~0.45 m sitting upright, with round ears and a stitched snout.",
+   "palette": {
+    "fur": "#b07a48",
+    "light": "#e3c29a",
+    "dark": "#2a2224"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.14,
+       0.16,
+       0.12
+      ]
+     },
+     "position": [
+      0,
+      0.16,
+      0
+     ],
+     "material": {
+      "color": "fur",
+      "roughness": 0.95
+     }
+    },
+    {
+     "id": "tummy",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.09,
+       0.1,
+       0.04
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "embed": 1.1
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "light",
+      "roughness": 0.95
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.12
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "embed": 0.25
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "fur",
+      "roughness": 0.95
+     }
+    },
+    {
+     "id": "arm",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.16,
+      "radius": 0.045
+     },
+     "rotation": [
+      0,
+      0,
+      55
+     ],
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0.3,
+       0.3
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "fur",
+      "roughness": 0.95
+     },
+     "mirror": true,
+     "pivot": "attach"
+    },
+    {
+     "id": "leg",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.15,
+      "radius": 0.05
+     },
+     "rotation": [
+      80,
+      0,
+      0
+     ],
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0.5,
+       -0.75
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "fur",
+      "roughness": 0.95
+     },
+     "mirror": true
+    },
+    {
+     "id": "sole",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.02,
+      "radius": 0.04
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "attach": {
+      "to": "leg",
+      "side": "front",
+      "embed": 0.6
+     },
+     "material": {
+      "color": "light",
+      "roughness": 0.95
+     }
+    },
+    {
+     "id": "ear",
+     "role": "ear",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.025,
+      "radius": 0.05,
+      "rounding": 0.01
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "scale": 1.1,
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "offset": [
+       0.65,
+       0
+      ]
+     },
+     "blend": 0.015,
+     "material": {
+      "color": "fur"
+     },
+     "mirror": true
+    },
+    {
+     "id": "snout",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.06,
+       0.05,
+       0.07
+      ]
+     },
+     "scale": 0.9,
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.25
+      ]
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "light"
+     }
+    },
+    {
+     "id": "snout_tip",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.022
+     },
+     "scale": 0.9,
+     "attach": {
+      "to": "snout",
+      "side": "front",
+      "offset": [
+       0,
+       0.3
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "#2a2224",
+      "roughness": 0.3
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.022,
+       0.03,
+       0.016
+      ]
+     },
+     "scale": 0.8,
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.42,
+       0.2
+      ]
+     },
+     "material": {
+      "color": "#1b1a1f",
+      "roughness": 0.15
+     },
+     "mirror": true
+    }
+   ]
+  },
+  "ghost": {
+   "format": "clayform/1",
+   "name": "Ghost",
+   "notes": "Floating cartoon ghost ~0.6 m with a wavy hem, glowing faintly; hover clip.",
+   "palette": {
+    "sheet": "#eef1f6",
+    "glow": "#a9c8ff",
+    "eye": "#23262d"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x",
+    "ground": "none"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "capsule",
+      "length": 0.55,
+      "radius": 0.2
+     },
+     "position": [
+      0,
+      0.5,
+      0
+     ],
+     "material": {
+      "color": "sheet",
+      "roughness": 0.5,
+      "emissive": "glow",
+      "emissiveStrength": 0.25
+     }
+    },
+    {
+     "id": "hem",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.12,
+      "radius": 0.24,
+      "sides": 10,
+      "rounding": 0.04
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "embed": 0.8
+     },
+     "blend": 0.06,
+     "material": {
+      "color": "sheet",
+      "roughness": 0.5,
+      "emissive": "glow",
+      "emissiveStrength": 0.25
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.03,
+       0.045,
+       0.02
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0.35,
+       0.35
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "mirror": true,
+     "material": {
+      "color": "eye"
+     }
+    },
+    {
+     "id": "mouth",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.04,
+       0.05,
+       0.02
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       0.1
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "eye"
+     }
+    },
+    {
+     "id": "arm",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.18,
+      "radius": 0.05
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0,
+       0.1
+      ],
+      "embed": 0.6
+     },
+     "rotation": [
+      0,
+      0,
+      60
+     ],
+     "pivot": "attach",
+     "blend": 0.05,
+     "mirror": true,
+     "material": {
+      "color": "sheet",
+      "roughness": 0.5,
+      "emissive": "glow",
+      "emissiveStrength": 0.25
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "hover",
+     "type": "hover"
+    }
+   ]
+  },
+  "dragon": {
+   "format": "clayform/1",
+   "name": "Baby dragon",
+   "notes": "Chubby baby dragon ~0.7 m long with bat wings, horns, a spiked tail and a belly.",
+   "palette": {
+    "scale": "#4aa36a",
+    "belly": "#f1d98a",
+    "horn": "#f2e6c8",
+    "wing": "#2f7a4b"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.16,
+       0.16,
+       0.22
+      ]
+     },
+     "position": [
+      0,
+      0.25,
+      0
+     ],
+     "material": {
+      "color": "scale",
+      "roughness": 0.55
+     }
+    },
+    {
+     "id": "belly",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.11,
+       0.12,
+       0.05
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       -0.2
+      ],
+      "embed": 1.1
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "belly",
+      "roughness": 0.6
+     }
+    },
+    {
+     "id": "neck",
+     "shape": {
+      "type": "capsule",
+      "length": 0.16,
+      "radius": 0.07
+     },
+     "rotation": [
+      -40,
+      0,
+      0
+     ],
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       0.45
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.05,
+     "material": {
+      "color": "scale",
+      "roughness": 0.55
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.11,
+       0.1,
+       0.13
+      ]
+     },
+     "position": [
+      0,
+      0,
+      0.03
+     ],
+     "attach": {
+      "to": "neck",
+      "side": "top",
+      "embed": 0.35
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "scale",
+      "roughness": 0.55
+     }
+    },
+    {
+     "id": "snout",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.07
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.3
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "scale",
+      "roughness": 0.55
+     }
+    },
+    {
+     "id": "leg_front",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.2,
+      "radius": 0.045
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.5,
+       0.45
+      ],
+      "embed": 0.5
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "scale",
+      "roughness": 0.55
+     },
+     "mirror": true
+    },
+    {
+     "id": "leg_back",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.2,
+      "radius": 0.055
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.5,
+       -0.45
+      ],
+      "embed": 0.5
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "scale",
+      "roughness": 0.55
+     },
+     "mirror": true
+    },
+    {
+     "id": "tail",
+     "role": "tail",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0,
+        -0.02,
+        -0.14
+       ],
+       [
+        0,
+        0.04,
+        -0.28
+       ],
+       [
+        0,
+        0.12,
+        -0.36
+       ]
+      ],
+      "radius": [
+       0.07,
+       0.05,
+       0.03,
+       0.015
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "back",
+      "offset": [
+       0,
+       -0.1
+      ],
+      "embed": 0.3
+     },
+     "blend": 0.04,
+     "material": {
+      "color": "scale",
+      "roughness": 0.55
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.045
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.42,
+       0.2
+      ]
+     },
+     "material": {
+      "color": "#fbfbf8",
+      "roughness": 0.25
+     },
+     "mirror": true
+    },
+    {
+     "id": "eye_pupil",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.024
+     },
+     "attach": {
+      "to": "eye",
+      "side": "front",
+      "embed": 0.55
+     },
+     "material": {
+      "color": "#1b1a1f",
+      "roughness": 0.15
+     }
+    },
+    {
+     "id": "eye_shine",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.012
+     },
+     "attach": {
+      "to": "eye_pupil",
+      "side": "front",
+      "offset": [
+       0.4,
+       0.4
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "#ffffff",
+      "emissive": "#ffffff",
+      "emissiveStrength": 0.4
+     }
+    },
+    {
+     "id": "horn",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0.03,
+        0.07,
+        -0.02
+       ],
+       [
+        0.08,
+        0.1,
+        -0.06
+       ],
+       [
+        0.1,
+        0.07,
+        -0.1
+       ]
+      ],
+      "radius": [
+       0.035,
+       0.028,
+       0.018,
+       0.006
+      ]
+     },
+     "scale": 0.8,
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "offset": [
+       0.4,
+       -0.3
+      ]
+     },
+     "material": {
+      "color": "horn",
+      "roughness": 0.5
+     },
+     "mirror": true
+    },
+    {
+     "id": "wing",
+     "role": "wing",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.34,
+       0.26,
+       0.02
+      ],
+      "rounding": 0.006
+     },
+     "rotation": [
+      0,
+      -40,
+      -60
+     ],
+     "scale": 0.9,
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "offset": [
+       0.9,
+       0.1
+      ],
+      "embed": 0.3
+     },
+     "material": {
+      "color": "wing"
+     },
+     "mirror": true,
+     "pivot": "attach"
+    },
+    {
+     "id": "spike",
+     "shape": {
+      "type": "cone",
+      "height": 0.1,
+      "radius": 0.03,
+      "sides": 6
+     },
+     "scale": 0.8,
+     "attach": {
+      "to": "tail",
+      "side": "top",
+      "offset": [
+       0,
+       0.2
+      ],
+      "embed": 0.2,
+      "align": true
+     },
+     "blend": 0.005,
+     "material": {
+      "color": "horn"
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk"
+    },
+    {
+     "id": "fly",
+     "type": "fly"
+    },
+    {
+     "id": "attack",
+     "type": "attack"
+    }
+   ]
+  },
+  "chicken": {
+   "format": "clayform/1",
+   "name": "Chicken",
+   "notes": "Plump chicken ~0.4 m with a comb, wattle, tail feathers and thin legs.",
+   "palette": {
+    "feather": "#f4efe4",
+    "red": "#d64533",
+    "beak": "#f2b233",
+    "eye": "#1b1a1f"
+   },
+   "settings": {
+    "resolution": 120,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.12,
+       0.12,
+       0.15
+      ]
+     },
+     "position": [
+      0,
+      0.22,
+      0
+     ],
+     "material": {
+      "color": "feather",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.07
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       0.75
+      ],
+      "embed": 0.4
+     },
+     "position": [
+      0,
+      0.03,
+      0
+     ],
+     "blend": 0.05,
+     "material": {
+      "color": "feather",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "comb",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.012,
+       0.035,
+       0.045
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "embed": 0.45
+     },
+     "material": {
+      "color": "red",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "beak",
+     "shape": {
+      "type": "cone",
+      "height": 0.045,
+      "radius": 0.018
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.05
+      ],
+      "align": true,
+      "embed": 0.2
+     },
+     "material": {
+      "color": "beak",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "wattle",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.012,
+       0.022,
+       0.012
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.5
+      ],
+      "embed": 0.5
+     },
+     "material": {
+      "color": "red",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.011
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.55,
+       0.2
+      ],
+      "embed": 0.4
+     },
+     "mirror": true,
+     "material": {
+      "color": "eye",
+      "roughness": 0.15
+     }
+    },
+    {
+     "id": "wing",
+     "role": "wing",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.025,
+       0.07,
+       0.1
+      ]
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "embed": 0.7
+     },
+     "rotation": [
+      -10,
+      0,
+      -6
+     ],
+     "pivot": "attach",
+     "blend": 0.02,
+     "mirror": true,
+     "material": {
+      "color": "feather",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "tail",
+     "role": "tail",
+     "shape": {
+      "type": "cone",
+      "height": 0.12,
+      "radius": 0.06,
+      "sides": 5
+     },
+     "attach": {
+      "to": "body",
+      "side": "back",
+      "offset": [
+       0,
+       0.5
+      ],
+      "embed": 0.4
+     },
+     "rotation": [
+      -50,
+      0,
+      0
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "feather",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "leg",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.12,
+      "radius": 0.012
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.35,
+       0
+      ],
+      "embed": 0.3
+     },
+     "mirror": true,
+     "material": {
+      "color": "beak",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "toes",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.025,
+       0.01,
+       0.035
+      ]
+     },
+     "attach": {
+      "to": "leg",
+      "side": "bottom",
+      "embed": 0.5
+     },
+     "position": [
+      0,
+      0,
+      0.012
+     ],
+     "material": {
+      "color": "beak",
+      "roughness": 0.5
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk"
+    },
+    {
+     "id": "idle",
+     "type": "idle"
+    }
+   ]
+  },
+  "truck": {
+   "format": "clayform/1",
+   "name": "Pickup truck",
+   "notes": "Toy pickup truck ~1.4 m with an open bed, headlights and spinning wheels.",
+   "palette": {
+    "paint": "#2f7fb8",
+    "trim": "#2b2d33",
+    "glass": "#9fd3e6",
+    "light": "#fff2b0",
+    "bed": "#255f8a"
+   },
+   "settings": {
+    "resolution": 130,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "chassis",
+     "role": "body",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.64,
+       0.24,
+       1.4
+      ],
+      "rounding": 0.08
+     },
+     "position": [
+      0,
+      0.32,
+      0
+     ],
+     "material": {
+      "color": "paint",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "cab",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.58,
+       0.3,
+       0.46
+      ],
+      "rounding": 0.09
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "top",
+      "offset": [
+       0,
+       0.2
+      ],
+      "embed": 0.35
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "paint",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "windshield",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.46,
+       0.16,
+       0.1
+      ],
+      "rounding": 0.025
+     },
+     "attach": {
+      "to": "cab",
+      "side": "front",
+      "offset": [
+       0,
+       0.2
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "glass",
+      "roughness": 0.1,
+      "metalness": 0.2
+     }
+    },
+    {
+     "id": "side_window",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.1,
+       0.15,
+       0.3
+      ],
+      "rounding": 0.025
+     },
+     "attach": {
+      "to": "cab",
+      "side": "left",
+      "offset": [
+       0,
+       0.2
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "glass",
+      "roughness": 0.1,
+      "metalness": 0.2
+     },
+     "mirror": true
+    },
+    {
+     "id": "bed",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.56,
+       0.16,
+       0.56
+      ],
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "top",
+      "offset": [
+       0,
+       -0.58
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "bed",
+      "roughness": 0.6
+     }
+    },
+    {
+     "id": "bumper",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.66,
+       0.08,
+       0.08
+      ],
+      "rounding": 0.035
+     },
+     "attach": {
+      "to": "chassis",
+      "side": "front",
+      "offset": [
+       0,
+       -0.4
+      ],
+      "embed": 0.5
+     },
+     "material": {
+      "color": "trim",
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "headlight",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.03,
+      "radius": 0.045
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "attach": {
+      "to": "chassis",
+      "side": "front",
+      "offset": [
+       0.6,
+       0.2
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "light",
+      "emissive": "light",
+      "emissiveStrength": 1.1
+     },
+     "mirror": true
+    },
+    {
+     "id": "wheel_front",
+     "role": "wheel",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.1,
+      "radius": 0.13,
+      "rounding": 0.035
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "scale": 1.15,
+     "attach": {
+      "to": "chassis",
+      "side": "left",
+      "offset": [
+       0.65,
+       -0.5
+      ],
+      "embed": 0.55
+     },
+     "material": {
+      "color": "#26272b",
+      "roughness": 0.9
+     },
+     "mirror": true,
+     "separate": true
+    },
+    {
+     "id": "wheel_front_hub",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.02,
+      "radius": 0.06,
+      "rounding": 0.006
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "scale": 1.15,
+     "attach": {
+      "to": "wheel_front",
+      "side": "left",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "#d9d9de",
+      "roughness": 0.3,
+      "metalness": 0.9
+     },
+     "separate": true
+    },
+    {
+     "id": "wheel_back",
+     "role": "wheel",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.1,
+      "radius": 0.13,
+      "rounding": 0.035
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "scale": 1.15,
+     "attach": {
+      "to": "chassis",
+      "side": "left",
+      "offset": [
+       -0.65,
+       -0.5
+      ],
+      "embed": 0.55
+     },
+     "material": {
+      "color": "#26272b",
+      "roughness": 0.9
+     },
+     "mirror": true,
+     "separate": true
+    },
+    {
+     "id": "wheel_back_hub",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.02,
+      "radius": 0.06,
+      "rounding": 0.006
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "scale": 1.15,
+     "attach": {
+      "to": "wheel_back",
+      "side": "left",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "#d9d9de",
+      "roughness": 0.3,
+      "metalness": 0.9
+     },
+     "separate": true
+    }
+   ],
+   "clips": [
+    {
+     "id": "drive",
+     "type": "drive"
+    }
+   ]
+  },
+  "plane": {
+   "format": "clayform/1",
+   "name": "Propeller plane",
+   "notes": "Chunky propeller plane ~1.5 m long, modeled in flight; the propeller spins in the spin clip.",
+   "palette": {
+    "paint": "#e8e2d2",
+    "stripe": "#d64533",
+    "dark": "#2b2d33",
+    "glass": "#27354d"
+   },
+   "settings": {
+    "resolution": 130,
+    "symmetry": "x",
+    "ground": "none"
+   },
+   "parts": [
+    {
+     "id": "fuselage",
+     "role": "body",
+     "shape": {
+      "type": "capsule",
+      "length": 1.4,
+      "radius": 0.16
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      0.45,
+      0
+     ],
+     "material": {
+      "color": "paint",
+      "roughness": 0.4
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "stripe",
+      "scale": 0.25,
+      "amount": 0.8,
+      "axis": "y"
+     }
+    },
+    {
+     "id": "cockpit",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.11,
+       0.09,
+       0.2
+      ]
+     },
+     "attach": {
+      "to": "fuselage",
+      "side": "top",
+      "offset": [
+       0,
+       0.1
+      ],
+      "embed": 0.55
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "glass",
+      "roughness": 0.05,
+      "metalness": 0.5
+     }
+    },
+    {
+     "id": "wing",
+     "shape": {
+      "type": "box",
+      "size": [
+       1.5,
+       0.05,
+       0.36
+      ],
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "fuselage",
+      "side": "center",
+      "embed": 1
+     },
+     "position": [
+      0,
+      -0.04,
+      0.12
+     ],
+     "blend": 0.04,
+     "material": {
+      "color": "paint",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "tailplane",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.6,
+       0.04,
+       0.2
+      ],
+      "rounding": 0.015
+     },
+     "attach": {
+      "to": "fuselage",
+      "side": "back",
+      "embed": 0.9
+     },
+     "position": [
+      0,
+      0.04,
+      0.12
+     ],
+     "blend": 0.03,
+     "material": {
+      "color": "paint",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "fin",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.26,
+       0.26,
+       0.04
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "fuselage",
+      "side": "back",
+      "embed": 0.9
+     },
+     "rotation": [
+      0,
+      90,
+      0
+     ],
+     "position": [
+      0,
+      0.14,
+      0.1
+     ],
+     "blend": 0.03,
+     "material": {
+      "color": "stripe",
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.06,
+      "radius": 0.1,
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "fuselage",
+      "side": "front",
+      "embed": 0.5
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "material": {
+      "color": "dark",
+      "metalness": 0.6,
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "propeller",
+     "role": "rotor",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.6,
+       0.05,
+       0.015
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "nose",
+      "side": "front",
+      "embed": 0.3
+     },
+     "separate": true,
+     "pivot": "center",
+     "material": {
+      "color": "dark",
+      "roughness": 0.6
+     }
+    },
+    {
+     "id": "wheel",
+     "role": "wheel",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.05,
+      "radius": 0.07,
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "wing",
+      "side": "bottom",
+      "offset": [
+       0.2,
+       0.3
+      ],
+      "embed": 0.2
+     },
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "separate": true,
+     "mirror": true,
+     "material": {
+      "color": "dark",
+      "roughness": 0.9
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "spin",
+     "type": "spin",
+     "target": "propeller",
+     "speed": 8
+    }
+   ]
+  },
+  "boat": {
+   "format": "clayform/1",
+   "name": "Sailboat",
+   "notes": "Small sailboat ~1.4 m long: hull, deck, mast and a triangle sail.",
+   "palette": {
+    "hull": "#c8403a",
+    "deck": "#b8865a",
+    "sail": "#f3efe6",
+    "wood": "#7a5032"
+   },
+   "settings": {
+    "resolution": 130,
+    "symmetry": "x",
+    "ground": "none"
+   },
+   "parts": [
+    {
+     "id": "hull",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.3,
+       0.22,
+       0.7
+      ]
+     },
+     "position": [
+      0,
+      0.22,
+      0
+     ],
+     "material": {
+      "color": "hull",
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "deck_cut",
+     "shape": {
+      "type": "box",
+      "size": [
+       1,
+       0.4,
+       2
+      ]
+     },
+     "position": [
+      0,
+      0.42,
+      0
+     ],
+     "op": "carve"
+    },
+    {
+     "id": "deck",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.28,
+       0.02,
+       0.66
+      ]
+     },
+     "position": [
+      0,
+      0.22,
+      0
+     ],
+     "material": {
+      "color": "deck",
+      "roughness": 0.8
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "#9a6a42",
+      "scale": 0.04,
+      "amount": 0.5,
+      "axis": "x"
+     }
+    },
+    {
+     "id": "mast",
+     "shape": {
+      "type": "cylinder",
+      "height": 1.2,
+      "radius": 0.025
+     },
+     "attach": {
+      "to": "deck",
+      "side": "top",
+      "offset": [
+       0,
+       0.2
+      ],
+      "embed": 0.2
+     },
+     "material": {
+      "color": "wood",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "sail",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.6,
+       1,
+       0.03
+      ],
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "mast",
+      "side": "center",
+      "embed": 1
+     },
+     "rotation": [
+      0,
+      90,
+      0
+     ],
+     "position": [
+      0,
+      0.05,
+      -0.28
+     ],
+     "material": {
+      "color": "sail",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "boom",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.6,
+      "radius": 0.02
+     },
+     "attach": {
+      "to": "mast",
+      "side": "center",
+      "embed": 1
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      -0.46,
+      -0.28
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.8
+     }
+    }
+   ]
+  },
+  "rocket": {
+   "format": "clayform/1",
+   "name": "Cartoon rocket",
+   "notes": "Retro rocket ~1.3 m with fins, a porthole and an engine glow; smoke trail effect.",
+   "palette": {
+    "body": "#e8e6e0",
+    "red": "#d64533",
+    "glass": "#7fc6e8",
+    "dark": "#2b2d33",
+    "glow": "#ffb13b"
+   },
+   "settings": {
+    "resolution": 130
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "capsule",
+      "length": 0.9,
+      "radius": 0.2
+     },
+     "position": [
+      0,
+      0.75,
+      0
+     ],
+     "material": {
+      "color": "body",
+      "roughness": 0.35,
+      "metalness": 0.2
+     }
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "cone",
+      "height": 0.35,
+      "radius": 0.19,
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "embed": 0.55
+     },
+     "blend": 0.05,
+     "material": {
+      "color": "red",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "window",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.04,
+      "radius": 0.07,
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       0.3
+      ],
+      "embed": 0.4
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "material": {
+      "color": "glass",
+      "roughness": 0.05,
+      "metalness": 0.4
+     }
+    },
+    {
+     "id": "rim",
+     "shape": {
+      "type": "torus",
+      "radius": 0.075,
+      "tube": 0.014
+     },
+     "attach": {
+      "to": "window",
+      "side": "front",
+      "embed": 0.9
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "material": {
+      "color": "dark",
+      "metalness": 0.7,
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "fin",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.3,
+       0.32,
+       0.04
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0,
+       -0.7
+      ],
+      "embed": 0.5
+     },
+     "blend": 0.02,
+     "mirror": true,
+     "material": {
+      "color": "red",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "fin_back",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.3,
+       0.32,
+       0.04
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "body",
+      "side": "back",
+      "offset": [
+       0,
+       -0.7
+      ],
+      "embed": 0.5
+     },
+     "rotation": [
+      0,
+      90,
+      0
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "red",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "fin_front",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.3,
+       0.32,
+       0.04
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "body",
+      "side": "front",
+      "offset": [
+       0,
+       -0.7
+      ],
+      "embed": 0.5
+     },
+     "rotation": [
+      0,
+      90,
+      0
+     ],
+     "blend": 0.02,
+     "material": {
+      "color": "red",
+      "roughness": 0.35
+     }
+    },
+    {
+     "id": "nozzle",
+     "shape": {
+      "type": "cone",
+      "height": 0.16,
+      "radius": 0.15,
+      "topRadius": 0.1,
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "embed": 0.4
+     },
+     "material": {
+      "color": "dark",
+      "metalness": 0.7,
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "flame",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.05,
+      "radius": 0.12
+     },
+     "attach": {
+      "to": "nozzle",
+      "side": "bottom",
+      "embed": 0.6
+     },
+     "material": {
+      "color": "glow",
+      "emissive": "glow",
+      "emissiveStrength": 2.5
+     }
+    }
+   ],
+   "effects": [
+    {
+     "id": "trail",
+     "preset": "smoke",
+     "direction": [
+      0,
+      -1,
+      0
+     ],
+     "gravity": 0.2,
+     "at": {
+      "to": "flame",
+      "side": "bottom"
+     }
+    }
+   ]
+  },
+  "tower": {
+   "format": "clayform/1",
+   "name": "Castle tower",
+   "notes": "Round stone tower ~3.8 m with battlements, arrow slits, a door and a flag.",
+   "palette": {
+    "stone": "#9a948c",
+    "roof": "#7a3a2a",
+    "wood": "#6b4526",
+    "flag": "#d64533",
+    "dark": "#2b2d33"
+   },
+   "settings": {
+    "resolution": 120,
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "wall",
+     "role": "body",
+     "shape": {
+      "type": "cylinder",
+      "height": 2.4,
+      "radius": 0.6,
+      "sides": 12
+     },
+     "position": [
+      0,
+      1.2,
+      0
+     ],
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.008,
+      "scale": 0.08
+     }
+    },
+    {
+     "id": "ring",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.3,
+      "radius": 0.7,
+      "sides": 12
+     },
+     "attach": {
+      "to": "wall",
+      "side": "top",
+      "embed": 0.9
+     },
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     }
+    },
+    {
+     "id": "crenel",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.2,
+       0.25,
+       1.6
+      ]
+     },
+     "attach": {
+      "to": "ring",
+      "side": "top",
+      "embed": 1
+     },
+     "op": "carve"
+    },
+    {
+     "id": "crenel_2",
+     "shape": {
+      "type": "box",
+      "size": [
+       1.6,
+       0.25,
+       0.2
+      ]
+     },
+     "attach": {
+      "to": "ring",
+      "side": "top",
+      "embed": 1
+     },
+     "op": "carve"
+    },
+    {
+     "id": "roof",
+     "shape": {
+      "type": "cone",
+      "height": 0.9,
+      "radius": 0.55,
+      "sides": 12
+     },
+     "attach": {
+      "to": "ring",
+      "side": "top",
+      "embed": 0.6
+     },
+     "material": {
+      "color": "roof",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "door",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.4,
+       0.7,
+       0.4
+      ],
+      "rounding": 0.05
+     },
+     "attach": {
+      "to": "wall",
+      "side": "front",
+      "offset": [
+       0,
+       -0.7
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "wood"
+     }
+    },
+    {
+     "id": "slit",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.06,
+       0.28,
+       0.4
+      ]
+     },
+     "attach": {
+      "to": "wall",
+      "side": "front",
+      "offset": [
+       0,
+       0.3
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "dark"
+     }
+    },
+    {
+     "id": "slit_side",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.4,
+       0.28,
+       0.06
+      ]
+     },
+     "attach": {
+      "to": "wall",
+      "side": "left",
+      "offset": [
+       0,
+       0.1
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "mirror": true,
+     "material": {
+      "color": "dark"
+     }
+    },
+    {
+     "id": "pole",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.6,
+      "radius": 0.03
+     },
+     "attach": {
+      "to": "roof",
+      "side": "top",
+      "embed": 0.2
+     },
+     "separate": true,
+     "material": {
+      "color": "dark",
+      "metalness": 0.6,
+      "roughness": 0.5
+     }
+    },
+    {
+     "id": "flag",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.25,
+       0.3,
+       0.035
+      ]
+     },
+     "attach": {
+      "to": "pole",
+      "side": "top",
+      "embed": 0.9
+     },
+     "rotation": [
+      0,
+      0,
+      -90
+     ],
+     "position": [
+      0.14,
+      -0.08,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "flag",
+      "roughness": 0.9
+     }
+    }
+   ]
+  },
+  "well": {
+   "format": "clayform/1",
+   "name": "Well",
+   "notes": "Stone well ~1.6 m with a wooden roof frame and a bucket.",
+   "palette": {
+    "stone": "#8f8a84",
+    "wood": "#7a5032",
+    "roof": "#a4553a",
+    "water": "#3a6f9a",
+    "rope": "#c8b38a"
+   },
+   "settings": {
+    "resolution": 120
+   },
+   "parts": [
+    {
+     "id": "ring",
+     "role": "body",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.6,
+      "radius": 0.5,
+      "rounding": 0.04
+     },
+     "position": [
+      0,
+      0.3,
+      0
+     ],
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.01,
+      "scale": 0.06
+     }
+    },
+    {
+     "id": "hole",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.7,
+      "radius": 0.38
+     },
+     "attach": {
+      "to": "ring",
+      "side": "top",
+      "embed": 1
+     },
+     "position": [
+      0,
+      0.05,
+      0
+     ],
+     "op": "carve",
+     "material": {
+      "color": "water",
+      "roughness": 0.1
+     }
+    },
+    {
+     "id": "post",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.08,
+       1,
+       0.08
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "ring",
+      "side": "left",
+      "embed": 0.7
+     },
+     "position": [
+      0,
+      0.5,
+      0
+     ],
+     "mirror": true,
+     "material": {
+      "color": "wood",
+      "roughness": 0.85
+     }
+    },
+    {
+     "id": "roof",
+     "shape": {
+      "type": "prism",
+      "size": [
+       1.3,
+       0.35,
+       0.8
+      ],
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "ring",
+      "side": "top",
+      "embed": 0
+     },
+     "position": [
+      0,
+      0.62,
+      0
+     ],
+     "material": {
+      "color": "roof",
+      "roughness": 0.85
+     }
+    },
+    {
+     "id": "axle",
+     "shape": {
+      "type": "cylinder",
+      "height": 1.05,
+      "radius": 0.035
+     },
+     "attach": {
+      "to": "ring",
+      "side": "top",
+      "embed": 0
+     },
+     "position": [
+      0,
+      0.5,
+      0
+     ],
+     "rotation": [
+      0,
+      0,
+      90
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.85
+     }
+    },
+    {
+     "id": "rope",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.35,
+      "radius": 0.017
+     },
+     "attach": {
+      "to": "axle",
+      "side": "bottom",
+      "embed": 0.2
+     },
+     "material": {
+      "color": "rope",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "bucket",
+     "shape": {
+      "type": "cone",
+      "height": 0.14,
+      "radius": 0.08,
+      "topRadius": 0.1,
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "rope",
+      "side": "bottom",
+      "embed": 0.3
+     },
+     "material": {
+      "color": "wood",
+      "roughness": 0.85
+     }
+    }
+   ]
+  },
+  "lamppost": {
+   "format": "clayform/1",
+   "name": "Lamp post",
+   "notes": "Victorian street lamp ~2.4 m with a glowing lantern head.",
+   "palette": {
+    "iron": "#2f3238",
+    "glass": "#fff0b8"
+   },
+   "settings": {
+    "resolution": 130,
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "base",
+     "role": "body",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.2,
+      "radius": 0.18,
+      "sides": 8,
+      "rounding": 0.02
+     },
+     "position": [
+      0,
+      0.1,
+      0
+     ],
+     "material": {
+      "color": "iron",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "pole",
+     "shape": {
+      "type": "cylinder",
+      "height": 1.9,
+      "radius": 0.045,
+      "sides": 8
+     },
+     "attach": {
+      "to": "base",
+      "side": "top",
+      "embed": 0.2
+     },
+     "material": {
+      "color": "iron",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "collar",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.08,
+      "radius": 0.08,
+      "sides": 8
+     },
+     "attach": {
+      "to": "pole",
+      "side": "top",
+      "embed": 0.4
+     },
+     "material": {
+      "color": "iron",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "lantern",
+     "shape": {
+      "type": "cone",
+      "height": 0.3,
+      "radius": 0.1,
+      "topRadius": 0.16,
+      "sides": 6
+     },
+     "attach": {
+      "to": "collar",
+      "side": "top",
+      "embed": 0.2
+     },
+     "material": {
+      "color": "glass",
+      "emissive": "glass",
+      "emissiveStrength": 1.6,
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "cap",
+     "shape": {
+      "type": "cone",
+      "height": 0.16,
+      "radius": 0.2,
+      "sides": 6
+     },
+     "attach": {
+      "to": "lantern",
+      "side": "top",
+      "embed": 0.3
+     },
+     "material": {
+      "color": "iron",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "finial",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.03
+     },
+     "attach": {
+      "to": "cap",
+      "side": "top",
+      "embed": 0.4
+     },
+     "material": {
+      "color": "iron",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    }
+   ]
+  },
+  "tent": {
+   "format": "clayform/1",
+   "name": "Tent",
+   "notes": "Camping tent ~1.3 m: a triangular canvas with an open flap and guy ropes.",
+   "palette": {
+    "canvas": "#d9a441",
+    "canvas_dark": "#b8862f",
+    "inside": "#3a2a1a",
+    "rope": "#c8b38a",
+    "peg": "#6b4a2b"
+   },
+   "settings": {
+    "resolution": 120
+   },
+   "parts": [
+    {
+     "id": "canvas",
+     "role": "body",
+     "shape": {
+      "type": "prism",
+      "size": [
+       1.4,
+       1.1,
+       1.6
+      ],
+      "rounding": 0.03
+     },
+     "position": [
+      0,
+      0.55,
+      0
+     ],
+     "material": {
+      "color": "canvas",
+      "roughness": 0.9
+     },
+     "pattern": {
+      "kind": "gradient",
+      "color": "canvas_dark",
+      "scale": 1.1,
+      "amount": 0.5
+     }
+    },
+    {
+     "id": "door",
+     "shape": {
+      "type": "prism",
+      "size": [
+       0.6,
+       0.7,
+       0.3
+      ],
+      "rounding": 0.02
+     },
+     "attach": {
+      "to": "canvas",
+      "side": "front",
+      "offset": [
+       0,
+       -0.35
+      ],
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "inside"
+     }
+    },
+    {
+     "id": "ridge",
+     "shape": {
+      "type": "cylinder",
+      "height": 1.7,
+      "radius": 0.02
+     },
+     "attach": {
+      "to": "canvas",
+      "side": "top",
+      "embed": 0.5
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "material": {
+      "color": "peg",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "rope",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0.35,
+        -0.5,
+        0
+       ]
+      ],
+      "radius": 0.01
+     },
+     "attach": {
+      "to": "canvas",
+      "side": "left",
+      "offset": [
+       0.6,
+       0.3
+      ],
+      "embed": 0.2
+     },
+     "mirror": true,
+     "separate": true,
+     "material": {
+      "color": "rope"
+     }
+    },
+    {
+     "id": "peg",
+     "shape": {
+      "type": "cone",
+      "height": 0.1,
+      "radius": 0.02,
+      "sides": 4
+     },
+     "attach": {
+      "to": "rope",
+      "side": "bottom",
+      "embed": 0.5
+     },
+     "rotation": [
+      180,
+      0,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "peg"
+     }
+    }
+   ]
+  },
+  "pine": {
+   "format": "clayform/1",
+   "name": "Pine tree",
+   "notes": "Stylized pine ~1.8 m with three stacked faceted tiers.",
+   "palette": {
+    "bark": "#6f4a2e",
+    "needle": "#2f7a4b",
+    "needle_dark": "#225c38"
+   },
+   "settings": {
+    "resolution": 110,
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "trunk",
+     "role": "body",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.6,
+      "radius": 0.1,
+      "sides": 7
+     },
+     "position": [
+      0,
+      0.3,
+      0
+     ],
+     "material": {
+      "color": "bark",
+      "roughness": 0.95
+     }
+    },
+    {
+     "id": "tier_low",
+     "shape": {
+      "type": "cone",
+      "height": 0.9,
+      "radius": 0.75,
+      "sides": 9
+     },
+     "attach": {
+      "to": "trunk",
+      "side": "top",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "needle",
+      "roughness": 0.9
+     },
+     "pattern": {
+      "kind": "gradient",
+      "color": "needle_dark",
+      "scale": 0.9,
+      "amount": 0.4,
+      "axis": "y"
+     }
+    },
+    {
+     "id": "tier_mid",
+     "shape": {
+      "type": "cone",
+      "height": 0.8,
+      "radius": 0.58,
+      "sides": 9
+     },
+     "attach": {
+      "to": "tier_low",
+      "side": "top",
+      "embed": 1.25
+     },
+     "rotation": [
+      0,
+      20,
+      0
+     ],
+     "material": {
+      "color": "needle",
+      "roughness": 0.9
+     }
+    },
+    {
+     "id": "tier_top",
+     "shape": {
+      "type": "cone",
+      "height": 0.7,
+      "radius": 0.4,
+      "sides": 9
+     },
+     "attach": {
+      "to": "tier_mid",
+      "side": "top",
+      "embed": 1.25
+     },
+     "rotation": [
+      0,
+      40,
+      0
+     ],
+     "material": {
+      "color": "needle",
+      "roughness": 0.9
+     }
+    }
+   ],
+   "clips": [
+    {
+     "id": "sway",
+     "type": "idle"
+    }
+   ]
+  },
+  "cactus": {
+   "format": "clayform/1",
+   "name": "Potted cactus",
+   "notes": "Saguaro-style cactus with two arms in a terracotta pot, ~0.7 m.",
+   "palette": {
+    "cactus": "#4f9a5a",
+    "spine": "#e8e2c8",
+    "pot": "#c26a3f",
+    "soil": "#4a3222",
+    "flower": "#e8649a"
+   },
+   "settings": {
+    "resolution": 120
+   },
+   "parts": [
+    {
+     "id": "pot",
+     "role": "body",
+     "shape": {
+      "type": "cone",
+      "height": 0.22,
+      "radius": 0.14,
+      "topRadius": 0.18,
+      "rounding": 0.02
+     },
+     "position": [
+      0,
+      0.11,
+      0
+     ],
+     "material": {
+      "color": "pot",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "rim",
+     "shape": {
+      "type": "torus",
+      "radius": 0.18,
+      "tube": 0.025
+     },
+     "attach": {
+      "to": "pot",
+      "side": "top",
+      "embed": 0.6
+     },
+     "material": {
+      "color": "pot",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "soil",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.04,
+      "radius": 0.16
+     },
+     "attach": {
+      "to": "pot",
+      "side": "top",
+      "embed": 0.8
+     },
+     "op": "carve",
+     "material": {
+      "color": "soil",
+      "roughness": 1
+     }
+    },
+    {
+     "id": "stem",
+     "shape": {
+      "type": "capsule",
+      "length": 0.5,
+      "radius": 0.065
+     },
+     "attach": {
+      "to": "pot",
+      "side": "top",
+      "embed": 0.25
+     },
+     "material": {
+      "color": "cactus",
+      "roughness": 0.7
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "#3f7a48",
+      "scale": 0.03,
+      "amount": 0.6,
+      "axis": "around"
+     }
+    },
+    {
+     "id": "arm",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0.1,
+        0,
+        0
+       ],
+       [
+        0.12,
+        0.16,
+        0
+       ]
+      ],
+      "radius": [
+       0.045,
+       0.045,
+       0.04
+      ]
+     },
+     "attach": {
+      "to": "stem",
+      "side": "left",
+      "offset": [
+       0,
+       0.1
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "cactus",
+      "roughness": 0.7
+     }
+    },
+    {
+     "id": "arm_2",
+     "shape": {
+      "type": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        -0.09,
+        0,
+        0
+       ],
+       [
+        -0.1,
+        0.12,
+        0
+       ]
+      ],
+      "radius": [
+       0.04,
+       0.04,
+       0.035
+      ]
+     },
+     "attach": {
+      "to": "stem",
+      "side": "right",
+      "offset": [
+       0,
+       -0.2
+      ],
+      "embed": 0.6
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "cactus",
+      "roughness": 0.7
+     }
+    },
+    {
+     "id": "flower",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.02,
+      "radius": 0.035,
+      "sides": 5,
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "stem",
+      "side": "top",
+      "embed": 0.3
+     },
+     "material": {
+      "color": "flower",
+      "roughness": 0.6
+     }
+    }
+   ]
+  },
+  "campfire": {
+   "format": "clayform/1",
+   "name": "Campfire",
+   "notes": "Crossed logs in a ring of stones with fire and a little smoke, ~0.8 m across.",
+   "palette": {
+    "wood": "#6f4a2e",
+    "ash": "#3a3432",
+    "stone": "#8f8a84",
+    "ember": "#ff8a3a"
+   },
+   "settings": {
+    "resolution": 110
+   },
+   "parts": [
+    {
+     "id": "ash",
+     "role": "body",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.03,
+      "radius": 0.26,
+      "rounding": 0.01
+     },
+     "position": [
+      0,
+      0.015,
+      0
+     ],
+     "material": {
+      "color": "ash",
+      "roughness": 1
+     }
+    },
+    {
+     "id": "log",
+     "shape": {
+      "type": "capsule",
+      "length": 0.55,
+      "radius": 0.05
+     },
+     "attach": {
+      "to": "ash",
+      "side": "top",
+      "embed": 0.5
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      0,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.9
+     },
+     "detail": {
+      "amount": 0.004,
+      "scale": 0.02
+     }
+    },
+    {
+     "id": "log_2",
+     "shape": {
+      "type": "capsule",
+      "length": 0.55,
+      "radius": 0.05
+     },
+     "attach": {
+      "to": "ash",
+      "side": "top",
+      "embed": 0.5
+     },
+     "rotation": [
+      90,
+      60,
+      0
+     ],
+     "position": [
+      0,
+      0.04,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.9
+     },
+     "detail": {
+      "amount": 0.004,
+      "scale": 0.02
+     }
+    },
+    {
+     "id": "log_3",
+     "shape": {
+      "type": "capsule",
+      "length": 0.55,
+      "radius": 0.05
+     },
+     "attach": {
+      "to": "ash",
+      "side": "top",
+      "embed": 0.5
+     },
+     "rotation": [
+      90,
+      120,
+      0
+     ],
+     "position": [
+      0,
+      0.08,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.9
+     },
+     "detail": {
+      "amount": 0.004,
+      "scale": 0.02
+     }
+    },
+    {
+     "id": "embers",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.07
+     },
+     "attach": {
+      "to": "ash",
+      "side": "top",
+      "embed": 0.5
+     },
+     "material": {
+      "color": "ember",
+      "emissive": "ember",
+      "emissiveStrength": 2
+     },
+     "detail": {
+      "amount": 0.01,
+      "scale": 0.02
+     }
+    },
+    {
+     "id": "stone_0",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.06
+      ]
+     },
+     "position": [
+      0,
+      0.035,
+      0.36
+     ],
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.03
+     }
+    },
+    {
+     "id": "stone_1",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.06
+      ]
+     },
+     "position": [
+      0.2545584412271571,
+      0.035,
+      0.2545584412271571
+     ],
+     "rotation": [
+      0,
+      45,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.03
+     }
+    },
+    {
+     "id": "stone_2",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.06
+      ]
+     },
+     "position": [
+      0.36,
+      0.035,
+      2.2043642384652358e-17
+     ],
+     "rotation": [
+      0,
+      90,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.03
+     }
+    },
+    {
+     "id": "stone_3",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.06
+      ]
+     },
+     "position": [
+      0.2545584412271571,
+      0.035,
+      -0.2545584412271571
+     ],
+     "rotation": [
+      0,
+      135,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.03
+     }
+    },
+    {
+     "id": "stone_4",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.06
+      ]
+     },
+     "position": [
+      4.4087284769304716e-17,
+      0.035,
+      -0.36
+     ],
+     "rotation": [
+      0,
+      180,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.03
+     }
+    },
+    {
+     "id": "stone_5",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.06
+      ]
+     },
+     "position": [
+      -0.2545584412271571,
+      0.035,
+      -0.25455844122715715
+     ],
+     "rotation": [
+      0,
+      225,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.03
+     }
+    },
+    {
+     "id": "stone_6",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.06
+      ]
+     },
+     "position": [
+      -0.36,
+      0.035,
+      -6.613092715395706e-17
+     ],
+     "rotation": [
+      0,
+      270,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.03
+     }
+    },
+    {
+     "id": "stone_7",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.07,
+       0.05,
+       0.06
+      ]
+     },
+     "position": [
+      -0.25455844122715715,
+      0.035,
+      0.25455844122715704
+     ],
+     "rotation": [
+      0,
+      315,
+      0
+     ],
+     "separate": true,
+     "material": {
+      "color": "stone",
+      "roughness": 0.95
+     },
+     "detail": {
+      "amount": 0.006,
+      "scale": 0.03
+     }
+    }
+   ],
+   "effects": [
+    {
+     "id": "fire",
+     "preset": "fire",
+     "at": {
+      "to": "embers",
+      "side": "top"
+     }
+    },
+    {
+     "id": "smoke",
+     "preset": "smoke",
+     "count": 25,
+     "at": {
+      "to": "embers",
+      "side": "top"
+     }
+    }
+   ]
+  },
+  "table": {
+   "format": "clayform/1",
+   "name": "Wooden table",
+   "notes": "Tavern table ~1.2 m long on four legs.",
+   "palette": {
+    "wood": "#b07c46",
+    "wood_dark": "#5e3c20"
+   },
+   "settings": {
+    "resolution": 120,
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "top",
+     "role": "body",
+     "shape": {
+      "type": "box",
+      "size": [
+       1.2,
+       0.07,
+       0.7
+      ],
+      "rounding": 0.015
+     },
+     "position": [
+      0,
+      0.75,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.8
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "wood_dark",
+      "scale": 0.08,
+      "amount": 0.4,
+      "axis": "z"
+     }
+    },
+    {
+     "id": "leg",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.07,
+       0.72,
+       0.07
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "top",
+      "side": "bottom",
+      "offset": [
+       0.85,
+       0.75
+      ],
+      "embed": 0.05
+     },
+     "mirror": true,
+     "material": {
+      "color": "wood_dark",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "leg_back",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.07,
+       0.72,
+       0.07
+      ],
+      "rounding": 0.01
+     },
+     "attach": {
+      "to": "top",
+      "side": "bottom",
+      "offset": [
+       0.85,
+       -0.75
+      ],
+      "embed": 0.05
+     },
+     "mirror": true,
+     "material": {
+      "color": "wood_dark",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "rail",
+     "shape": {
+      "type": "box",
+      "size": [
+       1,
+       0.06,
+       0.03
+      ]
+     },
+     "attach": {
+      "to": "top",
+      "side": "bottom",
+      "offset": [
+       0,
+       0.75
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "wood_dark",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "rail_back",
+     "shape": {
+      "type": "box",
+      "size": [
+       1,
+       0.06,
+       0.03
+      ]
+     },
+     "attach": {
+      "to": "top",
+      "side": "bottom",
+      "offset": [
+       0,
+       -0.75
+      ],
+      "embed": 0.4
+     },
+     "material": {
+      "color": "wood_dark",
+      "roughness": 0.8
+     }
+    }
+   ]
+  },
+  "chair": {
+   "format": "clayform/1",
+   "name": "Wooden chair",
+   "notes": "Simple chair ~0.9 m with a slatted back.",
+   "palette": {
+    "wood": "#b07c46",
+    "wood_dark": "#5e3c20"
+   },
+   "settings": {
+    "resolution": 120,
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "seat",
+     "role": "body",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.44,
+       0.05,
+       0.42
+      ],
+      "rounding": 0.012
+     },
+     "position": [
+      0,
+      0.45,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "leg",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.045,
+       0.43,
+       0.045
+      ],
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "seat",
+      "side": "bottom",
+      "offset": [
+       0.82,
+       0.82
+      ],
+      "embed": 0.05
+     },
+     "mirror": true,
+     "material": {
+      "color": "wood_dark",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "leg_back",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.045,
+       0.43,
+       0.045
+      ],
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "seat",
+      "side": "bottom",
+      "offset": [
+       0.82,
+       -0.82
+      ],
+      "embed": 0.05
+     },
+     "mirror": true,
+     "material": {
+      "color": "wood_dark",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "post",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.045,
+       0.46,
+       0.045
+      ],
+      "rounding": 0.008
+     },
+     "attach": {
+      "to": "seat",
+      "side": "top",
+      "offset": [
+       0.82,
+       -0.82
+      ],
+      "embed": 0.1
+     },
+     "mirror": true,
+     "material": {
+      "color": "wood_dark",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "slat",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.38,
+       0.05,
+       0.025
+      ],
+      "rounding": 0.006
+     },
+     "attach": {
+      "to": "seat",
+      "side": "top",
+      "offset": [
+       0,
+       -0.82
+      ],
+      "embed": 0
+     },
+     "position": [
+      0,
+      0.22,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.8
+     }
+    },
+    {
+     "id": "slat_2",
+     "shape": {
+      "type": "box",
+      "size": [
+       0.38,
+       0.05,
+       0.025
+      ],
+      "rounding": 0.006
+     },
+     "attach": {
+      "to": "seat",
+      "side": "top",
+      "offset": [
+       0,
+       -0.82
+      ],
+      "embed": 0
+     },
+     "position": [
+      0,
+      0.36,
+      0
+     ],
+     "material": {
+      "color": "wood",
+      "roughness": 0.8
+     }
+    }
+   ]
+  },
+  "shield": {
+   "format": "clayform/1",
+   "name": "Round shield",
+   "notes": "Viking-style round shield ~0.7 m with a metal rim and a boss.",
+   "palette": {
+    "wood": "#9a6a3f",
+    "paint": "#2f5f9a",
+    "metal": "#8f949c"
+   },
+   "settings": {
+    "resolution": 130
+   },
+   "parts": [
+    {
+     "id": "board",
+     "role": "body",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.035,
+      "radius": 0.35,
+      "rounding": 0.008
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      0.35,
+      0
+     ],
+     "material": {
+      "color": "paint",
+      "roughness": 0.7
+     },
+     "pattern": {
+      "kind": "stripes",
+      "color": "wood",
+      "scale": 0.12,
+      "amount": 1,
+      "axis": "x"
+     }
+    },
+    {
+     "id": "rim",
+     "shape": {
+      "type": "torus",
+      "radius": 0.35,
+      "tube": 0.02
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      0.35,
+      0
+     ],
+     "material": {
+      "color": "metal",
+      "metalness": 0.9,
+      "roughness": 0.4
+     }
+    },
+    {
+     "id": "boss",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.08
+     },
+     "attach": {
+      "to": "board",
+      "side": "front",
+      "embed": 0.6
+     },
+     "scale": [
+      1,
+      1,
+      0.6
+     ],
+     "material": {
+      "color": "metal",
+      "metalness": 0.9,
+      "roughness": 0.35
+     }
+    }
+   ]
+  },
+  "lantern": {
+   "format": "clayform/1",
+   "name": "Lantern",
+   "notes": "Hand lantern ~0.4 m with a glowing glass core, metal frame and ring handle.",
+   "palette": {
+    "metal": "#3a3e46",
+    "glass": "#ffd98a"
+   },
+   "settings": {
+    "resolution": 130,
+    "edges": "sharp"
+   },
+   "parts": [
+    {
+     "id": "base",
+     "role": "body",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.05,
+      "radius": 0.1,
+      "sides": 6,
+      "rounding": 0.008
+     },
+     "position": [
+      0,
+      0.025,
+      0
+     ],
+     "material": {
+      "color": "metal",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "frame",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.21,
+      "radius": 0.085,
+      "sides": 6
+     },
+     "attach": {
+      "to": "base",
+      "side": "top",
+      "embed": 0.2
+     },
+     "material": {
+      "color": "metal",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "pane",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.17,
+      "radius": 0.09,
+      "sides": 6
+     },
+     "attach": {
+      "to": "frame",
+      "side": "center",
+      "embed": 1
+     },
+     "rotation": [
+      0,
+      30,
+      0
+     ],
+     "op": "carve",
+     "material": {
+      "color": "glass",
+      "emissive": "glass",
+      "emissiveStrength": 1.8
+     }
+    },
+    {
+     "id": "glass",
+     "shape": {
+      "type": "cylinder",
+      "height": 0.2,
+      "radius": 0.07,
+      "sides": 6
+     },
+     "attach": {
+      "to": "base",
+      "side": "top",
+      "embed": 0.2
+     },
+     "material": {
+      "color": "glass",
+      "emissive": "glass",
+      "emissiveStrength": 1.8,
+      "roughness": 0.2
+     }
+    },
+    {
+     "id": "cap",
+     "shape": {
+      "type": "cone",
+      "height": 0.08,
+      "radius": 0.1,
+      "sides": 6
+     },
+     "attach": {
+      "to": "frame",
+      "side": "top",
+      "embed": 0.2
+     },
+     "material": {
+      "color": "metal",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    },
+    {
+     "id": "handle",
+     "shape": {
+      "type": "torus",
+      "radius": 0.045,
+      "tube": 0.008
+     },
+     "attach": {
+      "to": "cap",
+      "side": "top",
+      "embed": 0.4
+     },
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "material": {
+      "color": "metal",
+      "metalness": 0.7,
+      "roughness": 0.45
+     }
+    }
+   ]
+  },
+  "goblin": {
+   "format": "clayform/1",
+   "name": "Goblin",
+   "notes": "Stylized character ~1.1 m. Roles drive walk/idle/wave. Recolor via palette; swap head/hair shapes for species.",
+   "palette": {
+    "skin": "#7fb04a",
+    "shirt": "#6b4a2b",
+    "pants": "#3d3322",
+    "shoes": "#5b3b2a",
+    "hair": "#4a2f22",
+    "eye": "#1f1d22"
+   },
+   "settings": {
+    "resolution": 110,
+    "symmetry": "x"
+   },
+   "parts": [
+    {
+     "id": "body",
+     "role": "body",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.19,
+       0.24,
+       0.15
+      ]
+     },
+     "position": [
+      0,
+      0.62,
+      0
+     ],
+     "material": {
+      "color": "shirt"
+     }
+    },
+    {
+     "id": "head",
+     "role": "head",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.2
+     },
+     "attach": {
+      "to": "body",
+      "side": "top",
+      "embed": 0.18
+     },
+     "blend": 0.05,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "hair",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.212,
+       0.15,
+       0.214
+      ]
+     },
+     "position": [
+      0,
+      -0.02,
+      -0.025
+     ],
+     "attach": {
+      "to": "head",
+      "side": "top",
+      "embed": 1.1
+     },
+     "blend": 0.01,
+     "material": {
+      "color": "hair",
+      "roughness": 0.85
+     },
+     "hidden": true
+    },
+    {
+     "id": "eye",
+     "role": "eye",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.026,
+       0.038,
+       0.02
+      ]
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0.36,
+       0.02
+      ],
+      "embed": 0.55
+     },
+     "material": {
+      "color": "eye",
+      "roughness": 0.2
+     },
+     "mirror": true
+    },
+    {
+     "id": "nose",
+     "shape": {
+      "type": "cone",
+      "height": 0.09,
+      "radius": 0.03
+     },
+     "attach": {
+      "to": "head",
+      "side": "front",
+      "offset": [
+       0,
+       -0.1
+      ],
+      "embed": 0.2,
+      "align": true
+     },
+     "blend": 0.015,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "arm",
+     "role": "arm",
+     "shape": {
+      "type": "capsule",
+      "length": 0.36,
+      "radius": 0.052
+     },
+     "position": [
+      0.07,
+      -0.12,
+      0
+     ],
+     "rotation": [
+      0,
+      0,
+      16
+     ],
+     "attach": {
+      "to": "body",
+      "side": "left",
+      "offset": [
+       0,
+       0.42
+      ],
+      "embed": 0.75
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "shirt"
+     },
+     "mirror": true,
+     "pivot": "top"
+    },
+    {
+     "id": "hand",
+     "shape": {
+      "type": "sphere",
+      "radius": 0.058
+     },
+     "attach": {
+      "to": "arm",
+      "side": "bottom",
+      "embed": 0.55
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "skin"
+     }
+    },
+    {
+     "id": "leg",
+     "role": "leg",
+     "shape": {
+      "type": "capsule",
+      "length": 0.34,
+      "radius": 0.068
+     },
+     "attach": {
+      "to": "body",
+      "side": "bottom",
+      "offset": [
+       0.48,
+       0
+      ],
+      "embed": 0.62
+     },
+     "blend": 0.03,
+     "material": {
+      "color": "pants"
+     },
+     "mirror": true
+    },
+    {
+     "id": "foot",
+     "shape": {
+      "type": "ellipsoid",
+      "radii": [
+       0.068,
+       0.045,
+       0.105
+      ]
+     },
+     "position": [
+      0,
+      0,
+      0.035
+     ],
+     "attach": {
+      "to": "leg",
+      "side": "bottom",
+      "embed": 0.55
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "shoes"
+     }
+    },
+    {
+     "id": "ear",
+     "role": "ear",
+     "shape": {
+      "type": "cone",
+      "height": 0.16,
+      "radius": 0.045
+     },
+     "rotation": [
+      0,
+      0,
+      -25
+     ],
+     "attach": {
+      "to": "head",
+      "side": "left",
+      "offset": [
+       0,
+       0.2
+      ],
+      "embed": 0.2,
+      "align": true
+     },
+     "blend": 0.02,
+     "material": {
+      "color": "skin"
+     },
+     "mirror": true
+    }
+   ],
+   "clips": [
+    {
+     "id": "walk",
+     "type": "walk"
+    },
+    {
+     "id": "idle",
+     "type": "idle"
+    }
+   ]
+  }
+ },
+ "layouts": {
+  "camp": {
+   "format": "clayform-layout/1",
+   "name": "Camp",
+   "items": [
+    {
+     "id": "fire",
+     "scene": "torch",
+     "position": [
+      0,
+      0
+     ]
+    },
+    {
+     "id": "chest",
+     "scene": "chest",
+     "position": [
+      2.2,
+      0.4
+     ],
+     "rotation": -30
+    }
+   ],
+   "patterns": [
+    {
+     "id": "shroom",
+     "scene": "mushroom",
+     "type": "circle",
+     "count": 7,
+     "radius": 1.1,
+     "rotate": "random",
+     "scaleJitter": 0.25,
+     "seed": 3
+    },
+    {
+     "id": "barrel",
+     "scene": "barrel",
+     "type": "row",
+     "count": 3,
+     "spacing": 0.75,
+     "origin": [
+      -2.2,
+      -1.2
+     ],
+     "direction": 90
+    },
+    {
+     "id": "tree",
+     "scene": "tree",
+     "type": "scatter",
+     "count": 5,
+     "area": [
+      9,
+      5
+     ],
+     "origin": [
+      0,
+      -3.8
+     ],
+     "minGap": 1.8,
+     "rotate": "random",
+     "scaleJitter": 0.2,
+     "seed": 11
+    },
+    {
+     "id": "rock",
+     "scene": "rock",
+     "type": "scatter",
+     "count": 4,
+     "area": [
+      7,
+      3
+     ],
+     "origin": [
+      0,
+      2.6
+     ],
+     "minGap": 1.5,
+     "rotate": "random",
+     "scaleJitter": 0.3,
+     "seed": 5
+    }
+   ]
+  }
+ },
+ "styles": {
+  "toybox": {
+   "format": "clayform-style/1",
+   "name": "Toybox",
+   "palette": {
+    "skin": "#f0c4a0",
+    "red": "#d64533",
+    "blue": "#3f7cb3",
+    "yellow": "#f2b233",
+    "dark": "#2b2d33",
+    "wood": "#9a6a3f"
+   },
+   "defaults": {
+    "blend": 0.02,
+    "rounding": 0.03,
+    "roughness": 0.6
+   },
+   "settings": {
+    "resolution": 110
+   },
+   "heights": {
+    "character": [
+     0.9,
+     1.3
+    ],
+    "prop": [
+     0.2,
+     1
+    ],
+    "vehicle": [
+     0.4,
+     1
+    ]
+   }
+  }
+ }
+}

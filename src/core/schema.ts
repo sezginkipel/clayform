@@ -12,6 +12,7 @@
  */
 
 import { z } from 'zod';
+import { migrate } from './migrate.js';
 import { Style, loadStyle } from './style.js';
 
 export const FORMAT = 'clayform/1';
@@ -364,14 +365,17 @@ export function formatZodError(err: z.ZodError): string {
 		.join('\n');
 }
 
-export type ParseResult = { ok: true; scene: Scene } | { ok: false; error: string };
+/** `migrated` lists the upgrades applied when the document was written in an older format. */
+export type ParseResult = { ok: true; scene: Scene; migrated?: string[] } | { ok: false; error: string };
 
 export function parseScene(input: unknown): ParseResult {
-	const r = Scene.safeParse(input);
+	const m = migrate(input, FORMAT);
+	if (!m.ok) return { ok: false, error: m.error };
+	const r = Scene.safeParse(m.doc);
 	if (!r.success) return { ok: false, error: formatZodError(r.error) };
 	const probs = integrity(r.data);
 	if (probs.length) return { ok: false, error: probs.map((p) => `• ${p.path}: ${p.message}`).join('\n') };
-	return { ok: true, scene: r.data };
+	return m.steps.length ? { ok: true, scene: r.data, migrated: m.steps } : { ok: true, scene: r.data };
 }
 
 export function emptyScene(name: string): Scene {
