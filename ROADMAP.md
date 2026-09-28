@@ -18,26 +18,30 @@ Progress is tracked in [GitHub milestones](https://github.com/sezginkipel/clayfo
 - glTF export with skin and animations, triangle budgets; validated with the Khronos validator
 - MCP server (13 tools), CLI, three.js viewer, 19 templates, 34 tests
 
-## v0.2 — Prove it and see more
+## ✅ v0.2 — Imported meshes and motion checks (released 2026-09-28)
+
+- Imported GLB/OBJ meshes as parts: they blend, carve, anchor and mirror like any part
+- A motion critic for parts passing through each other during a clip
+- `clayform view --watch`: live reload while an agent edits
+- Full docs, a generated scene reference and JSON Schema, and docs examples run as tests
+
+## v0.3 — Prove it
 
 The goal is to know, not guess, how good the output is, and to break the stylized-only ceiling.
 
 - **Run and publish the bench**: 20 prompts, Clayform vs. Blender MCP, blind judging ([protocol](bench/README.md))
-- **Imported meshes as parts**: GLB/OBJ turned into a distance field, so they blend, carve and anchor like any part
 - **Image/text → 3D hand-off** (opt-in, bring your own key or run an open-weight model): generate
-  an organic base, import it, and let the agent edit, rig and check it
-- **Motion critic for self-intersection**: limbs passing through the body during a clip
+  an organic base, import it as a mesh part, and let the agent edit, rig and check it
 - **Faster iteration**: build in worker threads, rebuild only the parts that changed
-- `clayform view --watch`: live reload while an agent edits
 
-## v0.3 — Rigs that move like bodies
+## v0.4 — Rigs that move like bodies
 
 - Two-segment limbs with two-bone IK and foot planting on uneven ground
 - Clip blending and transitions (idle → walk → run)
 - Secondary motion (tails, ears, antennas follow through)
 - More clip types: attack, jump, sit, turn, die
 
-## v0.4 — Kits and worlds
+## v0.5 — Kits and worlds
 
 - Multi-object scenes: instances and layouts (a dungeon kit, a street, a forest patch)
 - A reusable part library beyond templates, searchable by tag
@@ -45,7 +49,7 @@ The goal is to know, not guess, how good the output is, and to break the stylize
 - LOD chains and collision hulls in the export
 - Tested import guides for Godot, Unity and Unreal
 
-## v0.5 — Textures
+## v0.6 — Textures
 
 - UV unwrapping (xatlas) and baked base color / ORM textures
 - A texture atlas shared across a kit

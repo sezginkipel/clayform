@@ -91,7 +91,7 @@ WARN [asymmetric] declared X symmetry is off by 1.3 cm on average; worst: orb (4
 | `new_scene` · `list_scenes` · `get_scene` · `import_scene` | Scenes in the workspace; `get_scene` summarizes parts with resolved world positions |
 | `edit` | Atomic batch of ops (add/update/remove/rename/duplicate parts, sculpts, clips, effects, settings, palette). Returns what changed and the critics |
 | `render` | Labelled multi-view PNG; modes `shaded`, `parts`, `clay`, `normals`, `depth` |
-| `inspect` | Part summary, critics, and a ground-contact check of every clip |
+| `inspect` | Part summary, critics, and a check of every clip (ground contact, parts passing through each other) |
 | `preview_motion` | A clip as a labelled film strip |
 | `preview_effect` | An effect's frames |
 | `export` | `glb` · `obj` · `json` · `flipbook` (sprite sheet PNG + JSON), with an optional triangle budget |
@@ -103,7 +103,8 @@ Meters, +Y up, the model faces +Z, the model's left is +X. The full reference is
 [`src/guide.ts`](src/guide.ts) (the text the `guide` tool returns).
 
 - **Shapes:** sphere, ellipsoid, box, capsule, cylinder, cone (both optionally faceted with
-  `sides`), torus, prism, tube (a swept tube with per-point radius, for tails, limbs, horns).
+  `sides`), torus, prism, tube (a swept tube with per-point radius, for tails, limbs, horns), and
+  mesh (an imported GLB or OBJ).
 - **Combining:** `add` with a smooth `blend` radius, `carve`, `intersect`; `pattern`
   (spots, stripes, noise, gradient), `detail` (surface displacement).
 - **Sculpts:** inflate, dent, flatten, crease, noise, anchored to a part and side or a point.
@@ -164,18 +165,19 @@ const glb = exportGlb(await simplifyBuild(build, { triangles: 4000 })).glb;
 - The look is **stylized**: smooth, clay-like, vertex-colored. There are no UV textures or
   photoreal materials. Hard mechanical edges are rounded at the cell size, so raise
   `resolution` for crisp props.
-- It does **not** generate organic detail from a text or image model yet. Hand-off to an
-  image-to-3D model is on the roadmap.
+- It does **not** generate organic detail from a text or image model yet. You can import a
+  mesh made elsewhere (`mesh` shape, GLB or OBJ) and keep working on it. Built-in hand-off to
+  an image-to-3D model is on the roadmap.
 - Animation is procedural plus keyframes, with no physics, IK or retargeting. Motion critics
-  check ground contact only.
+  check ground contact and parts passing through each other.
 - The renderer is for judging shape and color. It is not a final-quality renderer.
 - Nobody has run the bench yet ([`bench/`](bench/README.md)), so this README makes no
   quality comparison.
 
 ## Roadmap
 
-Next up: publishing the bench, imported meshes as parts and image-to-3D hand-off (v0.2), IK and
-foot planting (v0.3), kits and multi-object scenes (v0.4), textures (v0.5). See
+Next up: publishing the bench, image-to-3D hand-off and faster rebuilds (v0.3), IK and foot
+planting (v0.4), kits and multi-object scenes (v0.5), textures (v0.6). See
 [ROADMAP.md](ROADMAP.md), [milestones](https://github.com/sezginkipel/clayform/milestones) and the
 [changelog](CHANGELOG.md).
 

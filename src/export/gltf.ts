@@ -11,6 +11,7 @@
 import type { Build, MeshData } from '../core/build.js';
 import { m4Compose, m4Invert, qIdentity, srgbToLinear, type V3 } from '../core/math.js';
 import { buildRig, sampleClip, type Rig, type SampledClip } from '../anim/rig.js';
+import { VERSION } from '../version.js';
 
 export interface GlbOptions {
 	/** multiply ambient occlusion into vertex colors (default true) */
@@ -250,7 +251,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	/* -------------------------------------------------------------- json */
 	const bin = w.bytes();
 	const json: Record<string, unknown> = {
-		asset: { version: '2.0', generator: 'Clayform 0.1' },
+		asset: { version: '2.0', generator: `Clayform ${VERSION}` },
 		scene: 0,
 		scenes: [{ name: scene.name, nodes: sceneNodes }],
 		nodes,

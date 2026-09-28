@@ -1,12 +1,19 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-09-28
 
+- **Imported meshes as parts.** A `mesh` shape loads a `.glb` or `.obj`, bakes it into a distance
+  grid and from then on it attaches, blends, carves, mirrors and goes through the critics like
+  any other part. Open meshes are kept as a thin shell, with a warning. (#2)
+- **Clips are checked for parts passing through each other.** `inspect` and `preview_motion` say
+  which parts collide, when, and how deep. Overlaps that already exist at rest are ignored. (#4)
+- **`clayform view --watch`** reloads the viewer when the scene file changes, keeps the last good
+  version when an edit is invalid, and shows the error. (#6)
+- Palette errors now say what a valid name and color look like.
 - Docs: getting started, concepts, MCP tools, critics, animation, effects, export, CLI and library,
-  architecture, FAQ. Scene reference, template catalog and `schema/clayform.schema.json` are
-  generated from the code, and every JSON example in the docs marked `verify` is run by the test suite.
-- Every scene field now has a description, both in the JSON Schema and for agents.
-- Roadmap and GitHub milestones.
+  architecture, FAQ. The scene reference, template catalog and `schema/clayform.schema.json` are
+  generated from the code, and every docs example marked `verify` runs in the test suite.
+- Every scene field has a description, both in the JSON Schema and in what agents read.
 
 ## 0.1.0 — 2026-09-28
 
