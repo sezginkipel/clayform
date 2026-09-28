@@ -244,7 +244,7 @@ export const Scene = z.strictObject({
 	format: z.literal(FORMAT).describe('document version'),
 	name: z.string().min(1).max(80).describe('display name; also the glTF scene name'),
 	notes: z.string().max(2000).optional().describe('free text: intent, constraints, what to keep'),
-	palette: z.record(z.string().regex(/^[a-z][a-z0-9_]{0,31}$/), z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)).optional().describe('named colors parts refer to — recolor a model by editing one entry'),
+	palette: z.record(z.string().regex(/^[a-z][a-z0-9_]{0,31}$/, 'palette names are lowercase snake_case, like skin or wood_dark'), z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'palette colors are #rrggbb or #rgb')).optional().describe('named colors parts refer to — recolor a model by editing one entry'),
 	settings: Settings.optional().describe('see Settings'),
 	parts: z.array(Part).max(256).describe('in blend order: blend and carve act on the parts listed before them'),
 	sculpts: z.array(Sculpt).max(128).optional().describe('applied in order after all parts'),
