@@ -59,7 +59,7 @@
     "@types/node": "^24.0.0",
     "gltf-validator": "^2.0.0-dev.3.10",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vitest": "^3.2.7"
   },
   "repository": {
