@@ -30,6 +30,23 @@ Measured on the templates: the cottage goes from 149,804 to 6,324 triangles by d
 the toy car from 147,784 to 3,992 with `triangles: 4000`, with no visible difference in the
 renders.
 
+## Levels of detail and collision
+
+`export { lods: [0.5, 0.2], collision: "parts", engine: "godot" }`
+
+- **lods** adds lower levels of detail as fractions of the exported triangle count. Meshes are named
+  `<name>_LOD0`, `_LOD1` … and, for static models, grouped under one parent so importers that build
+  LOD groups from sibling names find them.
+- **collision** adds convex hulls: `parts` gives one per part (a compound collider that follows the
+  model's own structure), and `hull` gives one for the whole model. Each hull has at most 255 vertices
+  and sits up to one grid cell inside the surface.
+- **engine** names the collision nodes the way that engine picks them up: Godot `-convcolonly`,
+  Unreal `UCX_body_00` …, Unity `_collider`, otherwise `_collision`.
+
+The CLI takes the same options: `clayform export chest -o chest.glb --lods 0.5,0.2 --collision parts --engine godot`.
+The Khronos validator reports zero errors for all four naming styles. Importing into each engine is
+not tested yet ([#15](https://github.com/sezginkipel/clayform/issues/15)).
+
 ## OBJ
 
 Static geometry with per-vertex colors (`v x y z r g b`) and normals.

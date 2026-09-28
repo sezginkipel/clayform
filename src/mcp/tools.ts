@@ -252,7 +252,7 @@ export class Tools {
 		});
 	}
 
-	exportScene(args: { scene: string; format?: 'glb' | 'obj' | 'json' | 'flipbook'; path?: string; triangles?: number; effect?: string; bakeAo?: boolean }): Promise<Result> {
+	exportScene(args: { scene: string; format?: 'glb' | 'obj' | 'json' | 'flipbook'; path?: string; triangles?: number; effect?: string; bakeAo?: boolean; lods?: number[]; collision?: 'none' | 'parts' | 'hull'; engine?: 'godot' | 'unreal' | 'unity' | 'plain' }): Promise<Result> {
 		return wrap(async () => {
 			const scene = this.ws.get(args.scene);
 			const fmt = args.format ?? 'glb';
@@ -278,11 +278,13 @@ export class Tools {
 				writeFileSync(out, exportObj(b));
 				return { content: [text(`wrote ${out} · ${b.stats.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')})`)] };
 			}
-			const r = exportGlb(b, { bakeAo: args.bakeAo });
+			const lods = [];
+			for (const f of args.lods ?? []) lods.push(await simplifyBuild(full, { triangles: Math.max(100, Math.round(b.stats.triangles * f)) }));
+			const r = exportGlb(b, { bakeAo: args.bakeAo, lods, collision: args.collision, naming: args.engine });
 			writeFileSync(out, r.glb);
 			const s = r.stats;
 			return {
-				content: [text(`wrote ${out} · ${(s.bytes / 1024).toFixed(0)} KB · ${s.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')}) · ${s.meshes} meshes · ${s.materials} materials${s.joints ? ` · ${s.joints} joints` : ''}${s.animations ? ` · ${s.animations} animations` : ''}`)]
+				content: [text(`wrote ${out} · ${(s.bytes / 1024).toFixed(0)} KB · ${s.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')}) · ${s.meshes} meshes · ${s.materials} materials${s.joints ? ` · ${s.joints} joints` : ''}${s.animations ? ` · ${s.animations} animations` : ''}${s.lods > 1 ? ` · ${s.lods} levels of detail (${[b, ...lods].map((x) => x.stats.triangles).join(' / ')} triangles)` : ''}${s.colliders ? ` · ${s.colliders} convex colliders` : ''}`)]
 			};
 		});
 	}

@@ -119,7 +119,10 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 			path: z.string().optional(),
 			triangles: z.number().int().min(100).max(2_000_000).optional(),
 			effect: z.string().optional(),
-			bakeAo: z.boolean().optional().describe('multiply ambient occlusion into vertex colors (default true)')
+			bakeAo: z.boolean().optional().describe('multiply ambient occlusion into vertex colors (default true)'),
+			lods: z.array(z.number().gt(0).lt(1)).max(4).optional().describe('extra levels of detail as fractions of the triangle count, e.g. [0.5, 0.2] → <name>_LOD1, _LOD2'),
+			collision: z.enum(['none', 'parts', 'hull']).optional().describe('convex collision shapes: one per part (parts, a compound collider), one for the whole model (hull)'),
+			engine: z.enum(['godot', 'unreal', 'unity', 'plain']).optional().describe('name collision nodes the way that engine picks them up (godot: -convcolonly, unreal: UCX_, unity: _collider)')
 		}
 	}, (a) => t.exportScene(a));
 

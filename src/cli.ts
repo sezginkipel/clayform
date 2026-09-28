@@ -123,7 +123,11 @@ async function main() {
 			const b = await simplifyBuild(full, tri ? { triangles: Number(tri) } : {});
 			const out = flags.get('out') ?? `${stem(pos[0]!)}.glb`;
 			if (out.toLowerCase().endsWith('.obj')) writeFileSync(out, exportObj(b));
-			else writeFileSync(out, exportGlb(b).glb);
+			else {
+				const lods = [];
+				for (const f of (flags.get('lods') ?? '').split(',').filter(Boolean).map(Number)) lods.push(await simplifyBuild(full, { triangles: Math.max(100, Math.round(b.stats.triangles * f)) }));
+				writeFileSync(out, exportGlb(b, { lods, collision: flags.get('collision') as 'parts' | 'hull' | undefined, naming: flags.get('engine') as 'godot' | undefined }).glb);
+			}
 			console.log(`wrote ${out} · ${b.stats.triangles} triangles (from ${full.stats.triangles})`);
 			return;
 		}
@@ -213,7 +217,7 @@ async function main() {
   clayform new <template> [-o file]     write a template as a .clay.json
   clayform render <scene|template> [-o out.png] [--views front,left] [--mode parts] [--size 384]
   clayform inspect <scene|template>     part summary + critics (exit 2 on errors)
-  clayform export <scene|template> [-o out.glb|.obj] [--triangles N]
+  clayform export <scene|template> [-o out.glb|.obj] [--triangles N] [--lods 0.5,0.2] [--collision parts|hull] [--engine godot|unreal|unity]
   clayform motion <scene> [clip] [-o out.png] [--view left]
   clayform effect <scene> [effect] [-o out.png]
   clayform view <scene|template|file.glb> [--port 5231] [--watch]   three.js viewer, live reload

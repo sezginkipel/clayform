@@ -122,7 +122,7 @@ with frame times, the joints that move, and the lowest point reached.
 
 ## `export`
 
-`{ scene, format?, path?, triangles?, effect?, bakeAo? }`
+`{ scene, format?, path?, triangles?, effect?, bakeAo?, lods?, collision?, engine? }`. See [levels of detail and collision](export.md#levels-of-detail-and-collision)
 
 | format | writes |
 |---|---|

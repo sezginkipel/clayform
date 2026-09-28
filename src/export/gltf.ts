@@ -12,6 +12,7 @@ import type { Build, MeshData } from '../core/build.js';
 import { m4Compose, m4Invert, qIdentity, srgbToLinear, type V3 } from '../core/math.js';
 import { buildRig, sampleClip, type Rig, type SampledClip } from '../anim/rig.js';
 import { VERSION } from '../version.js';
+import { convexHull } from './hull.js';
 
 export interface GlbOptions {
 	/** multiply ambient occlusion into vertex colors (default true) */
@@ -20,12 +21,18 @@ export interface GlbOptions {
 	rig?: boolean;
 	/** only these clip ids (default: all) */
 	clips?: string[];
+	/** lower levels of detail (already simplified builds of the same scene), exported as <name>_LOD1, _LOD2 … */
+	lods?: Build[];
+	/** collision shapes: one convex hull per part (parts), one for the whole model (hull), or none */
+	collision?: 'none' | 'parts' | 'hull';
+	/** how collision nodes are named for the target engine */
+	naming?: 'godot' | 'unreal' | 'unity' | 'plain';
 }
 
 export interface GlbResult {
 	glb: Uint8Array;
 	json: Record<string, unknown>;
-	stats: { meshes: number; primitives: number; materials: number; triangles: number; joints: number; animations: number; bytes: number };
+	stats: { meshes: number; primitives: number; materials: number; triangles: number; joints: number; animations: number; bytes: number; lods: number; colliders: number };
 }
 
 const FLOAT = 5126, USHORT = 5123, UINT = 5125;
@@ -208,12 +215,57 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 		sceneNodes.push(jointNode[0]);
 	}
 
-	for (const m of b.meshes) {
-		const mesh = writeMesh(m);
-		const node: Record<string, unknown> = { name: exportName(m.name) + (rig ? '_mesh' : ''), mesh };
-		if (rig) node.skin = skinIndex;
-		nodes.push(node);
+	const levels = [b, ...(opts.lods ?? [])];
+	const lodNodes: number[] = [];
+	levels.forEach((lb, li) => {
+		for (const m of lb.meshes) {
+			const mesh = writeMesh(m);
+			const base = exportName(m.name) + (rig ? '_mesh' : '');
+			const node: Record<string, unknown> = { name: levels.length > 1 ? `${base}_LOD${li}` : base, mesh };
+			if (rig) node.skin = skinIndex;
+			nodes.push(node);
+			lodNodes.push(nodes.length - 1);
+		}
+	});
+	// static LODs sit under one parent so importers that build LOD groups (Unity) find siblings
+	if (levels.length > 1 && !rig) {
+		nodes.push({ name: `${exportName(scene.name.replace(/s+/g, '_'))}_LODs`, children: lodNodes });
 		sceneNodes.push(nodes.length - 1);
+	} else sceneNodes.push(...lodNodes);
+
+	/* --------------------------------------------------------- collision */
+	let colliders = 0;
+	if (opts.collision && opts.collision !== 'none') {
+		const groups = new Map<string, [number, number, number][]>();
+		for (const m of b.meshes)
+			for (let v = 0; v < m.positions.length / 3; v++) {
+				const owner = opts.collision === 'hull' ? 'model' : m.prim >= 0 ? prims[m.prim].id : prims[m.vertPrim[v]]?.id ?? 'body';
+				const list = groups.get(owner) ?? [];
+				list.push([m.positions[v * 3], m.positions[v * 3 + 1], m.positions[v * 3 + 2]]);
+				groups.set(owner, list);
+			}
+		const naming = opts.naming ?? 'plain';
+		let n = 0;
+		for (const [owner, pts] of groups) {
+			// engines cap convex colliders at 255 vertices; coarsen until it fits
+			let hull = convexHull(pts);
+			for (const cells of [10, 7, 5]) if (hull && hull.positions.length / 3 > 255) hull = convexHull(pts, cells);
+			if (!hull) continue;
+			const pos = w.accessor(hull.positions, 'VEC3', FLOAT, { target: ARRAY_BUFFER, minmax: true });
+			const idx = hull.positions.length / 3 > 65535 ? new Uint32Array(hull.indices) : new Uint16Array(hull.indices);
+			const ind = w.accessor(idx, 'SCALAR', idx instanceof Uint32Array ? UINT : USHORT, { target: ELEMENT_ARRAY_BUFFER });
+			const nm = exportName(owner);
+			const name =
+				naming === 'godot' ? `${nm}-convcolonly`
+				: naming === 'unreal' ? `UCX_body_${String(n).padStart(2, '0')}`
+				: naming === 'unity' ? `${nm}_collider`
+				: `${nm}_collision`;
+			meshes.push({ name, primitives: [{ attributes: { POSITION: pos }, indices: ind, mode: 4 }] });
+			nodes.push({ name, mesh: meshes.length - 1 });
+			sceneNodes.push(nodes.length - 1);
+			n++;
+		}
+		colliders = n;
 	}
 
 	/* ------------------------------------------------------- animations */
@@ -278,7 +330,9 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			triangles,
 			joints: rig?.joints.length ?? 0,
 			animations: animations.length,
-			bytes: glb.byteLength
+			bytes: glb.byteLength,
+			lods: levels.length,
+			colliders
 		}
 	};
 }
