@@ -31,7 +31,9 @@ Rotations are Euler degrees [x, y, z]. Ground is y=0; with \`settings.ground: "a
   capsule{length, radius} (along local Y) · cylinder{height, radius, rounding, sides} ·
   cone{height, radius, topRadius, rounding, sides} · torus{radius, tube} (ring in XZ) ·
   prism{size[3]} (triangle in XY, peak up, extruded along Z) · tube{points[], radius | radii[]}
-  (smooth swept tube: tails, limbs, horns). \`sides\` makes facets (6 = crystal, 4 = pyramid).
+  (smooth swept tube: tails, limbs, horns) · mesh{src, size?, resolution?} (an imported .glb or
+  .obj, baked to a distance field so it blends, carves and anchors like any part; color comes
+  from material). \`sides\` makes facets (6 = crystal, 4 = pyramid).
 - **Placement** — one of:
   - \`attach\`: \`{ to, side, offset?, embed?, align? }\` puts the part on another part's surface.
     \`side\` is a world direction you look from: top, bottom, front(+Z), back, left(+X), right, center.

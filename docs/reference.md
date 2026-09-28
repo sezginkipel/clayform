@@ -37,7 +37,7 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `id` **required** | string | unique snake_case id; a mirror twin is id + ".m" (exported to glTF as id_mirror) |
 | `role` | string | semantic role used by animation and critics: body, head, leg, arm, tail, wing, wheel, rotor, eye, ear, horn, prop … |
 | `label` | string | free text for people |
-| `shape` **required** | one of `sphere`, `ellipsoid`, `box`, `capsule`, `cylinder`, `cone`, `torus`, `prism`, `tube` | see Shapes |
+| `shape` **required** | one of `sphere`, `ellipsoid`, `box`, `capsule`, `cylinder`, `cone`, `torus`, `prism`, `mesh`, `tube` | see Shapes |
 | `position` | [number, number, number] | relative to parent; with attach it is an extra world offset |
 | `rotation` | [number, number, number] | Euler degrees XYZ |
 | `scale` | number (>0) or [number (>0), number (>0), number (>0)] | uniform or per local axis; the easy way to stretch a template part |
@@ -70,6 +70,8 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 **`torus`** — `radius`: number (>0) (ring radius, ring lies in the local XZ plane); `tube`: number (>0)
 
 **`prism`** — `size`: [number (>0), number (>0), number (>0)] (triangular cross-section in XY (peak on top), extruded along Z — roofs, blades); `rounding`?: number (≥0)
+
+**`mesh`** — `src`: string (path to a .glb or .obj (absolute, or relative to where the server runs / the workspace)); `size`?: number (>0) (scale so the longest axis is this many meters; default keeps the file's units); `resolution`?: integer (≥16, ≤160) (distance grid cells on the longest axis (default 64))
 
 **`tube`** — `points`: [number, number, number][] (local points of a smooth swept tube — tails, limbs, horns, tentacles); `radius`: number (>0) or number (>0)[] (one radius, or one per point for tapering)
 

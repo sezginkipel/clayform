@@ -358,6 +358,37 @@
                 "properties": {
                   "type": {
                     "type": "string",
+                    "const": "mesh"
+                  },
+                  "src": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "description": "path to a .glb or .obj (absolute, or relative to where the server runs / the workspace)"
+                  },
+                  "size": {
+                    "description": "scale so the longest axis is this many meters; default keeps the file's units",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "resolution": {
+                    "description": "distance grid cells on the longest axis (default 64)",
+                    "type": "integer",
+                    "minimum": 16,
+                    "maximum": 160
+                  }
+                },
+                "required": [
+                  "type",
+                  "src"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
                     "const": "tube"
                   },
                   "points": {

@@ -81,6 +81,26 @@ brings its hand. Set `mirror: false` on the child to stop that. Declare
 in a hand, a hubcap on a wheel. Separate parts still attach, animate and export (as their own
 glTF meshes).
 
+## Imported meshes
+
+A `mesh` shape brings in a `.glb` or `.obj` (from another tool, a scan, or an image-to-3D
+model). It is baked once into a distance grid, so from then on it is a part like any other:
+things attach to it, it blends and carves, it mirrors, and the critics check it.
+
+<!-- verify: part biped -->
+```json
+{ "id": "crate", "shape": { "type": "mesh", "src": "docs/examples/crate.obj", "size": 0.3 },
+  "attach": { "to": "hand", "side": "bottom", "embed": 0.2 }, "separate": true,
+  "material": { "color": "#9a7b5a" } }
+```
+
+- `src` is an absolute path, or relative to where the server runs (or the workspace).
+- `size` scales the longest axis to that many meters. The mesh is centered on its bounding box.
+- `resolution` sets the distance grid (default 64 cells on the longest axis). Raise it for fine detail.
+- Geometry only: the color comes from `material`, and textures and vertex colors in the file are ignored.
+- An open mesh (with holes) is kept as a thin shell, and a `placement` warning says so.
+- Compressed glTF (Draco, meshopt, quantization) is refused with a message. Export without compression.
+
 ## Surface: materials, patterns, detail
 
 - `material`: `color` (hex or palette key), `roughness`, `metalness`, `emissive`, `emissiveStrength`.

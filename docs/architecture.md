@@ -14,6 +14,7 @@ scene JSON ──► schema (zod, strict) ──► compile ──► build ─�
 | `src/core/schema.ts` | the document. Strict zod schema plus `integrity()` for cross-references (unique ids, references that exist, no cycles, palette keys) |
 | `src/core/ops.ts` | atomic edit ops (a copy is edited, then the whole result is validated) |
 | `src/core/sdf.ts` | distance primitives (incl. faceted cylinders and cones, swept tubes), smooth min / subtract / max, value noise and Worley noise |
+| `src/core/meshload.ts` | GLB/OBJ reader, BVH closest-triangle queries, a distance grid signed by a flood fill from outside (face normals in the band next to the surface) |
 | `src/core/compile.ts` | resolves world poses in dependency order: attach by sphere tracing, extreme-point anchors, embed, mirror twins and inheritance, pivots; compiles sculpts to field modifiers; evaluates the field |
 | `src/core/mesher.ts` | surface nets over a grid split into 4³ blocks. A block that no primitive can reach is skipped, and a block far from any surface is filled with a single value |
 | `src/core/build.ts` | meshes the fused body and separate parts; per vertex: normal, AO, blended color and pattern, dominant part, skin weights; ground offset |

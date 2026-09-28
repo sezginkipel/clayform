@@ -187,6 +187,7 @@ function shapeText(p: Scene['parts'][number]): string {
 		case 'torus': return `torus R${f2(s.radius)} t${f2(s.tube)}`;
 		case 'prism': return `prism ${v(s.size)}`;
 		case 'tube': return `tube ${s.points.length} pts`;
+		case 'mesh': return `mesh ${s.src}${s.size ? ` (${f2(s.size)} m)` : ''}`;
 	}
 }
 

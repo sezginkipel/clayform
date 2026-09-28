@@ -15,6 +15,7 @@ import {
 } from './math.js';
 import type { Anchor, Part, Scene, Sculpt, Side, Target } from './schema.js';
 import { cells3, fbm3, shapeBounds, shapeSdf, smax, smin, ssub, type LocalSdf } from './sdf.js';
+import { meshField } from './meshload.js';
 
 export interface Prim {
 	/** Order in `prims` (and joint index). */
@@ -240,6 +241,10 @@ export function compile(scene: Scene): Compiled {
 	const mirrored = new Map<string, boolean>();
 
 	const makePrim = (p: Part): Prim => {
+		if (p.shape.type === 'mesh') {
+			const mf = meshField(p.shape.src, p.shape.size, p.shape.resolution ?? 64);
+			if (!mf.closed) warnings.push(`${p.id}: ${p.shape.src} is not a closed mesh, so it is kept as a thin shell — fill its holes before importing for solid results`);
+		}
 		const b = shapeBounds(p.shape);
 		const scl = scaleOf(p);
 		const m = p.material ?? {};

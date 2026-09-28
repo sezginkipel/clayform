@@ -15,8 +15,9 @@ textures and no photoreal materials yet. Hard mechanical edges are rounded at th
 
 **Can it make organic characters?**
 Stylized ones, yes: smooth blends, swept tubes, anchored sculpts. Detailed organic sculpting
-(wrinkles, anatomy) is not something it does. Handing that off to an image-to-3D model is on
-the [roadmap](../ROADMAP.md).
+(wrinkles, anatomy) is not something it does. You can import a detailed mesh made elsewhere as a
+`mesh` part and keep working on it. Built-in hand-off to an image-to-3D model is on the
+[roadmap](../ROADMAP.md).
 
 **Which engines can use the exports?**
 The GLB files are standard glTF 2.0 and pass the Khronos validator with zero errors. Skinned

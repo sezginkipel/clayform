@@ -5,6 +5,7 @@
 
 import type { Shape } from './schema.js';
 import type { V3 } from './math.js';
+import { meshField } from './meshload.js';
 
 export type LocalSdf = (x: number, y: number, z: number) => number;
 
@@ -171,6 +172,10 @@ export function shapeSdf(s: Shape): LocalSdf {
 			const w = s.size[0] - rr * 3, h = s.size[1] - rr * 3, hz = s.size[2] / 2 - rr;
 			return (x, y, z) => sdPrism(x, y, z, Math.max(w, 1e-4), Math.max(h, 1e-4), Math.max(hz, 1e-4)) - rr;
 		}
+		case 'mesh': {
+			const f = meshField(s.src, s.size, s.resolution ?? 64);
+			return f.sdf;
+		}
 		case 'tube': {
 			const pts = s.points as V3[];
 			const radii = Array.isArray(s.radius) ? s.radius : pts.map(() => s.radius as number);
@@ -208,6 +213,10 @@ export function shapeBounds(s: Shape): { min: V3; max: V3 } {
 		case 'torus': {
 			const r = s.radius + s.tube;
 			return { min: [-r, -s.tube, -r], max: [r, s.tube, r] };
+		}
+		case 'mesh': {
+			const f = meshField(s.src, s.size, s.resolution ?? 64);
+			return { min: [...f.min] as V3, max: [...f.max] as V3 };
 		}
 		case 'tube': {
 			const radii = Array.isArray(s.radius) ? s.radius : s.points.map(() => s.radius as number);

@@ -69,6 +69,12 @@ export const Shape = z.discriminatedUnion('type', [
 		rounding: num.min(0).optional()
 	}),
 	z.strictObject({
+		type: z.literal('mesh'),
+		src: z.string().min(1).max(500).describe('path to a .glb or .obj (absolute, or relative to where the server runs / the workspace)'),
+		size: pos.optional().describe('scale so the longest axis is this many meters; default keeps the file\'s units'),
+		resolution: z.number().int().min(16).max(160).optional().describe('distance grid cells on the longest axis (default 64)')
+	}),
+	z.strictObject({
 		type: z.literal('tube'),
 		points: z.array(Vec3).min(2).max(64).describe('local points of a smooth swept tube — tails, limbs, horns, tentacles'),
 		radius: z.union([pos, z.array(pos).min(2).max(64)]).describe('one radius, or one per point for tapering')
