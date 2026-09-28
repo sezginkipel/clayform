@@ -34,7 +34,7 @@ export const knight = S('Knight', {
 		{ id: 'blade', shape: { type: 'box', size: [0.05, 0.38, 0.012], rounding: 0.004 }, parent: 'hand', position: [0, -0.09, 0], mirror: false, separate: true, material: { color: 'steel', metalness: 1, roughness: 0.2 } },
 		{ id: 'guard', shape: { type: 'box', size: [0.04, 0.03, 0.17], rounding: 0.012 }, attach: { to: 'blade', side: 'top', embed: 0.5 }, separate: true, material: { color: 'gold', metalness: 1, roughness: 0.3 } }
 	],
-	clips: [{ id: 'walk', type: 'walk' }, { id: 'idle', type: 'idle' }]
+	clips: [{ id: 'walk', type: 'walk' }, { id: 'idle', type: 'idle' }, { id: 'attack', type: 'attack' }]
 });
 
 export const wizard = withLibrary(
@@ -168,7 +168,7 @@ export const dragon = withLibrary(
 			{ id: 'leg_back', role: 'leg', shape: { type: 'capsule', length: 0.2, radius: 0.055 }, attach: { to: 'body', side: 'bottom', offset: [0.5, -0.45], embed: 0.5 }, blend: 0.04, mirror: true, material: { color: 'scale', roughness: 0.55 } },
 			{ id: 'tail', role: 'tail', shape: { type: 'tube', points: [[0, 0, 0], [0, -0.02, -0.14], [0, 0.04, -0.28], [0, 0.12, -0.36]], radius: [0.07, 0.05, 0.03, 0.015] }, attach: { to: 'body', side: 'back', offset: [0, -0.1], embed: 0.3 }, blend: 0.04, material: { color: 'scale', roughness: 0.55 } }
 		],
-		clips: [{ id: 'walk', type: 'walk' }, { id: 'fly', type: 'fly' }]
+		clips: [{ id: 'walk', type: 'walk' }, { id: 'fly', type: 'fly' }, { id: 'attack', type: 'attack' }]
 	}),
 	[
 		{ op: 'add_library_part', name: 'eye_cartoon', id: 'eye', attach: { to: 'head', offset: [0.42, 0.2] }, size: 1 },

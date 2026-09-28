@@ -243,7 +243,7 @@ Small armored knight ~1.1 m holding a sword. Metal via palette; the sword is sep
 - parts: `body`, `belt`, `tabard`, `head`, `visor`, `plume`, `arm`, `hand`, `leg`, `boot`, `blade`, `guard`
 - roles: body, head, arm, leg
 - palette: `steel` #b8bec8, `steel_dark` #7d8490, `cloth` #b83a33, `leather` #6b3f26, `gold` #d9a441, `eye` #1f1d22
-- clips: `walk` (walk), `idle` (idle)
+- clips: `walk` (walk), `idle` (idle), `attack` (attack)
 
 ## Wizard — `wizard`
 
@@ -327,7 +327,7 @@ Chubby baby dragon ~0.7 m long with bat wings, horns, a spiked tail and a belly.
 - parts: `body`, `belly`, `neck`, `head`, `snout`, `leg_front`, `leg_back`, `tail`, `eye`, `eye_pupil`, `eye_shine`, `horn`, `wing`, `spike`
 - roles: body, head, leg, tail, eye, wing
 - palette: `scale` #4aa36a, `belly` #f1d98a, `horn` #f2e6c8, `wing` #2f7a4b
-- clips: `walk` (walk), `fly` (fly)
+- clips: `walk` (walk), `fly` (fly), `attack` (attack)
 
 ## Chicken — `chicken`
 
