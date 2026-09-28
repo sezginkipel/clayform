@@ -45,6 +45,8 @@ const EDGES: [number, number][] = [
 export interface NetsOptions {
 	/** Field normal at a world point. When given, vertices are placed by dual contouring. */
 	normal?: (x: number, y: number, z: number) => V3;
+	/** A grid already sampled (e.g. by workers with sampleSlab), with its dense-block flags. */
+	vals?: { vals: Float32Array; dense: Uint8Array; samples: number };
 }
 
 /** Solve (AᵀA + λI) y = Aᵀb for a symmetric 3×3 matrix (Cramer). */
@@ -61,18 +63,48 @@ function solve3(a: number[], b: number[], lambda: number): V3 {
 	];
 }
 
-export function surfaceNets(f: MeshField, cell: number, opts: NetsOptions = {}): RawMesh {
-	const nx = Math.max(2, Math.ceil((f.max[0] - f.min[0]) / cell) + 1);
-	const ny = Math.max(2, Math.ceil((f.max[1] - f.min[1]) / cell) + 1);
-	const nz = Math.max(2, Math.ceil((f.max[2] - f.min[2]) / cell) + 1);
-	const [ox, oy, oz] = f.min;
-	const vals = new Float32Array(nx * ny * nz);
-	const at = (i: number, j: number, k: number) => i + nx * (j + ny * k);
-	let samples = 0;
+export function gridDims(f: MeshField, cell: number): [number, number, number] {
+	return [
+		Math.max(2, Math.ceil((f.max[0] - f.min[0]) / cell) + 1),
+		Math.max(2, Math.ceil((f.max[1] - f.min[1]) / cell) + 1),
+		Math.max(2, Math.ceil((f.max[2] - f.min[2]) / cell) + 1)
+	];
+}
 
+/** Number of block layers along Z (the unit work is split by). */
+export function blockLayers(f: MeshField, cell: number): number {
+	return Math.ceil(gridDims(f, cell)[2] / B);
+}
+
+/**
+ * Sample the grid for block layers [l0, l1) along Z. Returns just that slab
+ * (grid rows l0·B … min(l1·B, nz) − 1), so several workers can fill one grid.
+ */
+export interface Slab {
+	vals: Float32Array;
+	/** 1 for blocks sampled point by point (only those can hold the surface) */
+	dense: Uint8Array;
+	k0: number;
+	samples: number;
+}
+
+export function blockCounts(f: MeshField, cell: number): [number, number, number] {
+	const [nx, ny, nz] = gridDims(f, cell);
+	return [Math.ceil(nx / B), Math.ceil(ny / B), Math.ceil(nz / B)];
+}
+
+export function sampleSlab(f: MeshField, cell: number, l0: number, l1: number): Slab {
+	const [nx, ny, nz] = gridDims(f, cell);
+	const k0 = l0 * B, k1 = Math.min(l1 * B, nz);
+	const [ox, oy, oz] = f.min;
+	const vals = new Float32Array(nx * ny * Math.max(0, k1 - k0));
+	const [bx, by] = blockCounts(f, cell);
+	const dense = new Uint8Array(bx * by * Math.max(0, l1 - l0));
+	const at = (i: number, j: number, k: number) => i + nx * (j + ny * (k - k0));
+	let samples = 0;
 	const margin = cell * 2;
 	const halfDiag = (Math.sqrt(3) * B * cell) / 2;
-	for (let bk = 0; bk < nz; bk += B)
+	for (let bk = k0; bk < k1; bk += B)
 		for (let bj = 0; bj < ny; bj += B)
 			for (let bi = 0; bi < nx; bi += B) {
 				const ie = Math.min(bi + B, nx), je = Math.min(bj + B, ny), ke = Math.min(bk + B, nz);
@@ -98,18 +130,61 @@ export function surfaceNets(f: MeshField, cell: number, opts: NetsOptions = {}):
 						for (let i = bi; i < ie; i++) vals[at(i, j, k)] = ev(ox + i * cell, y, z);
 					}
 				}
+				dense[bi / B + bx * (bj / B + by * (bk / B - l0))] = 1;
 				samples += (ie - bi) * (je - bj) * (ke - bk);
 			}
+	return { vals, dense, k0, samples };
+}
 
-	// vertices: one per cell with a sign change
+export function surfaceNets(f: MeshField, cell: number, opts: NetsOptions = {}): RawMesh {
+	let vals: Float32Array, samples: number, dense: Uint8Array;
+	if (opts.vals) {
+		({ vals, dense, samples } = opts.vals);
+	} else {
+		({ vals, dense, samples } = sampleSlab(f, cell, 0, blockLayers(f, cell)));
+	}
+	const blocks = denseBlocks(dense);
+	const placed = placeVertices(f, cell, vals, blocks, opts.normal);
+	return { ...connect(f, cell, vals, blocks, placed), samples };
+}
+
+/**
+ * Blocks filled with one value are at least two cells from any surface, so no
+ * sign change can start there: only densely sampled blocks are visited.
+ */
+export function denseBlocks(dense: Uint8Array): number[] {
+	const out: number[] = [];
+	for (let q = 0; q < dense.length; q++) if (dense[q]) out.push(q);
+	return out;
+}
+
+export interface Placed {
+	/** grid cell index of each vertex */
+	cells: Int32Array;
+	positions: Float32Array;
+}
+
+/**
+ * One vertex per cell with a sign change, for the cells of `blocks`. Each block
+ * is independent, so ranges of blocks can be placed in parallel and
+ * concatenated in order.
+ */
+export function placeVertices(f: MeshField, cell: number, vals: Float32Array, blocks: number[], normal?: (x: number, y: number, z: number) => V3): Placed {
+	const opts = { normal };
+	const [nx, ny, nz] = gridDims(f, cell);
+	const [ox, oy, oz] = f.min;
+	const at = (i: number, j: number, k: number) => i + nx * (j + ny * k);
+	const [bx, by] = blockCounts(f, cell);
 	const cx = nx - 1, cy = ny - 1, cz = nz - 1;
-	const cellVert = new Int32Array(cx * cy * cz).fill(-1);
+	const cellsOut: number[] = [];
 	const pos: number[] = [];
 	const corner = new Float32Array(8);
 	const crossings: number[] = [];
-	for (let k = 0; k < cz; k++)
-		for (let j = 0; j < cy; j++)
-			for (let i = 0; i < cx; i++) {
+	for (const q of blocks) {
+		const bi = (q % bx) * B, bj = (Math.floor(q / bx) % by) * B, bk = Math.floor(q / (bx * by)) * B;
+		for (let k = bk; k < Math.min(bk + B, cz); k++)
+		for (let j = bj; j < Math.min(bj + B, cy); j++)
+			for (let i = bi; i < Math.min(bi + B, cx); i++) {
 				let mask = 0;
 				for (let c = 0; c < 8; c++) {
 					const v = vals[at(i + (c & 1), j + ((c >> 1) & 1), k + ((c >> 2) & 1))];
@@ -149,10 +224,22 @@ export function surfaceNets(f: MeshField, cell: number, opts: NetsOptions = {}):
 					vy = Math.min(1, Math.max(0, vy + y[1]));
 					vz = Math.min(1, Math.max(0, vz + y[2]));
 				}
-				cellVert[i + cx * (j + cy * k)] = pos.length / 3;
+				cellsOut.push(i + cx * (j + cy * k));
 				pos.push(ox + (i + vx) * cell, oy + (j + vy) * cell, oz + (k + vz) * cell);
 			}
+	}
+	return { cells: Int32Array.from(cellsOut), positions: new Float32Array(pos) };
+}
 
+/** Quads between the placed vertices, one per grid edge with a sign change. */
+export function connect(f: MeshField, cell: number, vals: Float32Array, blocks: number[], placed: Placed): { positions: Float32Array; indices: Uint32Array; cell: number } {
+	const [nx, ny, nz] = gridDims(f, cell);
+	const at = (i: number, j: number, k: number) => i + nx * (j + ny * k);
+	const [bx, by] = blockCounts(f, cell);
+	const cx = nx - 1, cy = ny - 1, cz = nz - 1;
+	const cellVert = new Int32Array(cx * cy * cz).fill(-1);
+	for (let n = 0; n < placed.cells.length; n++) cellVert[placed.cells[n]] = n;
+	const pos = placed.positions;
 	const idx: number[] = [];
 	const cv = (i: number, j: number, k: number) => cellVert[i + cx * (j + cy * k)];
 	const quad = (a: number, b: number, c: number, d: number, flip: boolean) => {
@@ -164,9 +251,11 @@ export function surfaceNets(f: MeshField, cell: number, opts: NetsOptions = {}):
 		else idx.push(a, b, d, b, c, d);
 	};
 
-	for (let k = 0; k < nz; k++)
-		for (let j = 0; j < ny; j++)
-			for (let i = 0; i < nx; i++) {
+	for (const q of blocks) {
+		const bi = (q % bx) * B, bj = (Math.floor(q / bx) % by) * B, bk = Math.floor(q / (bx * by)) * B;
+		for (let k = bk; k < Math.min(bk + B, nz); k++)
+		for (let j = bj; j < Math.min(bj + B, ny); j++)
+			for (let i = bi; i < Math.min(bi + B, nx); i++) {
 				const v0 = vals[at(i, j, k)];
 				const in0 = v0 < 0;
 				// X edge
@@ -185,6 +274,7 @@ export function surfaceNets(f: MeshField, cell: number, opts: NetsOptions = {}):
 					if (in0 !== in1) quad(cv(i - 1, j - 1, k), cv(i, j - 1, k), cv(i, j, k), cv(i - 1, j, k), !in0);
 				}
 			}
+	}
 
-	return { positions: new Float32Array(pos), indices: new Uint32Array(idx), cell, samples };
+	return { positions: pos, indices: new Uint32Array(idx), cell };
 }

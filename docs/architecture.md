@@ -36,7 +36,15 @@ scene JSON ──► schema (zod, strict) ──► compile ──► build ─�
   without allocation or closures. Making them so sped up field evaluation 13×.
 - A block's list of relevant primitives and sculpts is cached, together with a local Lipschitz
   bound (surface detail and sculpts raise it), so only the shell near the surface is sampled densely.
-- Typical builds take 0.1–0.7 s on a laptop at resolution 96–120. A four-view render takes about 1 s.
+- Vertex placement and faces only visit blocks that were sampled point by point: a block filled
+  with one value is at least two cells from any surface, so no sign change can start there.
+- `buildSceneAsync` (used by the MCP server and the CLI) splits the grid into slabs and the vertex
+  attributes into ranges across worker threads (`src/core/parallel.ts`, `worker.ts`). Workers rebuild the same
+  deterministic context, so the result is identical to `buildScene` vertex for vertex, and a test
+  checks it. The grid is shared memory. The house template at resolution 160 takes 3.2 s serially and
+  1.3 s on a warm pool on a 12-core machine. A single cold CLI run gains little, since starting workers costs about the same.
+  `CLAYFORM_WORKERS=0` turns it off, and if workers cannot start the build falls back to serial.
+- Typical builds take 0.1–1 s on a laptop at resolution 96–120. A four-view render takes about 1 s.
 
 ## Design choices
 

@@ -51,99 +51,149 @@ export interface BuildOptions {
 
 const BLOCK = 4;
 
-export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
-	const t0 = performance.now();
-	const source = scene;
-	scene = applyStyle(scene);
+export interface BodyContext {
+	min: V3;
+	max: V3;
+	field: MeshField;
+	near: (x: number, y: number, z: number, reach: number) => { prims: Int32Array; sculpts: Int32Array; lip: number } | null;
+	gradNear: (x: number, y: number, z: number) => V3;
+}
+
+/** Everything a build (or a worker doing part of one) needs, derived deterministically from the scene. */
+export interface BuildContext {
+	source: Scene;
+	scene: Scene;
+	c: Compiled;
+	res: number;
+	wantAo: boolean;
+	sharp: boolean;
+	cell: number;
+	ext: number;
+	body: BodyContext | null;
+}
+
+export function prepareContext(source: Scene, opts: BuildOptions = {}): BuildContext {
+	const scene = applyStyle(source);
 	const c = compile(scene);
 	const res = opts.resolution ?? scene.settings?.resolution ?? 96;
 	const wantAo = opts.ao ?? scene.settings?.ao ?? true;
 	const sharp = (opts.edges ?? scene.settings?.edges) === 'sharp';
-	const meshes: MeshData[] = [];
-	let samples = 0;
-
 	const adds = c.body.filter((p) => p.op === 'add');
 	const visible = c.prims.filter((p) => !p.hidden && p.op === 'add');
 	const all = worldAabb(visible.length ? visible : c.prims);
 	const ext = all ? Math.max(all.max[0] - all.min[0], all.max[1] - all.min[1], all.max[2] - all.min[2]) : 1;
-	let cell = Math.max(ext, 1e-3) / res;
+	const cell = Math.max(ext, 1e-3) / res;
+	return { source, scene, c, res, wantAo, sharp, cell, ext, body: adds.length ? prepareBody(c, cell, adds) : null };
+}
 
-	/* -------------------------------------------------------- fused body */
-	if (adds.length) {
-		const box = worldAabb(adds)!;
-		const maxK = Math.max(0, ...c.body.map((p) => p.k));
-		const pad = c.grow + maxK + cell * 3;
-		const min: V3 = [box.min[0] - pad, box.min[1] - pad, box.min[2] - pad];
-		const max: V3 = [box.max[0] + pad, box.max[1] + pad, box.max[2] + pad];
-		type List = { prims: Int32Array; sculpts: Int32Array; lip: number };
-		const lists = new Map<string, List | null>();
-		const listFor = (bmin: V3, bmax: V3): List | null => {
-			const key = `${bmin[0].toFixed(5)},${bmin[1].toFixed(5)},${bmin[2].toFixed(5)},${bmax[0].toFixed(5)}`;
-			if (lists.has(key)) return lists.get(key)!;
-			const pr: number[] = [];
-			let hasAdd = false;
-			let empty = false;
-			let lip = 1;
-			c.body.forEach((p, i) => {
-				const e = p.k * 1.5 + c.grow;
-				const touches =
-					p.min[0] - e <= bmax[0] && p.max[0] + e >= bmin[0] &&
-					p.min[1] - e <= bmax[1] && p.max[1] + e >= bmin[1] &&
-					p.min[2] - e <= bmax[2] && p.max[2] + e >= bmin[2];
-				if (p.op === 'intersect') {
-					if (!touches) empty = true;
-					pr.push(i);
-				} else if (touches) {
-					pr.push(i);
-					if (p.op === 'add') hasAdd = true;
-				} else return;
-				if (p.detail) lip = Math.max(lip, 1 + (5.5 * p.detail.amount) / p.detail.scale);
+function prepareBody(c: Compiled, cell: number, adds: Prim[]): BodyContext {
+	const box = worldAabb(adds)!;
+	const maxK = Math.max(0, ...c.body.map((p) => p.k));
+	const pad = c.grow + maxK + cell * 3;
+	const min: V3 = [box.min[0] - pad, box.min[1] - pad, box.min[2] - pad];
+	const max: V3 = [box.max[0] + pad, box.max[1] + pad, box.max[2] + pad];
+	type List = { prims: Int32Array; sculpts: Int32Array; lip: number };
+	const lists = new Map<string, List | null>();
+	const listFor = (bmin: V3, bmax: V3): List | null => {
+		const key = `${bmin[0].toFixed(5)},${bmin[1].toFixed(5)},${bmin[2].toFixed(5)},${bmax[0].toFixed(5)}`;
+		if (lists.has(key)) return lists.get(key)!;
+		const pr: number[] = [];
+		let hasAdd = false;
+		let empty = false;
+		let lip = 1;
+		c.body.forEach((p, i) => {
+			const e = p.k * 1.5 + c.grow;
+			const touches =
+				p.min[0] - e <= bmax[0] && p.max[0] + e >= bmin[0] &&
+				p.min[1] - e <= bmax[1] && p.max[1] + e >= bmin[1] &&
+				p.min[2] - e <= bmax[2] && p.max[2] + e >= bmin[2];
+			if (p.op === 'intersect') {
+				if (!touches) empty = true;
+				pr.push(i);
+			} else if (touches) {
+				pr.push(i);
+				if (p.op === 'add') hasAdd = true;
+			} else return;
+			if (p.detail) lip = Math.max(lip, 1 + (5.5 * p.detail.amount) / p.detail.scale);
+		});
+		let r: List | null = null;
+		if (hasAdd && !empty) {
+			const sc: number[] = [];
+			c.sculpts.forEach((s, i) => {
+				if (s.global || (s.min[0] <= bmax[0] && s.max[0] >= bmin[0] && s.min[1] <= bmax[1] && s.max[1] >= bmin[1] && s.min[2] <= bmax[2] && s.max[2] >= bmin[2])) {
+					sc.push(i);
+					lip = Math.max(lip, s.lip);
+				}
 			});
-			let r: List | null = null;
-			if (hasAdd && !empty) {
-				const sc: number[] = [];
-				c.sculpts.forEach((s, i) => {
-					if (s.global || (s.min[0] <= bmax[0] && s.max[0] >= bmin[0] && s.min[1] <= bmax[1] && s.max[1] >= bmin[1] && s.min[2] <= bmax[2] && s.max[2] >= bmin[2])) {
-						sc.push(i);
-						lip = Math.max(lip, s.lip);
-					}
-				});
-				r = { prims: Int32Array.from(pr), sculpts: Int32Array.from(sc), lip: lip * 1.25 };
-			}
-			lists.set(key, r);
-			return r;
-		};
-		const field: MeshField = {
-			min, max, lip: 8,
-			block(bmin, bmax) {
-				const l = listFor(bmin, bmax);
-				if (!l) return null;
-				return { ev: (x, y, z) => bodyField(c, x, y, z, l.prims, l.sculpts), lip: l.lip };
-			}
-		};
-		// neighbourhood lists for a point's block, grown by `reach` (cached per block)
-		const blockSize = BLOCK * cell;
-		const near = (x: number, y: number, z: number, reach: number): List | null => {
-			const bi = Math.floor((x - min[0]) / blockSize), bj = Math.floor((y - min[1]) / blockSize), bk = Math.floor((z - min[2]) / blockSize);
-			const bmin: V3 = [min[0] + bi * blockSize - reach, min[1] + bj * blockSize - reach, min[2] + bk * blockSize - reach];
-			const bmax: V3 = [min[0] + (bi + 1) * blockSize + reach, min[1] + (bj + 1) * blockSize + reach, min[2] + (bk + 1) * blockSize + reach];
-			return listFor(bmin, bmax);
-		};
-		const gradNear = (x: number, y: number, z: number): V3 => {
-			const l = near(x, y, z, cell * 3);
-			const e = cell * 0.25;
-			const g = (px: number, py: number, pz: number) => (l ? bodyField(c, px, py, pz, l.prims, l.sculpts) : bodyField(c, px, py, pz));
-			const gx = g(x + e, y, z) - g(x - e, y, z), gy = g(x, y + e, z) - g(x, y - e, z), gz = g(x, y, z + e) - g(x, y, z - e);
-			const n = Math.hypot(gx, gy, gz) || 1;
-			return [gx / n, gy / n, gz / n];
-		};
-		const raw = surfaceNets(field, cell, sharp ? { normal: gradNear } : {});
+			r = { prims: Int32Array.from(pr), sculpts: Int32Array.from(sc), lip: lip * 1.25 };
+		}
+		lists.set(key, r);
+		return r;
+	};
+	const field: MeshField = {
+		min, max, lip: 8,
+		block(bmin, bmax) {
+			const l = listFor(bmin, bmax);
+			if (!l) return null;
+			return { ev: (x, y, z) => bodyField(c, x, y, z, l.prims, l.sculpts), lip: l.lip };
+		}
+	};
+	// neighbourhood lists for a point's block, grown by `reach` (cached per block)
+	const blockSize = BLOCK * cell;
+	// hot path (called per vertex and per crossing): numeric keys, no string building
+	const nearCache = new Map<number, List | null>();
+	const reaches: number[] = [];
+	const near = (x: number, y: number, z: number, reach: number): List | null => {
+		const bi = Math.floor((x - min[0]) / blockSize), bj = Math.floor((y - min[1]) / blockSize), bk = Math.floor((z - min[2]) / blockSize);
+		let ri = reaches.indexOf(reach);
+		if (ri < 0) ri = reaches.push(reach) - 1;
+		const key = ((((bk + 2) * 4096 + (bj + 2)) * 4096 + (bi + 2)) * 8) + ri;
+		const hit = nearCache.get(key);
+		if (hit !== undefined) return hit;
+		const bmin: V3 = [min[0] + bi * blockSize - reach, min[1] + bj * blockSize - reach, min[2] + bk * blockSize - reach];
+		const bmax: V3 = [min[0] + (bi + 1) * blockSize + reach, min[1] + (bj + 1) * blockSize + reach, min[2] + (bk + 1) * blockSize + reach];
+		const l = listFor(bmin, bmax);
+		nearCache.set(key, l);
+		return l;
+	};
+	const gradNear = (x: number, y: number, z: number): V3 => {
+		const l = near(x, y, z, cell * 3);
+		const e = cell * 0.25;
+		const g = (px: number, py: number, pz: number) => (l ? bodyField(c, px, py, pz, l.prims, l.sculpts) : bodyField(c, px, py, pz));
+		const gx = g(x + e, y, z) - g(x - e, y, z), gy = g(x, y + e, z) - g(x, y - e, z), gz = g(x, y, z + e) - g(x, y, z - e);
+		const n = Math.hypot(gx, gy, gz) || 1;
+		return [gx / n, gy / n, gz / n];
+	};
+	return { min, max, field, near, gradNear };
+}
+
+export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
+	const t0 = performance.now();
+	const ctx = prepareContext(scene, opts);
+	let body: MeshData | null = null;
+	let samples = 0;
+	if (ctx.body) {
+		const raw = surfaceNets(ctx.body.field, ctx.cell, ctx.sharp ? { normal: ctx.body.gradNear } : {});
 		samples += raw.samples;
-
-		const body = attributes('body', raw.positions, raw.indices, cell, c, c.body, -1, near, (x, y, z) => bodyField(c, x, y, z), wantAo, ext);
-		meshes.push(sharp ? splitSharp(body, 40) : body);
+		body = bodyMesh(ctx, raw.positions, raw.indices, vertexAttributes(ctx, raw.positions, 0, raw.positions.length / 3));
 	}
+	return finishBuild(ctx, body, samples, t0);
+}
 
+/** Per-vertex attributes of the fused body for vertices [v0, v1) (a worker does a slice). */
+export function vertexAttributes(ctx: BuildContext, positions: Float32Array, v0: number, v1: number): VertexAttrs {
+	const b = ctx.body!;
+	return computeAttributes(positions, v0, v1, ctx.cell, ctx.c, ctx.c.body, -1, b.near, (x, y, z) => bodyField(ctx.c, x, y, z), ctx.wantAo, ctx.ext);
+}
+
+export function bodyMesh(ctx: BuildContext, positions: Float32Array, indices: Uint32Array, at: VertexAttrs): MeshData {
+	const m = assemble('body', positions, indices, at, -1);
+	return ctx.sharp ? splitSharp(m, 40) : m;
+}
+
+export function finishBuild(ctx: BuildContext, body: MeshData | null, samples: number, t0: number): Build {
+	const { c, res, cell, sharp, wantAo, scene, source } = ctx;
+	const meshes: MeshData[] = body ? [body] : [];
 	/* ---------------------------------------------------- separate parts */
 	for (const pr of c.prims) {
 		if (!pr.separate || pr.hidden || pr.op !== 'add') continue;
@@ -165,7 +215,7 @@ export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
 		};
 		const raw = surfaceNets(field, sc, sharp ? { normal: gradSep } : {});
 		samples += raw.samples;
-		const m = attributes(pr.id, raw.positions, raw.indices, sc, c, [pr], pr.index, () => null, f, wantAo, e);
+		const m = assemble(pr.id, raw.positions, raw.indices, computeAttributes(raw.positions, 0, raw.positions.length / 3, sc, c, [pr], pr.index, () => null, f, wantAo, e), pr.index);
 		meshes.push(sharp ? splitSharp(m, 40) : m);
 	}
 
@@ -204,10 +254,19 @@ export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
 	};
 }
 
-function attributes(
-	name: string,
+export interface VertexAttrs {
+	normals: Float32Array;
+	colors: Float32Array;
+	ao: Float32Array;
+	vertPrim: Int32Array;
+	joints: Uint16Array;
+	weights: Float32Array;
+}
+
+function computeAttributes(
 	positions: Float32Array,
-	indices: Uint32Array,
+	v0: number,
+	v1: number,
 	cell: number,
 	c: Compiled,
 	cands: Prim[],
@@ -216,8 +275,8 @@ function attributes(
 	field: Eval,
 	wantAo: boolean,
 	size: number
-): MeshData {
-	const n = positions.length / 3;
+): VertexAttrs {
+	const n = v1 - v0;
 	const normals = new Float32Array(n * 3);
 	const colors = new Float32Array(n * 3);
 	const ao = new Float32Array(n).fill(1);
@@ -231,7 +290,8 @@ function attributes(
 	const ids: number[] = [];
 
 	for (let v = 0; v < n; v++) {
-		const x = positions[v * 3], y = positions[v * 3 + 1], z = positions[v * 3 + 2];
+		const src = v0 + v;
+		const x = positions[src * 3], y = positions[src * 3 + 1], z = positions[src * 3 + 2];
 		const l = rigid < 0 ? near(x, y, z, cell * 3) : null;
 		const nf: Eval = l ? (px, py, pz) => bodyField(c, px, py, pz, l.prims, l.sculpts) : field;
 		let nx = nf(x + h, y, z) - nf(x - h, y, z);
@@ -325,12 +385,16 @@ function attributes(
 		}
 	}
 
+	return { normals, colors, ao, vertPrim, joints, weights };
+}
+
+function assemble(name: string, positions: Float32Array, indices: Uint32Array, at: VertexAttrs, prim: number): MeshData {
 	const triPrim = new Int32Array(indices.length / 3);
 	for (let t = 0; t < triPrim.length; t++) {
-		const a = vertPrim[indices[t * 3]], b = vertPrim[indices[t * 3 + 1]], cc = vertPrim[indices[t * 3 + 2]];
+		const a = at.vertPrim[indices[t * 3]], b = at.vertPrim[indices[t * 3 + 1]], cc = at.vertPrim[indices[t * 3 + 2]];
 		triPrim[t] = a === b || a === cc ? a : b === cc ? b : a;
 	}
-	return { name, positions, normals, colors, ao, indices, triPrim, vertPrim, joints, weights, prim: rigid };
+	return { name, positions, indices, triPrim, prim, ...at };
 }
 
 /** World position after the ground offset. */

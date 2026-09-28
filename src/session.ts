@@ -6,6 +6,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { buildScene, type Build } from './core/build.js';
+import { buildSceneAsync } from './core/parallel.js';
 import { compile } from './core/compile.js';
 import { applyOps } from './core/ops.js';
 import { emptyScene, parseScene, type Scene } from './core/schema.js';
@@ -158,6 +159,18 @@ export class Workspace {
 	private save(id: string) {
 		const e = this.scenes.get(id);
 		if (e) writeFileSync(this.path(id), JSON.stringify(e.scene, null, 2));
+	}
+
+	/** Like build(), on worker threads when that helps (same result). */
+	async buildAsync(id: string, resolution?: number): Promise<Build> {
+		const scene = this.get(id);
+		const key = JSON.stringify(scene) + '|' + (resolution ?? '');
+		const hit = this.cache.find((c) => c.key === key);
+		if (hit) return hit.build;
+		const build = await buildSceneAsync(scene, { resolution });
+		this.cache.unshift({ key, build });
+		this.cache.length = Math.min(this.cache.length, 4);
+		return build;
 	}
 
 	build(id: string, resolution?: number): Build {

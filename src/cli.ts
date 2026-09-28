@@ -16,6 +16,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { buildRig, critiqueClip, sampleClip } from './anim/rig.js';
 import { buildScene } from './core/build.js';
+import { buildSceneAsync } from './core/parallel.js';
 import { parseScene, type Scene } from './core/schema.js';
 import { simplifyBuild } from './core/simplify.js';
 import { critique, formatReport } from './critic/critics.js';
@@ -91,7 +92,7 @@ async function main() {
 		}
 		case 'render': {
 			const scene = loadScene(pos[0]);
-			const b = buildScene(scene);
+			const b = await buildSceneAsync(scene);
 			const views = flags.get('views')?.split(',').map((v) => v.trim()) as View[] | undefined;
 			const sheet = renderSheet(b, { views, mode: (flags.get('mode') as RenderMode) ?? 'shaded', size: Number(flags.get('size') ?? 384) });
 			const out = flags.get('out') ?? `${stem(pos[0]!)}.png`;
@@ -103,7 +104,7 @@ async function main() {
 		}
 		case 'inspect': {
 			const scene = loadScene(pos[0]);
-			const b = buildScene(scene);
+			const b = await buildSceneAsync(scene);
 			console.log(describe(scene) + '\n\n' + formatReport(critique(b)));
 			if (scene.clips?.length) {
 				const rig = buildRig(b);
@@ -118,7 +119,7 @@ async function main() {
 		}
 		case 'export': {
 			const scene = loadScene(pos[0]);
-			const full = buildScene(scene);
+			const full = await buildSceneAsync(scene);
 			const tri = flags.get('triangles');
 			const b = await simplifyBuild(full, tri ? { triangles: Number(tri) } : {});
 			const out = flags.get('out') ?? `${stem(pos[0]!)}.glb`;
@@ -135,7 +136,7 @@ async function main() {
 			const scene = loadScene(pos[0]);
 			const clip = pos[1] ?? scene.clips?.[0]?.id;
 			if (!clip) die('this scene has no clips');
-			const b = buildScene(scene);
+			const b = await buildSceneAsync(scene);
 			const s = renderClipStrip(b, clip!, { view: (flags.get('view') as View) ?? 'left', frames: Number(flags.get('frames') ?? 6) });
 			const out = flags.get('out') ?? `${stem(pos[0]!)}-${clip}.png`;
 			writeFileSync(out, s.png);
@@ -163,7 +164,7 @@ async function main() {
 			const make = async () => {
 				if (isGlb) return readGlb(target!);
 				const scene = loadSceneSoft(target!);
-				const b = await simplifyBuild(buildScene(scene), flags.get('triangles') ? { triangles: Number(flags.get('triangles')) } : {});
+				const b = await simplifyBuild(await buildSceneAsync(scene), flags.get('triangles') ? { triangles: Number(flags.get('triangles')) } : {});
 				return exportGlb(b).glb;
 			};
 			const model = { glb: await make(), version: 1, error: '' };
@@ -195,7 +196,7 @@ async function main() {
 			const { fitReference } = await import('./reference.js');
 			const scene = loadScene(pos[0]);
 			if (!pos[1]) die('usage: clayform compare <scene|template> <reference.png> [--view front] [-o overlay.png]');
-			const fit = fitReference(buildScene(scene), pos[1], (flags.get('view') as View) ?? 'front');
+			const fit = fitReference(await buildSceneAsync(scene), pos[1], (flags.get('view') as View) ?? 'front');
 			const out = flags.get('out') ?? `${stem(pos[0]!)}-fit.png`;
 			writeFileSync(out, fit.overlay);
 			console.log(`IoU ${fit.iou.toFixed(2)} · overlay ${out}\n${fit.advice.map((a) => '• ' + a).join('\n')}`);

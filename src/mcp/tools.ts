@@ -22,7 +22,7 @@ import { findLibraryParts } from '../library/parts.js';
 import { critiqueLayout, describeLayout, mergeBuilds } from '../layout.js';
 import type { Build } from '../core/build.js';
 import { resolveAsset } from '../core/meshload.js';
-import { buildScene } from '../core/build.js';
+import { buildSceneAsync } from '../core/parallel.js';
 import { renderTiles } from '../render/views.js';
 import { drawText } from '../render/font.js';
 import { encodePng } from '../render/png.js';
@@ -63,7 +63,7 @@ export class Tools {
 	constructor(readonly ws: Workspace) {}
 
 	guide(args: { topic?: string }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			if (args.topic === 'schema') return { content: [text(JSON.stringify(z.toJSONSchema(Scene), null, 1))] };
 			return { content: [text(GUIDE)] };
 		});
@@ -76,15 +76,15 @@ export class Tools {
 	}
 
 	newScene(args: { name: string; template?: string }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const { id, scene } = this.ws.create(args.name, args.template);
-			const b = this.ws.build(id);
+			const b = await this.ws.buildAsync(id);
 			return { content: [text(`created scene "${id}"${args.template ? ` from template ${args.template}` : ''}\n\n${describe(scene)}\n\n${formatReport(critique(b))}`)] };
 		});
 	}
 
 	listParts(args: { query?: string }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const list = findLibraryParts(args.query);
 			if (!list.length) return { content: [text(`no library part matches "${args.query}" — try eye, ear, tail, wheel, window, hat`)] };
 			return { content: [text(list.map((p) => `${p.name} — ${p.description} [${p.tags.join(', ')}] · usual side: ${p.side}${p.pair ? ' · mirrored pair' : ''}`).join('\n') + '\n\nAdd one with edit: {"op":"add_library_part","name":"eye_cartoon","id":"eye","attach":{"to":"head","offset":[0.4,0.1]}}')] };
@@ -92,25 +92,25 @@ export class Tools {
 	}
 
 	listScenes(): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const l = this.ws.list();
 			return { content: [text(l.length ? l.map((s) => `${s.id} — "${s.name}" · ${s.parts} parts · ${s.clips} clips · ${s.effects} effects`).join('\n') : 'no scenes yet — call new_scene (list_templates shows starting points)')] };
 		});
 	}
 
 	getScene(args: { scene: string; format?: 'summary' | 'json' }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const s = this.ws.get(args.scene);
 			return { content: [text(args.format === 'json' ? JSON.stringify(s, null, 1) : describe(s))] };
 		});
 	}
 
 	edit(args: { scene: string; ops: unknown[]; render?: boolean }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			if (!Array.isArray(args.ops) || !args.ops.length) return fail('ops must be a non-empty array — see guide (Edit ops)');
 			const r = this.ws.edit(args.scene, args.ops);
 			if (!r.ok) return fail(`nothing was changed:\n${r.error}`);
-			const b = this.ws.build(args.scene);
+			const b = await this.ws.buildAsync(args.scene);
 			const rep = critique(b);
 			const out: Content[] = [text(`${r.changes.join('\n')}\n\n${formatReport(rep)}`)];
 			if (args.render) out.push(png(renderSheet(b, { views: ['three_quarter'], size: 384 }).png));
@@ -119,9 +119,9 @@ export class Tools {
 	}
 
 	render(args: { scene: string; views?: unknown; mode?: RenderMode; size?: number; compare?: 'previous' }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			if (args.compare === 'previous') return this.compare(args);
-			const b = this.ws.build(args.scene);
+			const b = await this.ws.buildAsync(args.scene);
 			const views = parseViews(args.views);
 			const size = Math.max(128, Math.min(768, Math.round(args.size ?? (views && views.length === 1 ? 512 : 384))));
 			const sheet = renderSheet(b, { views, mode: args.mode ?? 'shaded', size });
@@ -133,11 +133,11 @@ export class Tools {
 		});
 	}
 
-	private compare(args: { scene: string; views?: unknown; mode?: RenderMode; size?: number }): Result {
+	private async compare(args: { scene: string; views?: unknown; mode?: RenderMode; size?: number }): Promise<Result> {
 		const before = this.ws.previous(args.scene);
 		if (!before) return fail('there is no earlier version to compare with — this scene has not been edited yet (or the edits were undone)');
 		const after = this.ws.get(args.scene);
-		const bb = buildScene(before), ba = this.ws.build(args.scene);
+		const bb = await buildSceneAsync(before), ba = await this.ws.buildAsync(args.scene);
 		const views = parseViews(args.views) ?? ['front', 'three_quarter'];
 		const size = Math.max(128, Math.min(512, Math.round(args.size ?? 300)));
 		// one camera for both states
@@ -160,9 +160,9 @@ export class Tools {
 	}
 
 	measure(args: { scene: string; queries: unknown[] }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			if (!Array.isArray(args.queries) || !args.queries.length) return fail('queries must be a non-empty array, e.g. [{"between":["hand","leg"]}]');
-			const b = this.ws.build(args.scene);
+			const b = await this.ws.buildAsync(args.scene);
 			const cm = (m: number) => `${(m * 100).toFixed(1)} cm`;
 			const lines = args.queries.map((q, i) => {
 				const Q = q as Record<string, any>;
@@ -197,9 +197,9 @@ export class Tools {
 	}
 
 	compareReference(args: { scene: string; image: string; view?: unknown }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const view = parseViews([args.view ?? 'front'])![0];
-			const b = this.ws.build(args.scene);
+			const b = await this.ws.buildAsync(args.scene);
 			const fit = fitReference(b, resolveAsset(args.image), view);
 			return {
 				content: [
@@ -211,7 +211,7 @@ export class Tools {
 	}
 
 	setLayout(args: { name: string; layout: unknown }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const { id } = this.ws.setLayout(args.name, args.layout);
 			const lb = this.ws.buildLayout(id);
 			const issues = critiqueLayout(lb);
@@ -220,7 +220,7 @@ export class Tools {
 	}
 
 	renderLayout(args: { layout: string; views?: unknown; size?: number; mode?: 'shaded' | 'parts' | 'clay' }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const lb = this.ws.buildLayout(args.layout);
 			const views = parseViews(args.views) ?? ['top', 'three_quarter'];
 			const sheet = renderSheet(lb.merged, { views, size: Math.max(128, Math.min(768, args.size ?? 420)), mode: args.mode ?? 'shaded' });
@@ -250,9 +250,9 @@ export class Tools {
 	}
 
 	inspect(args: { scene: string }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const scene = this.ws.get(args.scene);
-			const b = this.ws.build(args.scene);
+			const b = await this.ws.buildAsync(args.scene);
 			const rep = critique(b);
 			const lines = [describe(scene), '', formatReport(rep)];
 			const clips = scene.clips ?? [];
@@ -268,8 +268,8 @@ export class Tools {
 	}
 
 	previewMotion(args: { scene: string; clip: string; frames?: number; view?: unknown }): Promise<Result> {
-		return wrap(() => {
-			const b = this.ws.build(args.scene);
+		return wrap(async () => {
+			const b = await this.ws.buildAsync(args.scene);
 			const view = parseViews(args.view ? [args.view] : undefined)?.[0];
 			const s = renderClipStrip(b, args.clip, { frames: args.frames ?? 6, view: view ?? 'left', size: 220 });
 			const m = critiqueClip(b, s.rig, s.clip, b.compiled.scene.settings?.ground !== 'none');
@@ -284,7 +284,7 @@ export class Tools {
 	}
 
 	previewEffect(args: { scene: string; effect: string }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const scene = this.ws.get(args.scene);
 			const e = scene.effects?.find((x) => x.id === args.effect);
 			if (!e) return fail(`no effect "${args.effect}"${scene.effects?.length ? ` — effects: ${scene.effects.map((x) => x.id).join(', ')}` : ' — add one with add_effect'}`);
@@ -313,7 +313,7 @@ export class Tools {
 				writeFileSync(meta, JSON.stringify(fb.meta, null, 2));
 				return { content: [text(`wrote ${out} (${fb.meta.columns}×${fb.meta.rows} tiles of ${fb.meta.tile}px) and ${meta}`)] };
 			}
-			const full = this.ws.build(args.scene);
+			const full = await this.ws.buildAsync(args.scene);
 			const b = await simplifyBuild(full, args.triangles ? { triangles: args.triangles } : {});
 			if (fmt === 'obj') {
 				writeFileSync(out, exportObj(b));
@@ -331,7 +331,7 @@ export class Tools {
 	}
 
 	history(args: { scene: string; action: 'undo' | 'redo' | 'snapshot' | 'restore' | 'list'; label?: string }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const id = args.scene;
 			switch (args.action) {
 				case 'undo':
@@ -352,7 +352,7 @@ export class Tools {
 	}
 
 	importScene(args: { path?: string; json?: unknown; name?: string }): Promise<Result> {
-		return wrap(() => {
+		return wrap(async () => {
 			const r = args.path ? this.ws.load(args.path) : this.ws.import(typeof args.json === 'string' ? JSON.parse(args.json) : args.json, args.name);
 			return { content: [text(`imported as "${r.id}"\n\n${describe(r.scene)}`)] };
 		});

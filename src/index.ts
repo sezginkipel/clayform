@@ -4,6 +4,7 @@ export * from './core/schema.js';
 export { applyOps, Op, merge } from './core/ops.js';
 export { compile, type Compiled, type Prim } from './core/compile.js';
 export { buildScene, type Build, type BuildOptions, type MeshData } from './core/build.js';
+export { buildSceneAsync } from './core/parallel.js';
 export { simplifyBuild, type SimplifyOptions } from './core/simplify.js';
 export { critique, formatReport, type Issue, type Report } from './critic/critics.js';
 export { renderSheet, renderTiles, cameraFor, VIEWS, DEFAULT_VIEWS, type View, type Sheet, type SheetOptions } from './render/views.js';
