@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — 2026-09-28
+
+- **Sharp edges.** `settings.edges: "sharp"` places vertices by dual contouring, so box corners land
+  on the corner (0.05 cells away instead of 1.15) and normals split where faces meet steeply. The
+  house, chest, sword, robot and crystal templates use it. (#22)
+- **`measure` tool.** Surface distance between parts (negative when they overlap, even when
+  they blend together), part size and bounds, ratios, and which part is at a pixel of a render. (#23)
+- **`render { compare: "previous" }`** shows the state before the last edit above the current one,
+  with one camera, and lists what changed. (#24)
+
 ## 0.2.0 — 2026-09-28
 
 - **Imported meshes as parts.** A `mesh` shape loads a `.glb` or `.obj`, bakes it into a distance

@@ -25,35 +25,50 @@ Progress is tracked in [GitHub milestones](https://github.com/sezginkipel/clayfo
 - `clayform view --watch`: live reload while an agent edits
 - Full docs, a generated scene reference and JSON Schema, and docs examples run as tests
 
-## v0.3 — Prove it
+## ✅ v0.3 — Crisp and measurable (released 2026-09-28)
 
-The goal is to know, not guess, how good the output is, and to break the stylized-only ceiling.
+- Sharp edges with dual contouring and split normals for hard-surface models
+- `measure`: surface distances and overlap depth, sizes, ratios, the part at a pixel
+- Before/after renders of the last edit
 
-- **Run and publish the bench**: 20 prompts, Clayform vs. Blender MCP, blind judging ([protocol](bench/README.md))
-- **Image/text → 3D hand-off** (opt-in, bring your own key or run an open-weight model): generate
-  an organic base, import it as a mesh part, and let the agent edit, rig and check it
-- **Faster iteration**: build in worker threads, rebuild only the parts that changed
+## v0.4 — Match a reference
 
-## v0.4 — Rigs that move like bodies
+Give the agent a concept sketch or photo and it can move a model toward it with a number that
+goes up and concrete directions, without a generative model.
 
-- Two-segment limbs with two-bone IK and foot planting on uneven ground
-- Clip blending and transitions (idle → walk → run)
-- Secondary motion (tails, ears, antennas follow through)
-- More clip types: attack, jump, sit, turn, die
+- **Silhouette fit per view**: IoU against a reference image, with an overlay of what is missing and what is extra
+- **Where and how it differs**: band-by-band width comparison turned into sentences that name the part
+- **Image/text → 3D hand-off** (opt-in): generate an organic base and import it as a mesh part
 
-## v0.5 — Kits and worlds
+## v0.5 — Readable in a game
 
-- Multi-object scenes: instances and layouts (a dungeon kit, a street, a forest patch)
-- A reusable part library beyond templates, searchable by tag
-- 40+ templates across characters, creatures, vehicles, buildings and props
-- LOD chains and collision hulls in the export
-- Tested import guides for Godot, Unity and Unreal
+Models that read well at the size a player sees them.
 
-## v0.6 — Textures
+- Neighbouring parts whose colors blend together (contrast and hue difference after shading)
+- Details too small for the game camera (render at the target on-screen height)
+- Silhouettes that look the same from every side
 
-- UV unwrapping (xatlas) and baked base color / ORM textures
-- A texture atlas shared across a kit
-- Export options for toon and flat-shaded styles
+## v0.6 — Asset packs for engines
+
+A consistent set of assets that imports into Godot, Unity or Unreal without hand fixes.
+
+- Style sheets shared across a pack (palette, bevel, scale reference), with critics for drift
+- Multi-object scenes and layouts, a searchable part library, more templates
+- LOD chains and collision hulls; tested import guides per engine
+- Faster rebuilds (worker threads, incremental builds)
+
+## v0.7 — Textures
+
+- UV unwrapping and baked textures, a shared atlas, toon and flat-shaded export options
+
+## v0.8 — Motion that holds up
+
+- Two-bone IK and foot planting, clip blending, secondary motion, more clip types
+
+## v0.9 — Proven
+
+- The bench against Blender MCP, run and published
+- An unattended agent eval (`clayform eval`) that runs the bench prompts with a real model and catches regressions in CI
 
 ## v1.0 — Stable
 

@@ -177,8 +177,9 @@ const glb = exportGlb(await simplifyBuild(build, { triangles: 4000 })).glb;
 
 ## Roadmap
 
-Next up: publishing the bench, image-to-3D hand-off and faster rebuilds (v0.3), IK and foot
-planting (v0.4), kits and multi-object scenes (v0.5), textures (v0.6). See
+Next up: fitting a model to a reference image (v0.4), readability critics for game cameras
+(v0.5), style-consistent asset packs for engines (v0.6), textures (v0.7), IK and foot planting
+(v0.8), and a published bench (v0.9). See
 [ROADMAP.md](ROADMAP.md), [milestones](https://github.com/sezginkipel/clayform/milestones) and the
 [changelog](CHANGELOG.md).
 
