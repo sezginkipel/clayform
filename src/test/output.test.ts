@@ -88,11 +88,18 @@ describe('animation', () => {
 		const leg = rig.byPrim.get(b.compiled.byId.get('leg')!.index)!;
 		const twin = rig.byPrim.get(b.compiled.byId.get('leg.m')!.index)!;
 		const q = (j: number, f: number) => clip.channels.find((c) => c.joint === j)!.rot[f];
-		const f = Math.round(clip.times.length / 4);
-		expect(Math.sign(q(leg, f)[0])).toBe(-Math.sign(q(twin, f)[0]));
+		// at the start of the cycle one foot is forward and the other back
+		expect(Math.sign(q(leg, 0)[0])).toBe(-Math.sign(q(twin, 0)[0]));
 		const m = critiqueClip(b, rig, clip, true);
 		expect(m.issues).toEqual([]);
 		expect(m.minY).toBeGreaterThan(-b.cell * 2);
+		// planted feet: both legs touch down and do not slide
+		expect(clip.speed).toBeGreaterThan(0.05);
+		expect(m.feet.length).toBe(2);
+		for (const foot of m.feet) {
+			expect(foot.contacts).toBeGreaterThan(4);
+			expect(foot.slide).toBeLessThan(b.cell);
+		}
 	});
 
 	it('posing moves vertices and rest pose does not', () => {

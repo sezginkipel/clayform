@@ -16,10 +16,11 @@ import type { Build, MeshData } from '../core/build.js';
 import { primDist } from '../core/compile.js';
 import type { Prim } from '../core/compile.js';
 import {
-	DEG, add, m4Compose, m4Invert, m4Mul, norm, qAxisAngle, qEuler, qFromTo, qIdentity, qMul, qSlerp, sub,
+	DEG, add, m4Compose, qConj, m4Invert, m4Mul, m4Point, norm, qAxisAngle, qEuler, qFromTo, qIdentity, qMul, qRotate, qSlerp, sub,
 	type M4, type Quat, type V3
 } from '../core/math.js';
 import type { Clip } from '../core/schema.js';
+import { footPath, rigidLeg, twoBoneLeg } from './ik.js';
 
 export interface Joint {
 	name: string;
@@ -70,6 +71,76 @@ export interface SampledClip {
 	fps: number;
 	times: number[];
 	channels: Channel[];
+	/** walking speed the feet are planted for, m/s (move the character at this speed to avoid sliding) */
+	speed: number;
+	/** the clip is a cycle (last frame = first frame) */
+	loop: boolean;
+}
+
+/** A leg from the hip down: its top joint, optional knee, and the lowest point of everything it carries. */
+export interface LegChain {
+	top: number;
+	lower: number;
+	/** prims that ride on the leg (boots, paws …) */
+	subtree: Set<number>;
+	/** non-leg parts on the last segment, kept flat on the ground */
+	flat: number[];
+	hip: V3;
+	knee: V3 | null;
+	foot: V3;
+	/** where the flat foot hinges (its pivot), or the foot point when there is none; IK aims this */
+	ankle: V3;
+}
+
+/** Legs that stand on the ground at rest, ready for foot planting. */
+export function legChains(b: Build, rig: Rig): LegChain[] {
+	const prims = b.compiled.prims;
+	const legs = prims.filter((p) => p.role === 'leg' && !p.hidden);
+	const legSet = new Set(legs.map((p) => p.index));
+	const out: LegChain[] = [];
+	for (const top of legs.filter((p) => !legSet.has(p.parent))) {
+		const subtree = new Set([top.index]);
+		for (const p of prims) if (p.parent >= 0 && subtree.has(p.parent)) subtree.add(p.index);
+		const lower = prims.find((p) => p.parent === top.index && p.role === 'leg');
+		const last = lower ?? top;
+		const foot = lowestPoint(b, subtree);
+		if (!foot) continue;
+		const hip = add(top.pivot, b.offset);
+		// only legs that reach the ground and hang down from their hip (a flat flipper-foot rocks, it does not step)
+		const drop = hip[1] - foot[1], reachZ = Math.abs(foot[2] - hip[2]);
+		if (foot[1] > b.cell * 2 || drop < b.cell * 3 || drop < reachZ * 1.5 || drop < rig.height * 0.08) continue;
+		const flat = prims.filter((p) => p.parent === last.index && p.role !== 'leg');
+		out.push({
+			top: rig.byPrim.get(top.index)!,
+			lower: lower ? rig.byPrim.get(lower.index)! : -1,
+			subtree,
+			flat: flat.map((p) => rig.byPrim.get(p.index)!),
+			hip,
+			knee: lower ? add(lower.pivot, b.offset) : null,
+			foot,
+			// a flat foot keeps its shape: its sole moves with its hinge, so the hinge is what the leg reaches for
+			ankle: flat.length ? add(flat[0].pivot, b.offset) : foot
+		});
+	}
+	return out;
+}
+
+/** Lowest rest point of a set of prims (grounded): the mean of the vertices within half a cell of the bottom. */
+function lowestPoint(b: Build, set: Set<number>): V3 | null {
+	let minY = Infinity;
+	for (const m of b.meshes)
+		for (let v = 0; v < m.positions.length / 3; v++)
+			if (set.has(m.prim >= 0 ? m.prim : m.vertPrim[v]) && m.positions[v * 3 + 1] < minY) minY = m.positions[v * 3 + 1];
+	if (!isFinite(minY)) return null;
+	let x = 0, z = 0, n = 0;
+	for (const m of b.meshes)
+		for (let v = 0; v < m.positions.length / 3; v++)
+			if (set.has(m.prim >= 0 ? m.prim : m.vertPrim[v]) && m.positions[v * 3 + 1] < minY + b.cell * 0.5) {
+				x += m.positions[v * 3];
+				z += m.positions[v * 3 + 2];
+				n++;
+			}
+	return [x / n, minY, z / n];
 }
 
 type Motion = { rot?: V3 | Quat; off?: V3; scl?: V3 };
@@ -87,7 +158,7 @@ function sideOf(p: Prim, cx: number) {
 }
 
 /** Procedural drivers per joint for one clip. */
-function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<number, Driver> } {
+function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<number, Driver>; speed: number } {
 	const prims = b.compiled.prims;
 	const amp = clip.amplitude ?? 1;
 	const period = (PERIOD[clip.type] ?? 1) / (clip.speed ?? 1);
@@ -103,6 +174,14 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 		const prev = drive.get(joint);
 		drive.set(joint, prev ? (t) => combine(prev(t), f(t)) : f);
 	};
+	/** World matrix of a joint at time t from the drivers set so far. */
+	const worldAt = (joint: number, t: number): M4 => {
+		const jt = rig.joints[joint];
+		const m = drive.get(joint)?.(t) ?? {};
+		const local = m4Compose(add(jt.local, m.off ?? [0, 0, 0]), toQuat(m.rot), m.scl ?? [1, 1, 1]);
+		return jt.parent >= 0 ? m4Mul(worldAt(jt.parent, t), local) : local;
+	};
+	let speed = 0;
 
 	// legs: only the top joint of a chain swings; lower segments bend
 	const legs = role('leg');
@@ -150,23 +229,115 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 	};
 	const spinRotors = (rps: number) => rotors.forEach((p) => set(j(p), (t) => ({ rot: qAxisAngle(spinAxis(p), TAU * rps * t) })));
 
+	/**
+	 * Treadmill gait: each foot slides back on the ground during stance and
+	 * swings forward in the air; the root drops just enough for the stance feet
+	 * to reach, and legs are solved to their targets (two-bone IK, or a rigid
+	 * swing with an outward lift to clear the ground). Returns the speed.
+	 */
+	const plantFeet = (chains: LegChain[], run: boolean): number => {
+		const X: V3 = [1, 0, 0], Z: V3 = [0, 0, 1];
+		const duty = run ? 0.38 : chains.length >= 6 ? 0.5 : 0.6;
+		const two = chains.every((c) => c.lower >= 0);
+		const info = chains.map((c) => {
+			const rest = sub(c.ankle, c.hip);
+			const rigidLen = Math.hypot(rest[1], rest[2]);
+			const k = c.knee ? sub(c.knee, c.hip) : null;
+			const twoLen = k ? Math.hypot(k[1], k[2]) + Math.hypot(c.ankle[1] - c.knee![1], c.ankle[2] - c.knee![2]) : rigidLen;
+			// a rigid leg shortens its vertical reach as it swings: keep the step where that stays under a cell
+			const maxReach = k ? (run ? 0.9 : 0.6) * twoLen : Math.min(0.5 * rigidLen, 2 * rigidLen * Math.sin(Math.sqrt((1.6 * b.cell) / rigidLen)));
+			return { c, rest, rigidLen, twoLen, maxReach, side: c.hip[0] >= cx ? 1 : -1, phase: phaseOf(prims[rig.joints[c.top].prim]) };
+		});
+		const reach = Math.min(...info.map((i) => i.maxReach)) * amp;
+		const lift = (k: (typeof info)[number]) => (two ? (run ? 0.2 : 0.12) * k.twoLen * amp : b.cell * 3);
+		const rootRot = (t: number) => qEuler([run && two ? 6 * amp : 0, 0, (two ? 2 : 1) * amp * w(t)]);
+		// how far the root must drop for this leg's foot to reach its target at dz
+		const dropFor = (k: (typeof info)[number], rot: Quat, dz: number) => {
+			const hip = qRotate(rot, k.c.hip);
+			const ty = k.c.ankle[1], tz = k.c.ankle[2] + dz;
+			const L = two ? 0.97 * k.twoLen : k.rigidLen;
+			const d = hip[1] - ty - Math.sqrt(Math.max(0, L * L - (hip[2] - tz) ** 2));
+			return two ? Math.max(0, d) : d;
+		};
+		set(R, (t) => {
+			const rot = rootRot(t);
+			let drop = -Infinity;
+			for (const k of info) {
+				const fp = footPath(t / period + k.phase, duty, reach, 0);
+				if (fp.stance) drop = Math.max(drop, dropFor(k, rot, fp.dz));
+			}
+			if (drop === -Infinity) {
+				// flight (run): a short ballistic arc between the push-off and the landing
+				const q = (((t / period) % 0.5) + 0.5) % 0.5;
+				const u = (q - duty) / (0.5 - duty);
+				const tf = (0.5 - duty) * period;
+				const d0 = Math.max(...info.map((k) => dropFor(k, rot, -reach / 2)));
+				const d1 = Math.max(...info.map((k) => dropFor(k, rot, reach / 2)));
+				return { rot, off: [0, -(d0 + (d1 - d0) * u) + ((9.81 * tf * tf) / 8) * Math.sin(Math.PI * u), 0] };
+			}
+			return { rot, off: [0, -drop, 0] };
+		});
+		for (const k of info) {
+			const c = k.c;
+			const jt = rig.joints[c.top];
+			let memoT = NaN, memo = { hip: qIdentity(), knee: 0, flat: qIdentity() };
+			const solve = (t: number) => {
+				if (t === memoT) return memo;
+				const fp = footPath(t / period + k.phase, duty, reach, lift(k));
+				const target: V3 = [c.ankle[0], c.ankle[1] + fp.dy, c.ankle[2] + fp.dz];
+				const Wp = worldAt(jt.parent, t);
+				const tp = sub(m4Point(m4Invert(Wp), target), jt.local);
+				if (c.knee) {
+					const kn = sub(c.knee, c.hip);
+					const s2 = twoBoneLeg([kn[1], kn[2]], [k.rest[1], k.rest[2]], [tp[1], tp[2]]);
+					memo = { hip: qAxisAngle(X, s2.hip), knee: s2.knee, flat: qAxisAngle(X, -(s2.hip + s2.knee)) };
+				} else {
+					const a = rigidLeg([k.rest[1], k.rest[2]], [tp[1], tp[2]]);
+					let q = qAxisAngle(X, a);
+					if (!fp.stance) {
+						// a rigid leg cannot shorten: tip it outward until the foot clears its swing height
+						const footY = m4Point(Wp, add(jt.local, qRotate(q, k.rest)))[1];
+						const need = target[1] - footY;
+						if (need > 0) {
+							const phi = Math.min(30 * DEG, Math.acos(Math.max(-1, Math.min(1, 1 - need / Math.hypot(...k.rest)))));
+							q = qMul(qAxisAngle(Z, k.side * phi), q);
+						}
+					}
+					// the sole stays level: the foot undoes the leg's whole turn, sideways lift included
+					memo = { hip: q, knee: 0, flat: qConj(q) };
+				}
+				memoT = t;
+				return memo;
+			};
+			drive.set(c.top, (t) => ({ rot: solve(t).hip }));
+			if (c.lower >= 0) drive.set(c.lower, (t) => ({ rot: qAxisAngle(X, solve(t).knee) }));
+			for (const f of c.flat) set(f, (t) => ({ rot: solve(t).flat }));
+		}
+		return reach / (duty * period);
+	};
+
 	switch (clip.type) {
 		case 'walk':
 		case 'run': {
 			const run = clip.type === 'run';
 			const legA = (run ? 42 : 26) * amp, armA = (run ? 38 : 20) * amp;
-			topLegs.forEach((p) => set(j(p), (t) => ({ rot: [legA * w(t, phaseOf(p)), 0, 0] })));
-			lowerLegs.forEach((p) => set(j(p), (t) => ({ rot: [Math.max(0, -w(t, phaseOf(p) - 0.15)) * legA * 1.2, 0, 0] })));
+			const chains = legChains(b, rig);
+			const planted = chains.length > 0 && chains.length === topLegs.length;
 			topArms.forEach((p) => {
 				const same = topLegs.find((l) => sideOf(l, cx) === sideOf(p, cx));
 				const ph = same ? phaseOf(same) + 0.5 : sideOf(p, cx) > 0 ? 0.5 : 0;
 				set(j(p), (t) => ({ rot: [armA * w(t, ph), 0, 0] }));
 			});
-			const bob = h * (run ? 0.04 : 0.018) * amp;
-			set(R, (t) => ({
-				off: [0, bob * (0.5 - 0.5 * Math.cos(TAU * 2 * (t / period))), 0],
-				rot: qEuler([run ? 7 * amp : 0, 0, 2.5 * amp * w(t)])
-			}));
+			if (planted) speed = plantFeet(chains, run);
+			else {
+				topLegs.forEach((p) => set(j(p), (t) => ({ rot: [legA * w(t, phaseOf(p)), 0, 0] })));
+				lowerLegs.forEach((p) => set(j(p), (t) => ({ rot: [Math.max(0, -w(t, phaseOf(p) - 0.15)) * legA * 1.2, 0, 0] })));
+				const bob = h * (run ? 0.04 : 0.018) * amp;
+				set(R, (t) => ({
+					off: [0, bob * (0.5 - 0.5 * Math.cos(TAU * 2 * (t / period))), 0],
+					rot: qEuler([run ? 7 * amp : 0, 0, 2.5 * amp * w(t)])
+				}));
+			}
 			heads.forEach((p) => set(j(p), (t) => ({ rot: [-2.5 * amp * Math.cos(TAU * 2 * (t / period)), 3 * amp * w(t), 0] })));
 			tails.forEach((p) => set(j(p), (t) => ({ rot: [0, 14 * amp * w(t, 0.25), 0] })));
 			wings.forEach((p) => set(j(p), (t) => ({ rot: [0, 0, sideOf(p, cx) * 6 * amp * w(t, 0.25)] })));
@@ -252,7 +423,7 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 		case 'keyframes':
 			break;
 	}
-	return { period, drive };
+	return { period, drive, speed };
 }
 
 function toQuat(r: V3 | Quat | undefined): Quat {
@@ -286,7 +457,7 @@ function trackDriver(keys: NonNullable<Clip['tracks']>[number]['keys']): Driver 
 }
 
 export function sampleClip(b: Build, rig: Rig, clip: Clip): SampledClip {
-	const { period, drive } = drivers(b, rig, clip);
+	const { period, drive, speed } = drivers(b, rig, clip);
 	let duration = clip.duration ?? period;
 	for (const tr of clip.tracks ?? []) {
 		const p = b.compiled.byId.get(tr.part);
@@ -307,14 +478,18 @@ export function sampleClip(b: Build, rig: Rig, clip: Clip): SampledClip {
 		let hasScl = false;
 		for (const t of times) {
 			const m = f(t);
-			rot.push(toQuat(m.rot));
+			let q = toQuat(m.rot);
+			// q and -q are the same turn, but interpolating across a sign flip spins the long way
+			const prev = rot[rot.length - 1];
+			if (prev && prev[0] * q[0] + prev[1] * q[1] + prev[2] * q[2] + prev[3] * q[3] < 0) q = [-q[0], -q[1], -q[2], -q[3]];
+			rot.push(q);
 			off.push(m.off ?? [0, 0, 0]);
 			scl.push(m.scl ?? [1, 1, 1]);
 			if (m.scl) hasScl = true;
 		}
 		channels.push({ joint, rot, off, scl: hasScl ? scl : null });
 	}
-	return { id: clip.id, type: clip.type, duration, fps, times, channels };
+	return { id: clip.id, type: clip.type, duration, fps, times, channels, speed, loop: clip.type !== 'keyframes' };
 }
 
 /* ------------------------------------------------------------------ pose */
@@ -379,16 +554,61 @@ export interface MotionReport {
 	maxY: number;
 	lowest: { t: number; y: number };
 	issues: string[];
+	/** per planted leg: the worst slide while its foot is on the ground, and the highest it floats during stance (m) */
+	feet: { leg: string; slide: number; contacts: number }[];
 }
+
+/** A leg's lowest point in a posed frame, and the vertices (mesh, index) within half a cell of it: the sole touching the ground. */
+function footSole(meshes: MeshData[], c: LegChain, cell: number): { y: number; sole: [number, number][] } {
+	let minY = Infinity;
+	meshes.forEach((m) => {
+		for (let v = 0; v < m.positions.length / 3; v++)
+			if (c.subtree.has(m.prim >= 0 ? m.prim : m.vertPrim[v]) && m.positions[v * 3 + 1] < minY) minY = m.positions[v * 3 + 1];
+	});
+	const sole: [number, number][] = [];
+	meshes.forEach((m, mi) => {
+		for (let v = 0; v < m.positions.length / 3; v++)
+			if (c.subtree.has(m.prim >= 0 ? m.prim : m.vertPrim[v]) && m.positions[v * 3 + 1] < minY + cell * 0.5) sole.push([mi, v]);
+	});
+	return { y: minY, sole };
+}
+
+const meanXZ = (meshes: MeshData[], sole: [number, number][]): [number, number] => {
+	let x = 0, z = 0;
+	for (const [mi, v] of sole) {
+		x += meshes[mi].positions[v * 3];
+		z += meshes[mi].positions[v * 3 + 2];
+	}
+	return [x / Math.max(1, sole.length), z / Math.max(1, sole.length)];
+};
 
 export function critiqueClip(b: Build, rig: Rig, clip: SampledClip, standing: boolean): MotionReport {
 	const samples = Math.min(clip.times.length, 16);
 	let minY = Infinity, maxY = -Infinity, lowest = { t: 0, y: Infinity };
 	const issues: string[] = [];
 	const perFrameMin: number[] = [];
+	const chains = standing ? legChains(b, rig) : [];
+	// foot sliding: while a foot is down, the same sole points should move back at exactly the clip's speed
+	const slip = chains.map(() => ({ worst: 0, contacts: 0, run: null as null | { t: number; sole: [number, number][]; at: [number, number] } }));
 	for (let s = 0; s < samples; s++) {
 		const f = Math.round((s / Math.max(1, samples - 1)) * (clip.times.length - 1));
 		const meshes = poseMeshes(b, rig, clip, f);
+		chains.forEach((c, i) => {
+			const st = slip[i];
+			const fs = footSole(meshes, c, b.cell);
+			// down = within half a cell of the ground (a swinging foot skims higher than that)
+			if (fs.y >= b.cell * 0.5) {
+				st.run = null;
+				return;
+			}
+			st.contacts++;
+			if (!st.run) {
+				st.run = { t: clip.times[f], sole: fs.sole, at: meanXZ(meshes, fs.sole) };
+				return;
+			}
+			const [x, z] = meanXZ(meshes, st.run.sole);
+			st.worst = Math.max(st.worst, Math.hypot(x - st.run.at[0], z - st.run.at[1] + clip.speed * (clip.times[f] - st.run.t)));
+		});
 		let fm = Infinity;
 		for (const m of meshes)
 			for (let i = 0; i < m.positions.length; i += 3) {
@@ -407,7 +627,13 @@ export function critiqueClip(b: Build, rig: Rig, clip: SampledClip, standing: bo
 	if (standing && ['walk', 'run', 'idle', 'wave', 'nod'].includes(clip.type) && Math.min(...perFrameMin) > tol * 2)
 		issues.push(`${clip.id}: never touches the ground during the clip`);
 	if (!clip.channels.length) issues.push(`${clip.id}: no parts move — give parts roles (leg, arm, tail, wing, wheel, rotor, head) or add keyframe tracks`);
-	return { minY, maxY, lowest, issues };
+
+	const feet = chains.map((c, i) => ({ leg: rig.joints[c.top].name, slide: slip[i].worst, contacts: slip[i].contacts }));
+	const slipTol = Math.max(b.cell * 2, 0.01);
+	for (const f of feet)
+		if (f.slide > slipTol)
+			issues.push(`${clip.id}: ${f.leg} slides ${(f.slide * 100).toFixed(1)} cm while its foot is on the ground${clip.speed ? ` (the clip walks at ${clip.speed.toFixed(2)} m/s)` : ''} — plant the foot or lower the amplitude`);
+	return { minY, maxY, lowest, issues, feet };
 }
 
 /**

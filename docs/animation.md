@@ -20,7 +20,7 @@ axes". A leg swing is `rotation: [30, 0, 0]`.
 
 | role | walk / run | idle | hop | fly | swim | drive / hover |
 |---|---|---|---|---|---|---|
-| `leg` | swings by gait; lower segments bend | still | tucks | tucks back | — | — |
+| `leg` | steps with planted feet (IK) | still | tucks | tucks back | — | — |
 | `arm` | counter-swings its side's leg | sways | lifts | — | paddles | — |
 | `head` | nods and turns a little | looks around | — | — | counter-turns | — |
 | `tail` | sways | sways | flicks | trails | beats | — |
@@ -31,6 +31,28 @@ axes". A leg swing is `rotation: [30, 0, 0]`.
 
 Gait comes from the legs: two legs alternate, four legs trot diagonally, and six or more move
 in alternating tripods.
+
+### Planted feet
+
+`walk` and `run` plant the feet. Each foot slides back along the ground while it is down
+(60% of a walk cycle, 38% of a run, so a run has short flights) and swings forward through the
+air. The legs are solved to those targets:
+
+- A leg with a knee (a `leg` part whose child is also a `leg`) uses two-bone IK. The knee bends
+  the way it bends at rest, or forward when the leg is straight.
+- A rigid leg turns at the hip. The root drops just enough for the stance feet to reach the
+  ground, the steps stay short enough that the drop is under a cell, and the swinging leg tips
+  outward a little to clear the ground.
+- Parts on the bottom of a leg (a boot or a paw) stay level, so the sole does not rock.
+
+The feet move back at the clip's speed, which is exported as the animation's `extras.speed`
+(m/s). Move the character at that speed and the feet stay put in the world. A leg is planted
+only if it hangs down from its hip and reaches the ground at rest. Flat flipper-feet and legs
+in a sitting pose keep the simple swing.
+
+Measured on the templates' walks (biped, robot, knight, quadruped, cat, chicken, baby dragon):
+a foot moves at most 0.3 cm between touchdown and lift-off, except the baby dragon's right front
+foot at 1.1 cm. A cell is 0.4–1.1 cm on those models.
 
 ## Clip types
 
@@ -66,10 +88,11 @@ Mirror twins are addressed as `<id>.m`.
 
 `preview_motion` renders frames from one camera framed on the whole clip, so movement reads as
 movement. `inspect` samples every clip and reports parts passing through each other, sinking
-below the ground, never touching it, or not moving at all. The `fused-unrelated` critic warns
+below the ground, never touching it, feet sliding while they are down (the same sole points are
+followed from touchdown to lift-off, against the clip's speed), or not moving at all. The `fused-unrelated` critic warns
 *before* you animate when two moving parts are fused.
 
 ## Limits
 
-No IK, physics or retargeting yet. Limbs are rigid segments that bend at joints. A walk cycle does
-not plant its feet on uneven ground. See the [roadmap](../ROADMAP.md).
+No physics or retargeting. Feet are planted on flat ground only, and arms do not use IK. See the
+[roadmap](../ROADMAP.md).

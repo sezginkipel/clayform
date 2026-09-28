@@ -369,7 +369,8 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 					channels.push({ sampler: samplers.length - 1, target: { node, path: 'scale' } });
 				}
 			}
-			if (channels.length) animations.push({ name: clip.id, samplers, channels });
+			// planted gaits walk at a set speed: an engine moving the character at it keeps the feet from sliding
+			if (channels.length) animations.push({ name: clip.id, samplers, channels, ...(clip.speed > 0 ? { extras: { speed: Number(clip.speed.toFixed(4)) } } : {}) });
 		}
 	}
 

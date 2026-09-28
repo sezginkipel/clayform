@@ -31,7 +31,7 @@ export const knight = S('Knight', {
 		{ id: 'hand', shape: { type: 'sphere', radius: 0.058 }, attach: { to: 'arm', side: 'bottom', embed: 0.55 }, blend: 0.02, material: { color: 'steel_dark', metalness: 0.8, roughness: 0.4 } },
 		{ id: 'leg', role: 'leg', shape: { type: 'capsule', length: 0.34, radius: 0.07 }, attach: { to: 'body', side: 'bottom', offset: [0.48, 0], embed: 0.62 }, blend: 0.03, mirror: true, material: { color: 'steel_dark', metalness: 0.8, roughness: 0.4 } },
 		{ id: 'boot', shape: { type: 'ellipsoid', radii: [0.07, 0.05, 0.11] }, attach: { to: 'leg', side: 'bottom', embed: 0.55 }, position: [0, 0, 0.035], blend: 0.02, material: { color: 'steel', metalness: 0.85, roughness: 0.35 } },
-		{ id: 'blade', shape: { type: 'box', size: [0.05, 0.38, 0.012], rounding: 0.004 }, position: [0.295, 0.33, 0], separate: true, material: { color: 'steel', metalness: 1, roughness: 0.2 } },
+		{ id: 'blade', shape: { type: 'box', size: [0.05, 0.38, 0.012], rounding: 0.004 }, parent: 'hand', position: [0, -0.09, 0], separate: true, material: { color: 'steel', metalness: 1, roughness: 0.2 } },
 		{ id: 'guard', shape: { type: 'box', size: [0.04, 0.03, 0.17], rounding: 0.012 }, attach: { to: 'blade', side: 'top', embed: 0.5 }, separate: true, material: { color: 'gold', metalness: 1, roughness: 0.3 } }
 	],
 	clips: [{ id: 'walk', type: 'walk' }, { id: 'idle', type: 'idle' }]
@@ -48,7 +48,7 @@ export const wizard = withLibrary(
 			{ id: 'beard', shape: { type: 'cone', height: 0.15, radius: 0.09, rounding: 0.03 }, attach: { to: 'head', side: 'front', offset: [0, -0.4], embed: 0.8 }, rotation: [180, 0, 0], position: [0, -0.02, 0], blend: 0.02, material: { color: 'beard', roughness: 0.95 } },
 			{ id: 'sleeve', role: 'arm', shape: { type: 'capsule', length: 0.32, radius: 0.06 }, attach: { to: 'robe', side: 'left', offset: [0, 0.75], embed: 0.8 }, rotation: [0, 0, 32], position: [0.09, -0.1, 0], pivot: 'top', blend: 0.03, mirror: true, material: { color: 'robe', roughness: 0.85 } },
 			{ id: 'hand', shape: { type: 'sphere', radius: 0.045 }, attach: { to: 'sleeve', side: 'bottom', embed: 0.3 }, blend: 0.01, material: { color: 'skin' } },
-			{ id: 'staff', shape: { type: 'cylinder', height: 1.25, radius: 0.02, rounding: 0.01 }, position: [0.29, 0.63, 0], separate: true, material: { color: 'staff', roughness: 0.8 } },
+			{ id: 'staff', shape: { type: 'cylinder', height: 1.25, radius: 0.02, rounding: 0.01 }, parent: 'hand', position: [0.005, 0.205, 0], separate: true, material: { color: 'staff', roughness: 0.8 } },
 			{ id: 'orb', shape: { type: 'sphere', radius: 0.055 }, attach: { to: 'staff', side: 'top', embed: 0.3 }, separate: true, material: { color: 'gem', emissive: 'gem', emissiveStrength: 1.4, roughness: 0.1 } }
 		],
 		effects: [{ id: 'sparkle', preset: 'magic', count: 50, emitter: { shape: 'sphere', size: 0.08 }, at: { to: 'orb', side: 'center' } }],
