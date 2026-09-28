@@ -37,7 +37,7 @@ Progress is tracked in [GitHub milestones](https://github.com/sezginkipel/clayfo
 - ✅ **Where and how it differs** (0.4.0): band-by-band width comparison turned into sentences that name the part
 - **Image/text → 3D hand-off** (opt-in): generate an organic base and import it as a mesh part. Needs a provider and a key, so it is not started
 
-## v0.5 — Readable in a game
+## ✅ v0.5 — Readable in a game (released 2026-09-28)
 
 Models that read well at the size a player sees them.
 

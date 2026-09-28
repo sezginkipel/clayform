@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 — 2026-09-28
+
+- **Colors that blend together.** Touching parts whose colors are meant to differ but are too close
+  to tell apart (ΔE under 10 and contrast under 1.35:1) are flagged with a lighter or darker
+  suggestion. Parts given the same base color on purpose are left alone. (#27)
+- **Details too small for the game camera.** Set `settings.screenHeight` to how tall the model is
+  on screen, and parts that cover fewer than 4 pixels at that size are named. (#28)
+- **Same silhouette from every side.** Creatures whose front and side silhouettes overlap by more
+  than 93% get a warning with ideas for side-view depth. Round props get a note instead. (#29)
+- Updated to TypeScript 7, Vitest 5 and the current CI actions.
+
 ## 0.4.0 — 2026-09-28
 
 - **`compare_reference`** fits the model to a sketch or photo seen from one side. The reference is
