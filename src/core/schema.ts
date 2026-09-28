@@ -12,6 +12,7 @@
  */
 
 import { z } from 'zod';
+import { Style, loadStyle } from './style.js';
 
 export const FORMAT = 'clayform/1';
 
@@ -247,6 +248,8 @@ export const Scene = z.strictObject({
 	name: z.string().min(1).max(80).describe('display name; also the glTF scene name'),
 	notes: z.string().max(2000).optional().describe('free text: intent, constraints, what to keep'),
 	palette: z.record(z.string().regex(/^[a-z][a-z0-9_]{0,31}$/, 'palette names are lowercase snake_case, like skin or wood_dark'), z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'palette colors are #rrggbb or #rgb')).optional().describe('named colors parts refer to — recolor a model by editing one entry'),
+	style: z.union([z.string().min(1).max(500), Style]).optional().describe('a style sheet (path to a .style.json, or inline) shared across a pack: palette, material defaults, settings, height ranges'),
+	category: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/).optional().describe('what this is in the pack (character, prop, building …); the style checks its height'),
 	settings: Settings.optional().describe('see Settings'),
 	parts: z.array(Part).max(256).describe('in blend order: blend and carve act on the parts listed before them'),
 	sculpts: z.array(Sculpt).max(128).optional().describe('applied in order after all parts'),
@@ -273,7 +276,15 @@ export function integrity(s: Scene): Problem[] {
 		if (ids.has(p.id)) out.push({ path: `parts[${i}].id`, message: `duplicate part id "${p.id}"` });
 		ids.add(p.id);
 	});
-	const colorOk = (c: string | undefined) => !c || c.startsWith('#') || (s.palette && c in s.palette);
+	let stylePalette: Record<string, string> = {};
+	if (s.style) {
+		try {
+			stylePalette = loadStyle(s.style).palette ?? {};
+		} catch (e) {
+			out.push({ path: 'style', message: e instanceof Error ? e.message : String(e) });
+		}
+	}
+	const colorOk = (c: string | undefined) => !c || c.startsWith('#') || (s.palette && c in s.palette) || c in stylePalette;
 	s.parts.forEach((p, i) => {
 		const ref = p.attach?.to ?? p.parent;
 		if (ref && !ids.has(ref)) out.push({ path: `parts[${i}]`, message: `"${p.id}" refers to unknown part "${ref}"` });

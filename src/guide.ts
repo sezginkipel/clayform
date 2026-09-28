@@ -88,7 +88,9 @@ add_part{part, after?} · add_library_part{name, id, attach, size?, mirror?, col
 update_part{id, set} · remove_part{id, cascade?} · rename_part{id, to} ·
 duplicate_part{id, as, set?} · add_sculpt / update_sculpt / remove_sculpt ·
 add_clip / update_clip / remove_clip · add_effect / update_effect / remove_effect ·
-set_settings{set} · set_palette{set} · set_meta{name?, notes?} · replace{scene}.
+set_settings{set} · set_palette{set} · set_meta{name?, notes?, style?, category?} · replace{scene}.
+A style (a .style.json shared by a pack) supplies palette keys, material defaults and height
+ranges per category; critics flag colors and sizes that drift from it.
 \`set\` merges objects, replaces arrays, and \`null\` removes a field.
 
 ## Settings

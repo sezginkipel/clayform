@@ -30,6 +30,128 @@
         "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
       }
     },
+    "style": {
+      "description": "a style sheet (path to a .style.json, or inline) shared across a pack: palette, material defaults, settings, height ranges",
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "clayform-style/1",
+              "description": "style document version"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "palette": {
+              "description": "the pack's colors; scenes use these keys",
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,31}$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+              }
+            },
+            "defaults": {
+              "type": "object",
+              "properties": {
+                "blend": {
+                  "description": "blend for parts that do not set one",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "rounding": {
+                  "description": "edge rounding for boxes, cylinders, cones and prisms that do not set one",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.5
+                },
+                "roughness": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "metalness": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            "settings": {
+              "description": "defaults for scene settings",
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "type": "integer",
+                  "minimum": 16,
+                  "maximum": 256
+                },
+                "edges": {
+                  "type": "string",
+                  "enum": [
+                    "soft",
+                    "sharp"
+                  ]
+                },
+                "screenHeight": {
+                  "type": "integer",
+                  "minimum": 16,
+                  "maximum": 2048
+                }
+              },
+              "additionalProperties": false
+            },
+            "heights": {
+              "description": "allowed height range in meters per category, e.g. { \"character\": [1.0, 1.4] }",
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          },
+          "required": [
+            "format",
+            "name"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "category": {
+      "description": "what this is in the pack (character, prop, building …); the style checks its height",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,31}$"
+    },
     "settings": {
       "description": "see Settings",
       "type": "object",

@@ -20,6 +20,9 @@ the defect on purpose and checks that it is caught.
 | `colors-blend` | warn | two touching parts have different colors that are too close to tell apart (ΔE under 10 and contrast under 1.35:1), so they read as one blob. Parts given the same base color on purpose are left alone | use the suggested lighter or darker color, or make them the same on purpose |
 | `tiny-detail` | warn | with `settings.screenHeight`, a part covers fewer than 4 pixels (or vanishes) when the model is that tall on screen | make it bigger or bolder, or drop it and save the triangles |
 | `same-silhouette` | warn / info | the front and side silhouettes overlap by more than 93%, so the model reads the same as it turns. A warning for things with legs, tails or wings, a note for props | add depth seen from the side: a snout, a tail, a backpack, feet that point forward |
+| `off-style-color` | warn | a part uses a hex color that is not in the scene's style palette | use a palette key |
+| `style-override` | warn | the scene palette redefines a color the style already defines | remove it from the scene, or change the style for the whole pack |
+| `off-style-scale` | warn | the model's height is outside the style's range for its `category` | scale it to match the pack |
 | `placement` | warn | an attach offset landed outside the target's outline and was snapped to the surface | use a smaller offset |
 | `speck` | info | a tiny loose fragment where two surfaces almost touch | add `blend` or `embed` |
 | `open-edges` | info | more than 0.2% of edges are non-manifold | harmless for games; raise resolution for 3D printing |

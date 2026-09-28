@@ -38,7 +38,13 @@ export const Op = z.discriminatedUnion('op', [
 	z.strictObject({ op: z.literal('remove_effect'), id: Id }),
 	z.strictObject({ op: z.literal('set_settings'), set: Settings.partial() }),
 	z.strictObject({ op: z.literal('set_palette'), set: z.record(z.string(), z.union([z.string(), z.null()])) }),
-	z.strictObject({ op: z.literal('set_meta'), name: z.string().optional(), notes: z.string().optional() }),
+	z.strictObject({
+		op: z.literal('set_meta'),
+		name: z.string().optional(),
+		notes: z.string().optional(),
+		style: z.union([z.string(), z.null()]).optional().describe('path to a .style.json shared across a pack; null removes it'),
+		category: z.union([z.string(), z.null()]).optional().describe('what this is in the pack (character, prop …); null removes it')
+	}),
 	z.strictObject({ op: z.literal('replace'), scene: z.unknown().describe('a whole scene document') })
 ]);
 export type Op = z.infer<typeof Op>;
@@ -234,6 +240,10 @@ export function applyOps(scene: SceneT, ops: unknown[]): OpResult {
 			case 'set_meta': {
 				if (op.name !== undefined) s.name = op.name;
 				if (op.notes !== undefined) s.notes = op.notes;
+				if (op.style === null) delete s.style;
+				else if (op.style !== undefined) s.style = op.style;
+				if (op.category === null) delete s.category;
+				else if (op.category !== undefined) s.category = op.category;
 				changes.push('~ meta');
 				break;
 			}

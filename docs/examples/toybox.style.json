@@ -1,0 +1,15 @@
+{
+  "format": "clayform-style/1",
+  "name": "Toybox",
+  "palette": {
+    "skin": "#f0c4a0",
+    "red": "#d64533",
+    "blue": "#3f7cb3",
+    "yellow": "#f2b233",
+    "dark": "#2b2d33",
+    "wood": "#9a6a3f"
+  },
+  "defaults": { "blend": 0.02, "rounding": 0.03, "roughness": 0.6 },
+  "settings": { "resolution": 110 },
+  "heights": { "character": [0.9, 1.3], "prop": [0.2, 1.0], "vehicle": [0.4, 1.0] }
+}

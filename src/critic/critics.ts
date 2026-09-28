@@ -8,6 +8,7 @@
 
 import { bodyField, primDist } from '../core/compile.js';
 import { colorBlend, sameSilhouette, tinyDetail } from './readability.js';
+import { styleDrift } from '../core/style.js';
 import type { Build, MeshData } from '../core/build.js';
 import type { V3 } from '../core/math.js';
 
@@ -214,6 +215,9 @@ export function critique(b: Build): Report {
 			}
 		}
 	}
+
+	/* ------------------------------------------------------------- style */
+	for (const d of styleDrift(b.source, b.max[1] - b.min[1])) issues.push({ severity: 'warn', ...d });
 
 	/* ------------------------------------------------------- readability */
 	issues.push(...colorBlend(b));

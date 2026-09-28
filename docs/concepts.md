@@ -126,6 +126,26 @@ Sculpts are applied after all parts, in order, anchored like attachments:
 | `crease` | cut a groove from `at` to `to`, `radius` wide | groove depth |
 | `noise` | roughen locally, or everywhere without `at` | meters |
 
+## Style sheets for a pack
+
+Ten assets made one at a time drift apart: different scales, palettes, bevels. A style sheet
+(`.style.json`) holds what a pack shares, and each scene points at it:
+
+<!-- verify: ops barrel -->
+```json
+[{ "op": "set_meta", "style": "docs/examples/toybox.style.json", "category": "prop" }]
+```
+
+- The style's **palette** sits under the scene's own, so parts can use its keys. Change a color in
+  the style and every scene that uses it changes.
+- **defaults** (blend, rounding for boxes, cylinders, cones and prisms, roughness, metalness) fill
+  in whatever a part leaves unset. **settings** do the same for scene settings.
+- **heights** give each category an allowed height range.
+
+Critics then flag drift: a hex color that is not in the style palette (`off-style-color`), a
+scene that redefines a style color (`style-override`), and a model outside its category's
+height range (`off-style-scale`). See [`docs/examples/toybox.style.json`](examples/toybox.style.json).
+
 ## Sharp or soft edges
 
 By default edges are rounded to the cell size, which suits creatures and clay-like props. Set

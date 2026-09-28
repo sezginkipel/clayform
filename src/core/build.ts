@@ -7,6 +7,7 @@
 import { add, clamp, type V3 } from './math.js';
 import { bodyBase, bodyField, compile, primColor, primDist, worldAabb, type Compiled, type Prim } from './compile.js';
 import { surfaceNets, type Eval, type MeshField } from './mesher.js';
+import { applyStyle } from './style.js';
 import type { Scene } from './schema.js';
 
 export interface MeshData {
@@ -31,6 +32,8 @@ export interface MeshData {
 
 export interface Build {
 	compiled: Compiled;
+	/** the scene as written (compiled.scene has the style applied) */
+	source: Scene;
 	meshes: MeshData[];
 	/** Translation applied to everything so the model stands on y=0. */
 	offset: V3;
@@ -50,6 +53,8 @@ const BLOCK = 4;
 
 export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
 	const t0 = performance.now();
+	const source = scene;
+	scene = applyStyle(scene);
 	const c = compile(scene);
 	const res = opts.resolution ?? scene.settings?.resolution ?? 96;
 	const wantAo = opts.ao ?? scene.settings?.ao ?? true;
@@ -189,6 +194,7 @@ export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
 	}
 	return {
 		compiled: c,
+		source,
 		meshes,
 		offset,
 		min: isFinite(bmin[0]) ? bmin : [0, 0, 0],

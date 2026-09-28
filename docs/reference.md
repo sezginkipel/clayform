@@ -13,6 +13,8 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `name` **required** | string | display name; also the glTF scene name |
 | `notes` | string | free text: intent, constraints, what to keep |
 | `palette` | { key: string } | named colors parts refer to — recolor a model by editing one entry |
+| `style` | string or object | a style sheet (path to a .style.json, or inline) shared across a pack: palette, material defaults, settings, height ranges |
+| `category` | string | what this is in the pack (character, prop, building …); the style checks its height |
 | `settings` | object | see Settings |
 | `parts` **required** | object[] | in blend order: blend and carve act on the parts listed before them |
 | `sculpts` | object[] | applied in order after all parts |
