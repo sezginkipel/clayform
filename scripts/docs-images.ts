@@ -6,7 +6,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildScene } from '../src/core/build.js';
 import { applyOps } from '../src/core/ops.js';
+import { drawText } from '../src/render/font.js';
 import { renderClipStrip } from '../src/render/motion.js';
+import { encodePng } from '../src/render/png.js';
+import { decodePng } from '../src/render/pngdecode.js';
 import { renderSheet } from '../src/render/views.js';
 import { getTemplate } from '../src/templates/index.js';
 import { bakeEffect, resolveEffect } from '../src/vfx/effects.js';
@@ -31,6 +34,25 @@ writeFileSync('docs/goblin-walk.png', renderClipStrip(goblin, 'walk', { frames: 
 const torch = getTemplate('torch')!.scene;
 writeFileSync('docs/fire.png', bakeEffect(resolveEffect(torch, torch.effects![0])).preview);
 console.log('docs/goblin.png goblin-parts.png goblin-walk.png fire.png goblin.clay.json');
+
+// The game actions on the biped, one strip per clip, stacked.
+{
+	const types = ['attack', 'jump', 'sit', 'turn', 'die'];
+	const r2 = applyOps(getTemplate('biped')!.scene, types.map((type) => ({ op: 'add_clip', clip: { id: type, type } })));
+	if (!r2.ok) throw new Error(r2.error);
+	const bb = buildScene(r2.scene);
+	const strips = types.map((type) => decodePng(renderClipStrip(bb, type, { frames: 6, view: type === 'attack' || type === 'sit' ? 'left' : 'three_quarter', size: 150 }).png));
+	const W = strips[0].width, H = strips.reduce((s, x) => s + x.height, 0);
+	const buf = new Uint8Array(W * H * 4);
+	let y = 0;
+	strips.forEach((st, i) => {
+		buf.set(st.data, y * W * 4);
+		drawText(buf, W, H, W - types[i].length * 12 - 8, y + st.height - 22, types[i], [60, 60, 66], 2);
+		y += st.height;
+	});
+	writeFileSync('docs/actions.png', encodePng(buf, W, H));
+	console.log('docs/actions.png');
+}
 
 // The example camp layout.
 {

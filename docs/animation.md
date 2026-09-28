@@ -68,12 +68,52 @@ simulated for three cycles and the last one is kept, so the clip still loops. Ea
 
 ## Clip types
 
-`idle`, `walk`, `run`, `hop` (with squash and stretch), `fly`, `swim`, `drive`, `spin` (the
-`target` or the whole model), `hover`, `wave` (the `target` arm, or the one on the model's right),
-`nod`, `keyframes`.
+**Loops:** `idle`, `walk`, `run`, `hop` (with squash and stretch), `fly`, `swim`, `drive`, `spin`
+(the `target` or the whole model), `hover`, `wave` (the `target` arm, or the one on the model's
+right), `nod`.
+
+**Game actions** play once and are built from roles, so they work on any model:
+
+| clip | what happens | without arms / legs |
+|---|---|---|
+| `attack` | wind up with the arm overhead, chop forward and down, come back; the body leans into it over planted feet | the head lunges and snaps |
+| `jump` | crouch with a squash, leave the ground in a ballistic arc with the legs tucked and arms up, land with a squash | still jumps; nothing to tuck |
+| `sit` | two legs: sit on the ground with the legs forward. Four or more: fold the back legs under and sit up on the front ones. Stays seated | sinks down |
+| `turn` | a quarter turn to the left in place, in three small steps per foot (in the gait's pairs), the body following the feet | the body turns |
+| `die` | stagger back, tip over onto the right side with gravity, a small bounce, lie still | falls the same way |
+
+![attack, jump, sit, turn and die on the biped template](actions.png)
+
+`sit` and `die` keep the model's lowest point on the ground the whole way, so it tips over the
+edge it rests on instead of sinking or floating. `amplitude` scales every action (a turn of
+`amplitude: 2` is a half turn).
 
 `speed` multiplies the cycle rate, `amplitude` the motion size, `duration` sets the length (the
-default is one natural cycle, so clips loop), and `fps` the export sample rate.
+default is one natural cycle, so loops loop), and `fps` the export sample rate.
+
+## Blending clips
+
+A `blend` clip crossfades from one clip into another:
+
+<!-- verify: clip biped -->
+```json
+{ "id": "walk_to_idle", "type": "blend", "from": "walk", "to": "idle", "duration": 0.4 }
+```
+
+The first clip keeps playing from its start while its weight eases out, and the second is timed
+so it reaches its own first frame exactly when the blend ends. Play the blend, then the `to`
+clip from its start, and there is no seam. Both clips must be ordinary clips in the same scene.
+
+Engines can also blend at runtime, and the clips are made for it:
+
+- **Loops start and end on the same pose**, and the one-shots start from rest and end at rest
+  (or in their final pose for `sit`, `turn` and `die`), so a short crossfade (0.15–0.3 s) between
+  any two of them never pops.
+- **`walk` and `run` share a phase**: at the same normalized time, the same foot is forward. Blend
+  them by normalized time (Godot `AnimationNodeBlendSpace1D` with sync, Unity blend trees, Unreal
+  blend spaces), not by seconds, and the feet stay in step.
+- **Match the movement speed** to `extras.speed` on the walk and run animations. A blend space
+  between them works best with the parameter set to those two speeds.
 
 <!-- verify: clip biped -->
 ```json

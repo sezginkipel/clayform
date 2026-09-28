@@ -137,16 +137,18 @@ A target can also be `{ "point": [x, y, z] }` in world space.
 | field | type | meaning |
 |---|---|---|
 | `id` **required** | string | clip id, becomes the glTF animation name |
-| `type` **required** | `idle` · `walk` · `run` · `hop` · `fly` · `swim` · `drive` · `spin` · `hover` · `wave` · `nod` · `keyframes` | the motion intent; see Clip types |
+| `type` **required** | `idle` · `walk` · `run` · `hop` · `fly` · `swim` · `drive` · `spin` · `hover` · `wave` · `nod` · `attack` · `jump` · `sit` · `turn` · `die` · `blend` · `keyframes` | the motion intent; see Clip types |
 | `speed` | number (≥0.05, ≤10) | cycle speed multiplier |
 | `amplitude` | number (≥0, ≤4) | motion size multiplier |
 | `duration` | number (≥0.1, ≤60) | seconds; default one natural cycle |
-| `target` | string | part to drive for wave/nod/spin (default: auto) |
+| `target` | string | part to drive for wave/nod/spin/attack (default: auto) |
+| `from` | string | blend: the clip to fade out of |
+| `to` | string | blend: the clip to fade into; the blend ends where that clip starts, so play it next |
 | `tracks` | Track[] | keyframes (type "keyframes") or layered on top of a procedural clip |
 | `fps` | integer (≥4, ≤60) | sample rate for export (default 30) |
 | `secondary` | boolean | springy follow-through on tails, ears and antennas, driven by how the body moves (default true) |
 
-Clip types: `idle`, `walk`, `run`, `hop`, `fly`, `swim`, `drive`, `spin`, `hover`, `wave`, `nod`, `keyframes`.
+Clip types: `idle`, `walk`, `run`, `hop`, `fly`, `swim`, `drive`, `spin`, `hover`, `wave`, `nod`, `attack`, `jump`, `sit`, `turn`, `die`, `blend`, `keyframes`.
 
 ### Track
 

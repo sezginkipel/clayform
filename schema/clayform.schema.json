@@ -1157,6 +1157,12 @@
               "hover",
               "wave",
               "nod",
+              "attack",
+              "jump",
+              "sit",
+              "turn",
+              "die",
+              "blend",
               "keyframes"
             ],
             "description": "the motion intent; see Clip types"
@@ -1180,7 +1186,17 @@
             "maximum": 60
           },
           "target": {
-            "description": "part to drive for wave/nod/spin (default: auto)",
+            "description": "part to drive for wave/nod/spin/attack (default: auto)",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$"
+          },
+          "from": {
+            "description": "blend: the clip to fade out of",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$"
+          },
+          "to": {
+            "description": "blend: the clip to fade into; the blend ends where that clip starts, so play it next",
             "type": "string",
             "pattern": "^[a-z][a-z0-9_]{0,47}$"
           },

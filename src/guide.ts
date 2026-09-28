@@ -73,9 +73,12 @@ crease (groove from \`at\` to \`to\`, width = radius, depth = amount) · noise (
 \`at\` can also be \`{ "point": [x, y, z] }\`.
 
 ## Animation (intent, not keyframes)
-\`{ "id": "walk", "type": "walk", "speed": 1, "amplitude": 1 }\` — types: idle walk run hop
-fly swim drive spin hover wave nod keyframes. Legs pair by side (bipeds alternate,
-quadrupeds trot diagonally), arms counter-swing, wheels roll, rotors spin, tails sway.
+\`{ "id": "walk", "type": "walk", "speed": 1, "amplitude": 1 }\` — loops: idle walk run hop
+fly swim drive spin hover wave nod; one-shots: attack jump sit turn die; blend (\`from\`, \`to\`:
+a crossfade that ends where \`to\` starts); keyframes. Legs pair by side (bipeds alternate,
+quadrupeds trot diagonally) and walks plant the feet (export has extras.speed: move the
+character at it). Arms counter-swing, wheels roll, rotors spin; tails, ears and antennas
+follow through on a spring (\`secondary: false\` turns that off).
 \`tracks: [{ part, keys: [{ t, rotation: [deg], offset: [m] }] }]\` layers keyframes on top
 (or alone with type "keyframes"). Rotations turn a part about its pivot in world axes.
 

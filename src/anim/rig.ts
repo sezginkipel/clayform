@@ -147,7 +147,8 @@ type Motion = { rot?: V3 | Quat; off?: V3; scl?: V3 };
 type Driver = (t: number) => Motion;
 
 const PERIOD: Record<string, number> = {
-	idle: 2.4, walk: 1.0, run: 0.62, hop: 0.8, fly: 0.5, swim: 1.4, drive: 1.0, spin: 4, hover: 2, wave: 1.2, nod: 1.2, keyframes: 1
+	idle: 2.4, walk: 1.0, run: 0.62, hop: 0.8, fly: 0.5, swim: 1.4, drive: 1.0, spin: 4, hover: 2, wave: 1.2, nod: 1.2,
+	attack: 0.9, jump: 1.2, sit: 1.6, turn: 1.2, die: 1.8, blend: 0.4, keyframes: 1
 };
 
 const TAU = Math.PI * 2;
@@ -389,14 +390,224 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 				return qSlerp(lags[Math.min(i, lags.length - 1)], lags[Math.min(i + 1, lags.length - 1)], f);
 			};
 			const prev = drive.get(J);
+			// a one-shot ends at rest, ready for the next clip: the follow-through fades out over its last fifth
+			const fade = (t: number) => (loop ? 1 : 1 - smooth(Math.max(0, Math.min(1, (t / D - 0.8) / 0.2))));
 			drive.set(J, (t) => {
 				const m = prev ? prev(t) : {};
-				return { ...m, rot: qMul(lagAt(t), toQuat(m.rot)) };
+				return { ...m, rot: qMul(qSlerp(qIdentity(), lagAt(t), fade(t)), toQuat(m.rot)) };
 			});
 		}
 	};
 
+	/* ------------------------------------------------- one-shot helpers */
+	const smooth = (u: number) => u * u * (3 - 2 * u);
+	/** 0 → 1 across [a, b] of the clip, eased. */
+	const seg = (t: number, a: number, b2: number) => smooth(Math.max(0, Math.min(1, (t / period - a) / (b2 - a))));
+	const X: V3 = [1, 0, 0], Y: V3 = [0, 1, 0], Z: V3 = [0, 0, 1];
+	/**
+	 * Keep the lowest point of the model on the ground while the pose changes
+	 * (sitting down, tipping over): the posed mesh is sampled at a few times
+	 * with the drivers set so far and the root is lifted or lowered to match.
+	 */
+	const groundLock = (samples = 24) => {
+		const pts: { v: V3; j: number[]; w: number[] }[] = [];
+		for (const m of b.meshes) {
+			const step = Math.max(1, Math.floor(m.positions.length / 3 / 1500));
+			for (let v = 0; v < m.positions.length / 3; v += step) {
+				const js: number[] = [], ws: number[] = [];
+				for (let k = 0; k < 4; k++) if (m.weights[v * 4 + k] > 0) { js.push(rig.byPrim.get(m.joints[v * 4 + k]) ?? 0); ws.push(m.weights[v * 4 + k]); }
+				pts.push({ v: [m.positions[v * 3], m.positions[v * 3 + 1], m.positions[v * 3 + 2]], j: js, w: ws });
+			}
+		}
+		const lows: number[] = [];
+		for (let i = 0; i <= samples; i++) {
+			const t = (i / samples) * period;
+			const skin = rig.joints.map((jt, ji) => m4Mul(worldAt(ji, t), m4Invert(m4Compose(jt.rest, qIdentity()))));
+			let low = Infinity;
+			for (const p of pts) {
+				let y = 0, sw = 0;
+				p.j.forEach((ji, k) => {
+					y += m4Point(skin[ji], p.v)[1] * p.w[k];
+					sw += p.w[k];
+				});
+				low = Math.min(low, y / (sw || 1));
+			}
+			lows.push(low);
+		}
+		set(R, (t) => {
+			const u = Math.max(0, Math.min(1, t / period)) * samples;
+			const i = Math.min(samples - 1, Math.floor(u)), f = u - i;
+			return { off: [0, -(lows[i] + (lows[i + 1] - lows[i]) * f), 0] };
+		});
+	};
+	/**
+	 * Keep feet where `target(chain, t)` says (by default where they stand at
+	 * rest) while the body moves above them. Rigid legs turn to point at the
+	 * target, legs with knees use two-bone IK, and flat feet stay level.
+	 * `weight(t)` fades the solve out (0 = leave the leg to other drivers).
+	 */
+	const plant = (target: (c: LegChain, t: number) => V3 = (c) => c.ankle, weight: (t: number) => number = () => 1, heading: (c: LegChain, t: number) => number = () => 0) => {
+		for (const c of legChains(b, rig)) {
+			const jt = rig.joints[c.top];
+			const rest = sub(c.ankle, c.hip);
+			let memoT = NaN, memo = { hip: qIdentity(), knee: qIdentity(), flat: qIdentity() };
+			const solve = (t: number) => {
+				if (t === memoT) return memo;
+				const tp = sub(m4Point(m4Invert(worldAt(jt.parent, t)), target(c, t)), jt.local);
+				const wgt = weight(t);
+				if (c.knee) {
+					const kn = sub(c.knee, c.hip);
+					const s2 = twoBoneLeg([kn[1], kn[2]], [rest[1], rest[2]], [tp[1], tp[2]]);
+					const hip = qSlerp(qIdentity(), qAxisAngle(X, s2.hip), wgt), knee = qSlerp(qIdentity(), qAxisAngle(X, s2.knee), wgt);
+					memo = { hip, knee, flat: qMul(qConj(qMul(hip, knee)), qAxisAngle(Y, heading(c, t) * DEG)) };
+				} else {
+					let q = qFromTo(norm(rest), norm(tp));
+					// a rigid leg cannot shorten to lift its foot: tip it outward until the foot reaches the target's height
+					const Wp = worldAt(jt.parent, t);
+					const goal = target(c, t);
+					const need = goal[1] - m4Point(Wp, add(jt.local, qRotate(q, rest)))[1];
+					// only for a lifted foot: on the ground a millimetre short is fine, and the tip grows as √need
+					if (goal[1] > c.ankle[1] + b.cell * 0.5 && need > 0) {
+						const phi = Math.min(30 * DEG, Math.acos(Math.max(-1, Math.min(1, 1 - need / Math.hypot(...rest)))));
+						q = qMul(qAxisAngle(Z, (c.hip[0] >= cx ? 1 : -1) * phi), q);
+					}
+					q = qSlerp(qIdentity(), q, wgt);
+					// the foot keeps its own heading in the world, not the body's
+					memo = { hip: q, knee: qIdentity(), flat: qMul(qConj(q), qAxisAngle(Y, heading(c, t) * DEG)) };
+				}
+				memoT = t;
+				return memo;
+			};
+			set(c.top, (t) => ({ rot: solve(t).hip }));
+			if (c.lower >= 0) set(c.lower, (t) => ({ rot: solve(t).knee }));
+			for (const f of c.flat) set(f, (t) => ({ rot: solve(t).flat }));
+		}
+	};
+	// the model's right arm (-X) is the one that strikes, unless a target is named
+	const strikeArm = clip.target ? prims.find((p) => p.id === clip.target) : topArms.slice().sort((a, c) => a.pivot[0] - c.pivot[0])[0];
+
 	switch (clip.type) {
+		case 'attack': {
+			// wind up, strike fast, recover; creatures without arms lunge and snap with the head
+			const wind = (t: number) => seg(t, 0, 0.35), hit = (t: number) => seg(t, 0.35, 0.5), back = (t: number) => seg(t, 0.55, 1);
+			const curve = (t: number, up: number, down: number) => (up * wind(t) + (down - up) * hit(t) - down * back(t)) * amp;
+			if (strikeArm) {
+				// overhead: the arm goes up and slightly forward, then chops forward and down
+				set(j(strikeArm), (t) => ({ rot: [curve(t, -150, -55), 0, 0] }));
+				topArms.filter((p) => p !== strikeArm).forEach((p) => set(j(p), (t) => ({ rot: [curve(t, 20, -15), 0, sideOf(p, cx) * 12 * amp * (wind(t) - back(t))] })));
+				set(R, (t) => ({ rot: [curve(t, -5, 9), 0, 0] }));
+				heads.forEach((p) => set(j(p), (t) => ({ rot: [curve(t, -6, 10), 0, 0] })));
+			} else {
+				set(R, (t) => ({ rot: [curve(t, -6, 12), 0, 0] }));
+				heads.forEach((p) => set(j(p), (t) => ({ rot: [curve(t, -18, 14), 0, 0] })));
+			}
+			// the lean pivots over planted feet
+			plant();
+			tails.forEach((p) => set(j(p), (t) => ({ rot: [0, curve(t, 20, -25), 0] })));
+			ears.forEach((p) => set(j(p), (t) => ({ rot: [curve(t, 12, -12), 0, 0] })));
+			groundLock();
+			break;
+		}
+		case 'jump': {
+			// crouch, launch, a ballistic arc, land with a squash, recover
+			const crouch = (t: number) => seg(t, 0, 0.22) - seg(t, 0.22, 0.32);
+			const land = (t: number) => seg(t, 0.78, 0.84) - seg(t, 0.84, 1);
+			const air = (t: number) => {
+				const u = (t / period - 0.3) / (0.78 - 0.3);
+				return u > 0 && u < 1 ? 4 * u * (1 - u) : 0;
+			};
+			set(R, (t) => {
+				const sq = 1 - 0.16 * amp * (crouch(t) + land(t)) + 0.08 * amp * Math.min(1, air(t) * 3) * (1 - air(t));
+				return { off: [0, h * 0.4 * amp * air(t), 0], scl: [1 / Math.sqrt(sq), sq, 1 / Math.sqrt(sq)] };
+			});
+			// on the ground the feet hold their spot through the squash; in the air they tuck
+			const grounded = (t: number) => (t / period < 0.3 || t / period > 0.78 ? 1 : 0);
+			plant(undefined, grounded);
+			topLegs.forEach((p) => set(j(p), (t) => ({ rot: [-28 * amp * air(t), 0, 0] })));
+			lowerLegs.forEach((p) => set(j(p), (t) => ({ rot: [45 * amp * air(t), 0, 0] })));
+			topArms.forEach((p) => set(j(p), (t) => ({ rot: [-60 * amp * air(t) + 25 * amp * crouch(t), 0, sideOf(p, cx) * 25 * amp * air(t)] })));
+			wings.forEach((p) => set(j(p), (t) => ({ rot: [0, 0, sideOf(p, cx) * 30 * amp * air(t)] })));
+			tails.forEach((p) => set(j(p), (t) => ({ rot: [-15 * amp * air(t), 0, 0] })));
+			ears.forEach((p) => set(j(p), (t) => ({ rot: [-15 * amp * air(t) + 10 * amp * land(t), 0, 0] })));
+			break;
+		}
+		case 'sit': {
+			// sit down and stay: two legs stretch forward on the ground, four legs fold the back pair under
+			const down = (t: number) => seg(t, 0, 0.6);
+			const four = topLegs.length >= 4;
+			if (four) {
+				const back = topLegs.filter((p) => p.pivot[2] < cz), front = topLegs.filter((p) => p.pivot[2] >= cz);
+				const pitch = 28 * amp;
+				set(R, (t) => ({ rot: [-pitch * down(t), 0, 0] }));
+				// front legs stay upright in the world, the back legs fold forward under the body
+				front.forEach((p) => set(j(p), (t) => ({ rot: [pitch * down(t), 0, 0] })));
+				back.forEach((p) => set(j(p), (t) => ({ rot: [-(70 * amp - pitch) * down(t), 0, 0] })));
+				tails.forEach((p) => set(j(p), (t) => ({ rot: [25 * amp * down(t), 0, 0] })));
+				heads.forEach((p) => set(j(p), (t) => ({ rot: [-pitch * 0.6 * down(t), 0, 0] })));
+			} else {
+				set(R, (t) => ({ rot: [-6 * amp * down(t), 0, 0] }));
+				topLegs.forEach((p) => set(j(p), (t) => ({ rot: [-84 * amp * down(t), 0, 0] })));
+				topArms.forEach((p) => set(j(p), (t) => ({ rot: [-35 * amp * down(t), 0, sideOf(p, cx) * 8 * amp * down(t)] })));
+				heads.forEach((p) => set(j(p), (t) => ({ rot: [4 * amp * down(t), 0, 0] })));
+			}
+			groundLock();
+			break;
+		}
+		case 'turn': {
+			// a quarter turn to the left in place, in three small steps per foot; amplitude scales the angle
+			const total = 90 * amp;
+			const chains = legChains(b, rig);
+			const steps = 3;
+			// feet step in the gait's pairs (alternating for two legs, diagonals for four)
+			const stepYaw = (phase: number, t: number) => {
+				const u = t / period;
+				let done = 0;
+				for (let k = 0; k < steps; k++) {
+					const a = 0.08 + (k * 2 + (phase ? 1 : 0)) * (0.84 / (steps * 2));
+					done += smooth(Math.max(0, Math.min(1, (u - a) / (0.84 / (steps * 2)))));
+				}
+				return (total * done) / steps;
+			};
+			const phases = chains.map((c) => phaseOf(prims[rig.joints[c.top].prim]));
+			// the body turns with the average of its feet, so planted feet stay under it
+			const bodyYaw = (t: number) => (chains.length ? phases.reduce((sum, ph) => sum + stepYaw(ph, t), 0) / chains.length : total * seg(t, 0.1, 0.9));
+			set(R, (t) => ({ rot: qAxisAngle(Y, bodyYaw(t) * DEG) }));
+			heads.forEach((p) => set(j(p), (t) => ({ rot: [0, 0.2 * total * (seg(t, 0, 0.3) - seg(t, 0.6, 1)), 0] })));
+			const lift = b.cell * 3;
+			const index = new Map(chains.map((c, i) => [c.top, i]));
+			plant((c, t) => {
+				const ph = phases[index.get(c.top)!];
+				const yaw = stepYaw(ph, t);
+				// lift during this foot's own steps: where its yaw is changing
+				const moving = Math.abs(stepYaw(ph, t + 0.01) - yaw) > 1e-4 ? 1 : 0;
+				const frac = (yaw / total) * steps;
+				const up = moving ? Math.sin(Math.PI * (frac - Math.floor(frac))) : 0;
+				return add(qRotate(qAxisAngle(Y, yaw * DEG), c.ankle), [0, lift * up, 0]);
+			}, undefined, (c, t) => stepYaw(phases[index.get(c.top)!], t) - bodyYaw(t));
+			tails.forEach((p) => set(j(p), (t) => ({ rot: [0, -0.3 * total * (seg(t, 0.1, 0.5) - seg(t, 0.5, 0.95)), 0] })));
+			break;
+		}
+		case 'die': {
+			// stagger back, tip over onto the right side with gravity, a small bounce, then lie still
+			const stagger = (t: number) => seg(t, 0, 0.18) - seg(t, 0.18, 0.4);
+			const fall = (t: number) => {
+				const u = Math.max(0, Math.min(1, (t / period - 0.15) / 0.4));
+				return u * u; // accelerating like a fall
+			};
+			const bounce = (t: number) => {
+				const u = (t / period - 0.55) / 0.15;
+				return u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0;
+			};
+			set(R, (t) => ({ rot: qMul(qAxisAngle(Z, (88 * fall(t) - 7 * bounce(t)) * amp * DEG), qEuler([-8 * amp * stagger(t), 0, 0])) }));
+			// arms fall along the body: the upper (left) one forward over it, the lower one out on the ground
+			topArms.forEach((p) => set(j(p), (t) => ({ rot: [(-25 * stagger(t) - (sideOf(p, cx) > 0 ? 35 : 15) * seg(t, 0.3, 0.8)) * amp, 0, (sideOf(p, cx) > 0 ? -8 : -25) * amp * seg(t, 0.2, 0.7)] })));
+			topLegs.forEach((p) => set(j(p), (t) => ({ rot: [(sideOf(p, cx) > 0 ? -12 : 6) * amp * seg(t, 0.3, 0.8), 0, 0] })));
+			heads.forEach((p) => set(j(p), (t) => ({ rot: [8 * amp * seg(t, 0.1, 0.4), 0, 8 * amp * seg(t, 0.5, 0.9)] })));
+			tails.forEach((p) => set(j(p), (t) => ({ rot: [0, 0, -20 * amp * seg(t, 0.5, 0.9)] })));
+			wings.forEach((p) => set(j(p), (t) => ({ rot: [0, 0, sideOf(p, cx) * 30 * amp * seg(t, 0.3, 0.8)] })));
+			groundLock();
+			break;
+		}
 		case 'walk':
 		case 'run': {
 			const run = clip.type === 'run';
@@ -537,6 +748,7 @@ function trackDriver(keys: NonNullable<Clip['tracks']>[number]['keys']): Driver 
 }
 
 export function sampleClip(b: Build, rig: Rig, clip: Clip): SampledClip {
+	if (clip.type === 'blend') return sampleBlend(b, rig, clip);
 	const { period, drive, speed, followThrough } = drivers(b, rig, clip);
 	let duration = clip.duration ?? period;
 	for (const tr of clip.tracks ?? []) {
@@ -572,6 +784,56 @@ export function sampleClip(b: Build, rig: Rig, clip: Clip): SampledClip {
 		channels.push({ joint, rot, off, scl: hasScl ? scl : null });
 	}
 	return { id: clip.id, type: clip.type, duration, fps, times, channels, speed, loop: LOOPS.has(clip.type) };
+}
+
+/**
+ * A crossfade from one clip into another. The first clip keeps playing from
+ * its start while its weight eases out; the second is timed so that it
+ * reaches its own start exactly when the blend ends, so playing it next is
+ * seamless. Walk and run share their phase convention, so they blend in step.
+ */
+function sampleBlend(b: Build, rig: Rig, clip: Clip): SampledClip {
+	const all = b.compiled.scene.clips ?? [];
+	const from = all.find((c) => c.id === clip.from), to = all.find((c) => c.id === clip.to);
+	if (!from || !to || from.type === 'blend' || to.type === 'blend') throw new Error(`blend ${clip.id} needs "from" and "to" naming two ordinary clips`);
+	const A = sampleClip(b, rig, from), B = sampleClip(b, rig, to);
+	const duration = clip.duration ?? PERIOD.blend / (clip.speed ?? 1);
+	const fps = clip.fps ?? 30;
+	const frames = Math.max(2, Math.round(duration * fps) + 1);
+	const times = Array.from({ length: frames }, (_, i) => (i / (frames - 1)) * duration);
+	const at = (c: SampledClip, joint: number, t: number) => {
+		const ch = c.channels.find((x) => x.joint === joint);
+		if (!ch) return { rot: qIdentity(), off: [0, 0, 0] as V3, scl: [1, 1, 1] as V3 };
+		let u = c.loop ? ((t % c.duration) + c.duration) % c.duration : Math.max(0, Math.min(c.duration, t));
+		u = (u / c.duration) * (c.times.length - 1);
+		const i = Math.min(c.times.length - 2, Math.floor(u)), f = u - i;
+		const o0 = ch.off[i], o1 = ch.off[i + 1];
+		const s0 = ch.scl?.[i] ?? [1, 1, 1], s1 = ch.scl?.[i + 1] ?? [1, 1, 1];
+		return {
+			rot: qSlerp(ch.rot[i], ch.rot[i + 1], f),
+			off: [0, 1, 2].map((k) => o0[k] + (o1[k] - o0[k]) * f) as V3,
+			scl: [0, 1, 2].map((k) => s0[k] + (s1[k] - s0[k]) * f) as V3
+		};
+	};
+	const joints = [...new Set([...A.channels, ...B.channels].map((c) => c.joint))];
+	const channels: Channel[] = joints.map((joint) => {
+		const rot: Quat[] = [], off: V3[] = [], scl: V3[] = [];
+		let hasScl = false;
+		for (const t of times) {
+			const w = t / duration, s = w * w * (3 - 2 * w);
+			const a = at(A, joint, t), z = at(B, joint, t - duration);
+			let q = qSlerp(a.rot, z.rot, s);
+			const prev = rot[rot.length - 1];
+			if (prev && prev[0] * q[0] + prev[1] * q[1] + prev[2] * q[2] + prev[3] * q[3] < 0) q = [-q[0], -q[1], -q[2], -q[3]];
+			rot.push(q);
+			off.push([0, 1, 2].map((k) => a.off[k] + (z.off[k] - a.off[k]) * s) as V3);
+			const sc = [0, 1, 2].map((k) => a.scl[k] + (z.scl[k] - a.scl[k]) * s) as V3;
+			if (sc.some((v) => Math.abs(v - 1) > 1e-6)) hasScl = true;
+			scl.push(sc);
+		}
+		return { joint, rot, off, scl: hasScl ? scl : null };
+	});
+	return { id: clip.id, type: 'blend', duration, fps, times, channels, speed: (A.speed + B.speed) / 2, loop: false };
 }
 
 /* ------------------------------------------------------------------ pose */
@@ -669,7 +931,8 @@ export function critiqueClip(b: Build, rig: Rig, clip: SampledClip, standing: bo
 	let minY = Infinity, maxY = -Infinity, lowest = { t: 0, y: Infinity };
 	const issues: string[] = [];
 	const perFrameMin: number[] = [];
-	const chains = standing ? legChains(b, rig) : [];
+	// sitting down and falling over move the feet on purpose; a blend mixes two gaits
+	const chains = standing && !['sit', 'die', 'blend'].includes(clip.type) ? legChains(b, rig) : [];
 	// foot sliding: while a foot is down, the same sole points should move back at exactly the clip's speed
 	const slip = chains.map(() => ({ worst: 0, contacts: 0, run: null as null | { t: number; sole: [number, number][]; at: [number, number] } }));
 	for (let s = 0; s < samples; s++) {

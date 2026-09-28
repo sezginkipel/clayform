@@ -174,7 +174,7 @@ export type Sculpt = z.infer<typeof Sculpt>;
 
 /* ----------------------------------------------------------------- animation */
 
-export const CLIP_TYPES = ['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'keyframes'] as const;
+export const CLIP_TYPES = ['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'attack', 'jump', 'sit', 'turn', 'die', 'blend', 'keyframes'] as const;
 
 export const Key = z.strictObject({
 	t: num.min(0).describe('seconds'),
@@ -190,7 +190,9 @@ export const Clip = z.strictObject({
 	speed: num.min(0.05).max(10).optional().describe('cycle speed multiplier'),
 	amplitude: num.min(0).max(4).optional().describe('motion size multiplier'),
 	duration: num.min(0.1).max(60).optional().describe('seconds; default one natural cycle'),
-	target: Id.optional().describe('part to drive for wave/nod/spin (default: auto)'),
+	target: Id.optional().describe('part to drive for wave/nod/spin/attack (default: auto)'),
+	from: Id.optional().describe('blend: the clip to fade out of'),
+	to: Id.optional().describe('blend: the clip to fade into; the blend ends where that clip starts, so play it next'),
 	tracks: z.array(Track).max(128).optional().describe('keyframes (type "keyframes") or layered on top of a procedural clip'),
 	fps: z.number().int().min(4).max(60).optional().describe('sample rate for export (default 30)'),
 	secondary: z.boolean().optional().describe('springy follow-through on tails, ears and antennas, driven by how the body moves (default true)')
@@ -333,6 +335,15 @@ export function integrity(s: Scene): Problem[] {
 			if (!ids.has(t.part.replace(/\.m$/, ''))) out.push({ path: `clips[${i}].tracks[${j}]`, message: `unknown part "${t.part}"` });
 		});
 		if (c.type === 'keyframes' && !c.tracks?.length) out.push({ path: `clips[${i}]`, message: 'keyframes clip needs tracks' });
+		if (c.type === 'blend') {
+			for (const k of ['from', 'to'] as const) {
+				const ref = c[k];
+				const other = (s.clips ?? []).find((x) => x.id === ref);
+				if (!ref) out.push({ path: `clips[${i}].${k}`, message: `blend needs "${k}" — the id of another clip` });
+				else if (!other) out.push({ path: `clips[${i}].${k}`, message: `no clip "${ref}" to blend ${k}` });
+				else if (other.type === 'blend') out.push({ path: `clips[${i}].${k}`, message: `"${ref}" is itself a blend — blend between two ordinary clips` });
+			}
+		}
 	});
 	const eids = new Set<string>();
 	(s.effects ?? []).forEach((e, i) => {
