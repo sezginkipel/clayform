@@ -5,6 +5,7 @@
  */
 
 import { FORMAT, type Scene } from '../core/schema.js';
+import { MORE } from './more.js';
 
 export interface Template {
 	id: string;
@@ -330,7 +331,8 @@ export const TEMPLATES: Template[] = [
 	{ id: 'chest', title: 'Treasure chest', tags: ['prop', 'container', 'item'], description: chest.notes!, scene: chest },
 	{ id: 'barrel', title: 'Barrel', tags: ['prop', 'container'], description: barrel.notes!, scene: barrel },
 	{ id: 'potion', title: 'Potion', tags: ['item', 'magic', 'prop', 'effect'], description: potion.notes!, scene: potion },
-	{ id: 'torch', title: 'Torch', tags: ['prop', 'fire', 'effect'], description: torch.notes!, scene: torch }
+	{ id: 'torch', title: 'Torch', tags: ['prop', 'fire', 'effect'], description: torch.notes!, scene: torch },
+	...MORE.map((t) => ({ ...t, description: t.scene.notes! }))
 ];
 
 export function getTemplate(id: string): Template | undefined {

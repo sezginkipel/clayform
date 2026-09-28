@@ -232,3 +232,283 @@ Wall-less standing torch ~0.7 m with a fire effect on top.
 - palette: `wood` #7a5032, `iron` #4d4f55, `ember` #ff8a3a
 
 - effects: `flame` (fire)
+
+## Knight — `knight`
+
+<img src="templates/knight.png" width="192" alt="Knight template, three-quarter view">
+
+Small armored knight ~1.1 m holding a sword. Metal via palette; the sword is separate.
+
+- tags: character, armor, medieval
+- parts: `body`, `belt`, `tabard`, `head`, `visor`, `plume`, `arm`, `hand`, `leg`, `boot`, `blade`, `guard`
+- roles: body, head, arm, leg
+- palette: `steel` #b8bec8, `steel_dark` #7d8490, `cloth` #b83a33, `leather` #6b3f26, `gold` #d9a441, `eye` #1f1d22
+- clips: `walk` (walk), `idle` (idle)
+
+## Wizard — `wizard`
+
+<img src="templates/wizard.png" width="192" alt="Wizard template, three-quarter view">
+
+Robed wizard ~1.3 m with a long beard and a tall hat. Recolor the robe via palette.
+
+- tags: character, magic, fantasy
+- parts: `robe`, `head`, `beard`, `sleeve`, `hand`, `staff`, `orb`, `eye`, `nose`, `hat`, `hat_cone`
+- roles: body, head, arm, eye
+- palette: `robe` #3b4f9e, `robe_dark` #2b3a78, `skin` #f0c4a0, `beard` #e8e6e0, `hat` #3b2f6b, `staff` #6b4a2b, `gem` #7fe3ff
+- clips: `idle` (idle)
+- effects: `sparkle` (magic)
+
+## Cat — `cat`
+
+<img src="templates/cat.png" width="192" alt="Cat template, three-quarter view">
+
+Sitting-height cat on four legs ~0.6 m long with pointed ears and a thin tail.
+
+- tags: animal, pet, creature
+- parts: `body`, `head`, `muzzle`, `nose`, `eye`, `ear`, `leg_front`, `leg_back`, `paw_front`, `paw_back`, `tail`
+- roles: body, head, eye, ear, leg, tail
+- palette: `fur` #9a9a9f, `fur_dark` #5f5f66, `belly` #e8e3db, `nose` #e08a9a, `eye` #2a6b3a
+- clips: `walk` (walk), `idle` (idle)
+
+## Frog — `frog`
+
+<img src="templates/frog.png" width="192" alt="Frog template, three-quarter view">
+
+Squat cartoon frog ~0.35 m with big eyes on top and folded legs; hop clip included.
+
+- tags: animal, creature, cute
+- parts: `body`, `belly`, `eye`, `eye_white`, `pupil`, `mouth`, `thigh`, `foot`, `hand`
+- roles: body, eye, leg, arm
+- palette: `skin` #5fae4a, `belly` #d8e8a0, `eye` #1b1a1f, `white` #fbfbf5, `mouth` #3b1f2b
+- clips: `hop` (hop)
+
+## Penguin — `penguin`
+
+<img src="templates/penguin.png" width="192" alt="Penguin template, three-quarter view">
+
+Round penguin ~0.5 m with flippers, a beak and orange feet.
+
+- tags: animal, bird, creature
+- parts: `body`, `front`, `head`, `face`, `beak`, `flipper`, `foot`, `eye`
+- roles: body, head, wing, leg, eye
+- palette: `black` #23262d, `white` #f3f3f0, `orange` #f2a33a
+- clips: `walk` (walk)
+
+## Teddy bear — `teddy`
+
+<img src="templates/teddy.png" width="192" alt="Teddy bear template, three-quarter view">
+
+Plush teddy bear ~0.45 m sitting upright, with round ears and a stitched snout.
+
+- tags: toy, prop, cute
+- parts: `body`, `tummy`, `head`, `arm`, `leg`, `sole`, `ear`, `snout`, `snout_tip`, `eye`
+- roles: body, head, arm, leg, ear, eye
+- palette: `fur` #b07a48, `light` #e3c29a, `dark` #2a2224
+
+## Ghost — `ghost`
+
+<img src="templates/ghost.png" width="192" alt="Ghost template, three-quarter view">
+
+Floating cartoon ghost ~0.6 m with a wavy hem, glowing faintly; hover clip.
+
+- tags: monster, spooky, creature
+- parts: `body`, `hem`, `eye`, `mouth`, `arm`
+- roles: body, eye, arm
+- palette: `sheet` #eef1f6, `glow` #a9c8ff, `eye` #23262d
+- clips: `hover` (hover)
+
+## Baby dragon — `dragon`
+
+<img src="templates/dragon.png" width="192" alt="Baby dragon template, three-quarter view">
+
+Chubby baby dragon ~0.7 m long with bat wings, horns, a spiked tail and a belly.
+
+- tags: monster, fantasy, creature, flying
+- parts: `body`, `belly`, `neck`, `head`, `snout`, `leg_front`, `leg_back`, `tail`, `eye`, `eye_pupil`, `eye_shine`, `horn`, `wing`, `spike`
+- roles: body, head, leg, tail, eye, wing
+- palette: `scale` #4aa36a, `belly` #f1d98a, `horn` #f2e6c8, `wing` #2f7a4b
+- clips: `walk` (walk), `fly` (fly)
+
+## Chicken — `chicken`
+
+<img src="templates/chicken.png" width="192" alt="Chicken template, three-quarter view">
+
+Plump chicken ~0.4 m with a comb, wattle, tail feathers and thin legs.
+
+- tags: animal, bird, farm
+- parts: `body`, `head`, `comb`, `beak`, `wattle`, `eye`, `wing`, `tail`, `leg`, `toes`
+- roles: body, head, eye, wing, tail, leg
+- palette: `feather` #f4efe4, `red` #d64533, `beak` #f2b233, `eye` #1b1a1f
+- clips: `walk` (walk), `idle` (idle)
+
+## Pickup truck — `truck`
+
+<img src="templates/truck.png" width="192" alt="Pickup truck template, three-quarter view">
+
+Toy pickup truck ~1.4 m with an open bed, headlights and spinning wheels.
+
+- tags: vehicle, car
+- parts: `chassis`, `cab`, `windshield`, `side_window`, `bed`, `bumper`, `headlight`, `wheel_front`, `wheel_front_hub`, `wheel_back`, `wheel_back_hub`
+- roles: body, wheel
+- palette: `paint` #2f7fb8, `trim` #2b2d33, `glass` #9fd3e6, `light` #fff2b0, `bed` #255f8a
+- clips: `drive` (drive)
+
+## Propeller plane — `plane`
+
+<img src="templates/plane.png" width="192" alt="Propeller plane template, three-quarter view">
+
+Chunky propeller plane ~1.5 m long, modeled in flight; the propeller spins in the spin clip.
+
+- tags: vehicle, flying
+- parts: `fuselage`, `cockpit`, `wing`, `tailplane`, `fin`, `nose`, `propeller`, `wheel`
+- roles: body, rotor, wheel
+- palette: `paint` #e8e2d2, `stripe` #d64533, `dark` #2b2d33, `glass` #27354d
+- clips: `spin` (spin)
+
+## Sailboat — `boat`
+
+<img src="templates/boat.png" width="192" alt="Sailboat template, three-quarter view">
+
+Small sailboat ~1.4 m long: hull, deck, mast and a triangle sail.
+
+- tags: vehicle, water
+- parts: `hull`, `deck_cut`, `deck`, `mast`, `sail`, `boom`
+- roles: body
+- palette: `hull` #c8403a, `deck` #b8865a, `sail` #f3efe6, `wood` #7a5032
+
+## Cartoon rocket — `rocket`
+
+<img src="templates/rocket.png" width="192" alt="Cartoon rocket template, three-quarter view">
+
+Retro rocket ~1.3 m with fins, a porthole and an engine glow; smoke trail effect.
+
+- tags: vehicle, sci-fi, effect
+- parts: `body`, `nose`, `window`, `rim`, `fin`, `fin_back`, `fin_front`, `nozzle`, `flame`
+- roles: body
+- palette: `body` #e8e6e0, `red` #d64533, `glass` #7fc6e8, `dark` #2b2d33, `glow` #ffb13b
+
+- effects: `trail` (smoke)
+
+## Castle tower — `tower`
+
+<img src="templates/tower.png" width="192" alt="Castle tower template, three-quarter view">
+
+Round stone tower ~3.8 m with battlements, arrow slits, a door and a flag.
+
+- tags: building, medieval, environment
+- parts: `wall`, `ring`, `crenel`, `crenel_2`, `roof`, `door`, `slit`, `slit_side`, `pole`, `flag`
+- roles: body
+- palette: `stone` #9a948c, `roof` #7a3a2a, `wood` #6b4526, `flag` #d64533, `dark` #2b2d33
+
+## Well — `well`
+
+<img src="templates/well.png" width="192" alt="Well template, three-quarter view">
+
+Stone well ~1.6 m with a wooden roof frame and a bucket.
+
+- tags: building, prop, village
+- parts: `ring`, `hole`, `post`, `roof`, `axle`, `rope`, `bucket`
+- roles: body
+- palette: `stone` #8f8a84, `wood` #7a5032, `roof` #a4553a, `water` #3a6f9a, `rope` #c8b38a
+
+## Lamp post — `lamppost`
+
+<img src="templates/lamppost.png" width="192" alt="Lamp post template, three-quarter view">
+
+Victorian street lamp ~2.4 m with a glowing lantern head.
+
+- tags: prop, street, light
+- parts: `base`, `pole`, `collar`, `lantern`, `cap`, `finial`
+- roles: body
+- palette: `iron` #2f3238, `glass` #fff0b8
+
+## Tent — `tent`
+
+<img src="templates/tent.png" width="192" alt="Tent template, three-quarter view">
+
+Camping tent ~1.3 m: a triangular canvas with an open flap and guy ropes.
+
+- tags: prop, camp, environment
+- parts: `canvas`, `door`, `ridge`, `rope`, `peg`
+- roles: body
+- palette: `canvas` #d9a441, `canvas_dark` #b8862f, `inside` #3a2a1a, `rope` #c8b38a, `peg` #6b4a2b
+
+## Pine tree — `pine`
+
+<img src="templates/pine.png" width="192" alt="Pine tree template, three-quarter view">
+
+Stylized pine ~1.8 m with three stacked faceted tiers.
+
+- tags: nature, environment, plant
+- parts: `trunk`, `tier_low`, `tier_mid`, `tier_top`
+- roles: body
+- palette: `bark` #6f4a2e, `needle` #2f7a4b, `needle_dark` #225c38
+- clips: `sway` (idle)
+
+## Potted cactus — `cactus`
+
+<img src="templates/cactus.png" width="192" alt="Potted cactus template, three-quarter view">
+
+Saguaro-style cactus with two arms in a terracotta pot, ~0.7 m.
+
+- tags: nature, plant, prop
+- parts: `pot`, `rim`, `soil`, `stem`, `arm`, `arm_2`, `flower`
+- roles: body
+- palette: `cactus` #4f9a5a, `spine` #e8e2c8, `pot` #c26a3f, `soil` #4a3222, `flower` #e8649a
+
+## Campfire — `campfire`
+
+<img src="templates/campfire.png" width="192" alt="Campfire template, three-quarter view">
+
+Crossed logs in a ring of stones with fire and a little smoke, ~0.8 m across.
+
+- tags: prop, fire, camp, effect
+- parts: `ash`, `log`, `log_2`, `log_3`, `embers`, `stone_0`, `stone_1`, `stone_2`, `stone_3`, `stone_4`, `stone_5`, `stone_6`, `stone_7`
+- roles: body
+- palette: `wood` #6f4a2e, `ash` #3a3432, `stone` #8f8a84, `ember` #ff8a3a
+
+- effects: `fire` (fire), `smoke` (smoke)
+
+## Wooden table — `table`
+
+<img src="templates/table.png" width="192" alt="Wooden table template, three-quarter view">
+
+Tavern table ~1.2 m long on four legs.
+
+- tags: furniture, prop, tavern
+- parts: `top`, `leg`, `leg_back`, `rail`, `rail_back`
+- roles: body
+- palette: `wood` #b07c46, `wood_dark` #5e3c20
+
+## Wooden chair — `chair`
+
+<img src="templates/chair.png" width="192" alt="Wooden chair template, three-quarter view">
+
+Simple chair ~0.9 m with a slatted back.
+
+- tags: furniture, prop, tavern
+- parts: `seat`, `leg`, `leg_back`, `post`, `slat`, `slat_2`
+- roles: body
+- palette: `wood` #b07c46, `wood_dark` #5e3c20
+
+## Round shield — `shield`
+
+<img src="templates/shield.png" width="192" alt="Round shield template, three-quarter view">
+
+Viking-style round shield ~0.7 m with a metal rim and a boss.
+
+- tags: weapon, prop, item
+- parts: `board`, `rim`, `boss`
+- roles: body
+- palette: `wood` #9a6a3f, `paint` #2f5f9a, `metal` #8f949c
+
+## Lantern — `lantern`
+
+<img src="templates/lantern.png" width="192" alt="Lantern template, three-quarter view">
+
+Hand lantern ~0.4 m with a glowing glass core, metal frame and ring handle.
+
+- tags: prop, light, item
+- parts: `base`, `frame`, `pane`, `glass`, `cap`, `handle`
+- roles: body
+- palette: `metal` #3a3e46, `glass` #ffd98a

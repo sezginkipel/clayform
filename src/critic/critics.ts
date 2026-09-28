@@ -97,11 +97,19 @@ export function critique(b: Build): Report {
 
 	/* ------------------------------- unrelated parts fused (animation) */
 	if (body && (c.scene.clips?.length ?? 0) > 0) {
+		const movers = new Set(['leg', 'arm', 'wing', 'tail', 'head', 'wheel', 'rotor', 'ear']);
+		// z is an ancestor of a and nothing between them moves on its own: one rigid piece (a hat on a head)
+		const rides = (a: number, z: number) => {
+			for (let p = c.prims[a]; p && p.parent >= 0; p = c.prims[p.parent]) {
+				if (p.parent === z) return true;
+				if (movers.has(p.role)) return false;
+			}
+			return false;
+		};
 		const related = (a: number, z: number) => {
 			const A = c.prims[a], Z = c.prims[z];
-			return a === z || A.parent === z || Z.parent === a || (A.parent >= 0 && A.parent === Z.parent && !['leg', 'arm', 'wing', 'tail'].includes(A.role) && !['leg', 'arm', 'wing', 'tail'].includes(Z.role));
+			return a === z || rides(a, z) || rides(z, a) || (A.parent >= 0 && A.parent === Z.parent && !['leg', 'arm', 'wing', 'tail'].includes(A.role) && !['leg', 'arm', 'wing', 'tail'].includes(Z.role));
 		};
-		const movers = new Set(['leg', 'arm', 'wing', 'tail', 'head', 'wheel', 'rotor', 'ear']);
 		const pairs = new Map<string, number>();
 		const adds = c.body.filter((p) => p.op === 'add');
 		const step = Math.max(1, Math.floor(body.positions.length / 3 / 6000));

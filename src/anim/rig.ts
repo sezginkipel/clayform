@@ -142,7 +142,13 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 			const rad = Math.max(0.01, Math.min(p.max[1] - p.min[1], Math.max(p.max[2] - p.min[2], p.max[0] - p.min[0])) / 2);
 			set(j(p), (t) => ({ rot: qAxisAngle([1, 0, 0], (mps * t) / rad) }));
 		});
-	const spinRotors = (rps: number) => rotors.forEach((p) => set(j(p), (t) => ({ rot: qAxisAngle([0, 1, 0], TAU * rps * t) })));
+	// a flat rotor turns around its thinnest axis: a propeller facing forward around Z, a helicopter rotor around Y
+	const spinAxis = (p: { min: V3; max: V3 }): V3 => {
+		const d = [0, 1, 2].map((k) => p.max[k] - p.min[k]);
+		const k = d.indexOf(Math.min(...d));
+		return d[k] < 0.5 * Math.max(...d) ? ([0, 0, 0].map((_, i) => (i === k ? 1 : 0)) as V3) : [0, 1, 0];
+	};
+	const spinRotors = (rps: number) => rotors.forEach((p) => set(j(p), (t) => ({ rot: qAxisAngle(spinAxis(p), TAU * rps * t) })));
 
 	switch (clip.type) {
 		case 'walk':
@@ -216,7 +222,8 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 		}
 		case 'spin': {
 			const target = clip.target ? prims.find((p) => p.id === clip.target) : undefined;
-			set(target ? j(target) : R, (t) => ({ rot: qAxisAngle([0, 1, 0], (TAU * t) / period) }));
+			const axis = target ? spinAxis(target) : ([0, 1, 0] as V3);
+			set(target ? j(target) : R, (t) => ({ rot: qAxisAngle(axis, (TAU * t) / period) }));
 			break;
 		}
 		case 'hover': {
