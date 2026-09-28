@@ -17,6 +17,8 @@ import { describe, Workspace } from '../session.js';
 import { TEMPLATES } from '../templates/index.js';
 import { bakeEffect, resolveEffect } from '../vfx/effects.js';
 import { measureBetween, measurePart, measureRatio, partAtPixel } from '../measure.js';
+import { fitReference } from '../reference.js';
+import { resolveAsset } from '../core/meshload.js';
 import { buildScene } from '../core/build.js';
 import { renderTiles } from '../render/views.js';
 import { drawText } from '../render/font.js';
@@ -180,6 +182,20 @@ export class Tools {
 				}
 			});
 			return { content: [text(lines.join('\n'))] };
+		});
+	}
+
+	compareReference(args: { scene: string; image: string; view?: unknown }): Promise<Result> {
+		return wrap(() => {
+			const view = parseViews([args.view ?? 'front'])![0];
+			const b = this.ws.build(args.scene);
+			const fit = fitReference(b, resolveAsset(args.image), view);
+			return {
+				content: [
+					png(fit.overlay),
+					text(`fit against ${args.image} (${typeof view === 'string' ? view : 'custom'} view): IoU ${fit.iou.toFixed(2)} — gray both, orange only in the reference, blue only in the model\n${fit.advice.map((a) => '• ' + a).join('\n')}\nFix the biggest difference first, then compare again: the score should go up.`)
+				]
+			};
 		});
 	}
 

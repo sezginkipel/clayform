@@ -15,4 +15,7 @@ export { bakeEffect, resolveEffect, PRESETS as EFFECT_PRESETS_TABLE, type Flipbo
 export { TEMPLATES, getTemplate, type Template } from './templates/index.js';
 export { Workspace, describe } from './session.js';
 export { GUIDE } from './guide.js';
+export { fitReference, silhouettePng } from './reference.js';
+export { measureBetween, measurePart, measureRatio, partAtPixel } from './measure.js';
+export { decodePng } from './render/pngdecode.js';
 export { VERSION } from './version.js';

@@ -74,6 +74,12 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 		}
 	}, (a) => t.render(a));
 
+	server.registerTool('compare_reference', {
+		title: 'Compare with a reference image',
+		description: 'Fit the model to a reference picture (concept sketch, photo, turnaround). Give a PNG with a transparent or plain background showing the whole object from one side, and the matching view (front, back, left, right, top). Returns an IoU score, an overlay (orange = only in the reference, blue = only in the model) and sentences naming the parts that are too wide or narrow. Edit, compare again, and watch the score go up.',
+		inputSchema: { scene, image: z.string().describe('path to a .png'), view: z.enum(['front', 'back', 'left', 'right', 'top']).optional() }
+	}, (a) => t.compareReference(a));
+
 	server.registerTool('measure', {
 		title: 'Measure exactly',
 		description: 'Exact answers instead of guessing from pictures. queries: {between: [a, b]} surface distance (negative = overlap depth) and closest points · {part: id} size, center, bounds, ground contact · {ratio: [a, b], axis: x|y|z|max} size of a over b · {pixel: {view, x, y, size?}} which part is at that pixel of a render tile. Meters, grounded world.',

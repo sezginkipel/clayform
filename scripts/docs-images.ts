@@ -31,3 +31,17 @@ writeFileSync('docs/goblin-walk.png', renderClipStrip(goblin, 'walk', { frames: 
 const torch = getTemplate('torch')!.scene;
 writeFileSync('docs/fire.png', bakeEffect(resolveEffect(torch, torch.effects![0])).preview);
 console.log('docs/goblin.png goblin-parts.png goblin-walk.png fire.png goblin.clay.json');
+
+// Fitting a reference: the snowman's own silhouette as the reference, and a head 40% too big.
+{
+	const { fitReference, silhouettePng } = await import('../src/reference.js');
+	const snow = getTemplate('snowman')!.scene;
+	const ref = silhouettePng(buildScene(snow), 'front');
+	writeFileSync('docs/reference-snowman.png', ref);
+	const big = applyOps(snow, [{ op: 'update_part', id: 'head', set: { scale: 1.4 } }]);
+	if (!big.ok) throw new Error(big.error);
+	const fit = fitReference(buildScene(big.scene), ref, 'front');
+	writeFileSync('docs/fit-bigger-head.png', fit.overlay);
+	console.log(`IoU ${fit.iou.toFixed(2)}`, fit.advice);
+	console.log('docs/reference-snowman.png fit-bigger-head.png');
+}

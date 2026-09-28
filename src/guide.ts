@@ -16,7 +16,9 @@ rigs it and exports it. You never place vertices.
 5. Add clips (\`add_clip\` with a type) → \`preview_motion\` to see frames.
 6. Ask \`measure\` when a number matters (a gap, an overlap, a proportion, what part is at a
    pixel), and use \`render { compare: "previous" }\` to see exactly what your last edit changed.
-7. \`export\` (glb for engines; \`triangles\` sets a budget, default keeps shape within 0.4%).
+7. Working from a picture? \`compare_reference { image, view }\` scores the silhouette against it and
+   names the parts that are too wide or narrow. Fix the biggest difference, compare again.
+8. \`export\` (glb for engines; \`triangles\` sets a budget, default keeps shape within 0.4%).
 
 ## Conventions
 Meters. +Y up. The model faces **+Z** (front). The model's own **left is +X**.

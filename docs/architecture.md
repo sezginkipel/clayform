@@ -19,6 +19,8 @@ scene JSON ──► schema (zod, strict) ──► compile ──► build ─�
 | `src/core/mesher.ts` | surface nets over a grid split into 4³ blocks. A block that no primitive can reach is skipped, and a block far from any surface is filled with a single value |
 | `src/core/build.ts` | meshes the fused body and separate parts; per vertex: normal, AO, blended color and pattern, dominant part, skin weights; ground offset |
 | `src/core/simplify.ts` | meshoptimizer quadric simplification with color, normal and material attributes |
+| `src/measure.ts` | spatial queries on the parts' own surfaces (distance, overlap, size, ratio, part at pixel) |
+| `src/reference.ts` | reference silhouettes (alpha or border flood fill), area normalization, registration by overlap, band-by-band advice, overlay |
 | `src/critic/critics.ts` | the measurements (see [critics](critics.md)) |
 | `src/render/*` | deferred software rasterizer, named views and framing, a 5×7 font, PNG encoder, film strips |
 | `src/anim/rig.ts` | joints from parts, procedural clips by role, keyframe tracks, CPU skinning, motion checks |

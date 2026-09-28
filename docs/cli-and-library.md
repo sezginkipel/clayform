@@ -15,6 +15,7 @@ Wherever a command takes a scene, you can also give a template id.
 | `clayform motion <scene> [clip] [-o png] [--view left] [--frames 6]` | film strip |
 | `clayform effect <scene> [effect] [-o png]` | flipbook + `.json` + `.preview.png` |
 | `clayform view <scene\|template\|file.glb> [--port 5231] [--watch]` | local three.js viewer that plays clips. `--watch` reloads when the scene file changes, and when an edit is invalid it keeps the last good version and shows the error |
+| `clayform compare <scene> <reference.png> [--view front] [-o overlay.png]` | fit a model to a reference image |
 | `clayform guide` | print the agent manual |
 
 ## Library
@@ -49,4 +50,5 @@ Main entry points:
 | `simplifyBuild(build, { triangles?, error? })` | a reduced `Build` |
 | `exportGlb(build, { bakeAo?, rig?, clips? })` | `{ glb, json, stats }` |
 | `bakeEffect(resolveEffect(scene, effect))` | `{ sheet, preview, meta }` |
+| `fitReference(build, png, view)` | `{ iou, aspect, advice, overlay }` |
 | `Workspace` | named scenes on disk with undo/redo and snapshots, as the MCP server uses them |

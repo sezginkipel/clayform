@@ -93,6 +93,7 @@ WARN [asymmetric] declared X symmetry is off by 1.3 cm on average; worst: orb (4
 | `render` | Labelled multi-view PNG; modes `shaded`, `parts`, `clay`, `normals`, `depth`; `compare: "previous"` shows before and after the last edit |
 | `inspect` | Part summary, critics, and a check of every clip (ground contact, parts passing through each other) |
 | `measure` | Exact distances, overlaps, sizes, proportions, and which part is at a pixel |
+| `compare_reference` | Fit the model to a sketch or photo: a score, an overlay, and which parts are too wide or narrow |
 | `preview_motion` | A clip as a labelled film strip |
 | `preview_effect` | An effect's frames |
 | `export` | `glb` · `obj` · `json` · `flipbook` (sprite sheet PNG + JSON), with an optional triangle budget |
@@ -158,7 +159,7 @@ const glb = exportGlb(await simplifyBuild(build, { triangles: 4000 })).glb;
 
 - [Getting started](docs/getting-started.md) · [Concepts](docs/concepts.md) · [MCP tools](docs/mcp-tools.md) · [Critics](docs/critics.md)
 - [Animation](docs/animation.md) · [Effects](docs/effects.md) · [Export](docs/export.md) · [CLI and library](docs/cli-and-library.md)
-- [Architecture](docs/architecture.md) · [FAQ](docs/faq.md) · [Scene reference](docs/reference.md) · [Templates](docs/templates.md)
+- [Matching a reference](docs/matching-a-reference.md) · [Architecture](docs/architecture.md) · [FAQ](docs/faq.md) · [Scene reference](docs/reference.md) · [Templates](docs/templates.md)
 - JSON Schema for `.clay.json` files: [`schema/clayform.schema.json`](schema/clayform.schema.json)
 
 ## Limits (today)

@@ -76,6 +76,12 @@ op 1 (remove_part): no part "ghost"
 Add `compare: "previous"` to see the state before the last edit (top row) and now (bottom row)
 with one camera. The text lists which parts were added, removed or changed.
 
+## `compare_reference`
+
+`{ scene, image, view? }`. Fits the model to a reference PNG seen from `view` (default
+`front`): an IoU score, an overlay image, and sentences naming the parts that are too wide or
+narrow. See [matching a reference](matching-a-reference.md).
+
 ## `measure`
 
 `{ scene, queries: Query[] }`. Exact answers instead of judging from a picture. Meters, in the

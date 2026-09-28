@@ -10,6 +10,7 @@ and exports glTF.
 | [Concepts](concepts.md) | understand placement, blending, carving, mirroring and why the order of parts matters |
 | [MCP tools](mcp-tools.md) | see every tool, its arguments and what it returns |
 | [Critics](critics.md) | know what each critic code means and how to fix it |
+| [Matching a reference](matching-a-reference.md) | move a model toward a sketch or photo with a score and directions |
 | [Animation](animation.md) | rig, clips, pivots, keyframes, motion checks |
 | [Effects](effects.md) | particle presets, parameters, flipbook output |
 | [Export](export.md) | glTF structure, triangle budgets, naming, engines |

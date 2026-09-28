@@ -187,6 +187,16 @@ async function main() {
 			}
 			return;
 		}
+		case 'compare': {
+			const { fitReference } = await import('./reference.js');
+			const scene = loadScene(pos[0]);
+			if (!pos[1]) die('usage: clayform compare <scene|template> <reference.png> [--view front] [-o overlay.png]');
+			const fit = fitReference(buildScene(scene), pos[1], (flags.get('view') as View) ?? 'front');
+			const out = flags.get('out') ?? `${stem(pos[0]!)}-fit.png`;
+			writeFileSync(out, fit.overlay);
+			console.log(`IoU ${fit.iou.toFixed(2)} · overlay ${out}\n${fit.advice.map((a) => '• ' + a).join('\n')}`);
+			return;
+		}
 		case 'guide':
 			console.log(GUIDE);
 			return;
@@ -207,6 +217,7 @@ async function main() {
   clayform motion <scene> [clip] [-o out.png] [--view left]
   clayform effect <scene> [effect] [-o out.png]
   clayform view <scene|template|file.glb> [--port 5231] [--watch]   three.js viewer, live reload
+  clayform compare <scene> <ref.png> [--view front] [-o overlay.png]   fit to a reference image
   clayform guide                        the manual agents read`);
 	}
 }
