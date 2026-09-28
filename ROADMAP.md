@@ -45,13 +45,13 @@ Models that read well at the size a player sees them.
 - Details too small for the game camera (render at the target on-screen height)
 - Silhouettes that look the same from every side
 
-## v0.6 — Asset packs for engines
+## ✅ v0.6 — Asset packs for engines (released 2026-09-28)
 
 A consistent set of assets that imports into Godot, Unity or Unreal without hand fixes.
 
 - Style sheets shared across a pack (palette, bevel, scale reference), with critics for drift
 - Multi-object scenes and layouts, a searchable part library, more templates
-- LOD chains and collision hulls; tested import guides per engine
+- LOD chains and collision hulls named for each engine (tested import guides moved to v1.0)
 - Faster rebuilds (worker threads, incremental builds)
 
 ## v0.7 — Textures
@@ -73,6 +73,7 @@ A consistent set of assets that imports into Godot, Unity or Unreal without hand
 - Published bench results, re-run every release
 - An npm release and a documentation site
 - A remote MCP server (HTTP) for hosted use
+- Import guides for Godot, Unity and Unreal, each tested in the engine
 
 ## Not planned
 

@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.6.0 — 2026-09-28
+
+- **Style sheets.** A `clayform-style/1` file holds a pack's palette, material defaults, resolution,
+  edge style and height range per category. Scenes point at it with `style`, and critics flag colors
+  outside the palette, local overrides and models outside their category's height range. (#31)
+- **Part library.** 28 ready parts (eyes, ears, horns, wings, wheels, doors, hats …) placed with one
+  `add_library_part` edit and searched with `list_parts`. See docs/parts.md. (#12)
+- **Layouts.** A `clayform-layout/1` file places many scenes by hand or by pattern (row, grid,
+  circle, scatter with a minimum gap). `set_layout`, `render_layout` and `export_layout` build it
+  into one GLB, and the layout critic flags items that overlap or float. (#11)
+- **LODs and colliders.** `--lods 0.5,0.2` adds lower-detail meshes, `--collision parts|hull` adds
+  convex hulls (at most 255 vertices each), and `--engine godot|unreal|unity` names them so the
+  engine picks them up on import. (#14)
+- **Parallel builds.** Large scenes are sampled, meshed and shaded on worker threads, with the same
+  output as a serial build. The cottage at resolution 160 builds in 1.3 s instead of 3.2 s.
+  Blocks far from any surface are skipped, which speeds up serial builds too.
+  `CLAYFORM_WORKERS=0` turns the workers off. (#5)
+- **43 templates.** 24 new ones: knight, wizard, cat, frog, penguin, teddy bear, ghost, baby dragon,
+  chicken, pickup truck, propeller plane, sailboat, rocket, castle tower, well, lamp post, tent,
+  pine, potted cactus, campfire, table, chair, round shield and lantern. All of them pass the
+  critics and their clips pass the motion check. (#13)
+- Rotors spin around their thinnest axis, so a propeller facing forward turns around Z.
+- The fused-parts critic no longer flags a part that rides on its ancestor (a hat brim and the
+  head under it).
+
+The per-engine import guides (#15) moved to v1.0: they need Godot, Unity and Unreal installed to be
+tested, and an untested guide is not worth shipping.
+
 ## 0.5.0 — 2026-09-28
 
 - **Colors that blend together.** Touching parts whose colors are meant to differ but are too close
