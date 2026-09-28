@@ -11,7 +11,8 @@ Wherever a command takes a scene, you can also give a template id.
 | `clayform new <template> [-o file]` | write a template as a `.clay.json` |
 | `clayform render <scene> [-o png] [--views front,left] [--mode parts] [--size 384]` | render a sheet (prints the legend and critics) |
 | `clayform inspect <scene>` | part summary, critics and clip checks. Exit code 2 on errors, so it can gate CI |
-| `clayform export <scene> [-o out.glb\|out.obj] [--triangles N]` | export |
+| `clayform export <scene> [-o out.glb\|out.obj] [--triangles N] [--texture 1024] [--shading flat\|toon] [--outline 0.01]` | export |
+| `clayform kit <scene> [more …] [-o dir] [--atlas 2048] [--embed]` | several models sharing one [texture atlas](export.md#kits) |
 | `clayform motion <scene> [clip] [-o png] [--view left] [--frames 6]` | film strip |
 | `clayform effect <scene> [effect] [-o png]` | flipbook + `.json` + `.preview.png` |
 | `clayform view <scene\|template\|file.glb> [--port 5231] [--watch]` | local three.js viewer that plays clips. `--watch` reloads when the scene file changes, and when an edit is invalid it keeps the last good version and shows the error |
@@ -49,7 +50,9 @@ Main entry points:
 | `renderSheet(build, { views, mode, size })` | `{ png, legend, views }` |
 | `renderClipStrip(build, clipId, { frames, view })` | film strip PNG |
 | `simplifyBuild(build, { triangles?, error? })` | a reduced `Build` |
-| `exportGlb(build, { bakeAo?, rig?, clips? })` | `{ glb, json, stats }` |
+| `exportGlb(build, { bakeAo?, rig?, clips?, lods?, collision?, naming?, texture?, shading?, bands?, outline? })` | `{ glb, json, stats, atlas? }` |
+| `exportKit(items, { atlas?, embed?, shading?, … })` | `{ atlas, files }` |
+| `bakeAtlas(sources, { size?, padding?, bakeAo?, toonBands? })` | `{ size, png, meshes, charts, coverage, texelsPerMeter }` |
 | `bakeEffect(resolveEffect(scene, effect))` | `{ sheet, preview, meta }` |
 | `fitReference(build, png, view)` | `{ iou, aspect, advice, overlay }` |
 | `Workspace` | named scenes on disk with undo/redo and snapshots, as the MCP server uses them |

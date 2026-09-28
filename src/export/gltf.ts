@@ -6,6 +6,11 @@
  * COLOR_0 (linear, optionally with baked ambient occlusion). When the scene
  * has clips the export is skinned: joints are the parts' pivots under a
  * `root` joint and every clip becomes a glTF animation.
+ *
+ * With `texture` the colors go into a baked atlas (TEXCOORD_0 + baseColorTexture)
+ * instead of COLOR_0, for engines whose default materials ignore vertex colors.
+ * `shading` gives faceted (flat) or banded unlit (toon) looks, `outline` adds
+ * an inverted-hull rim.
  */
 
 import type { Build, MeshData } from '../core/build.js';
@@ -13,6 +18,7 @@ import { m4Compose, m4Invert, qIdentity, srgbToLinear, type V3 } from '../core/m
 import { buildRig, sampleClip, type Rig, type SampledClip } from '../anim/rig.js';
 import { VERSION } from '../version.js';
 import { convexHull } from './hull.js';
+import { bakeAtlas, flatten, outlineMesh, toonColors, type Atlas, type Shading } from './texture.js';
 
 export interface GlbOptions {
 	/** multiply ambient occlusion into vertex colors (default true) */
@@ -27,12 +33,38 @@ export interface GlbOptions {
 	collision?: 'none' | 'parts' | 'hull';
 	/** how collision nodes are named for the target engine */
 	naming?: 'godot' | 'unreal' | 'unity' | 'plain';
+	/** bake the colors into a square texture of this many pixels (e.g. 1024) instead of vertex colors */
+	texture?: number;
+	/** smooth (default), flat (faceted normals) or toon (banded light baked in, unlit material) */
+	shading?: Shading;
+	/** light steps for toon shading (default 3) */
+	bands?: number;
+	/** inverted-hull outline this many meters wide (toon look); 0 = none */
+	outline?: number;
+	/** a shared atlas baked from `glbMeshes` of several builds (kits); `first` is this build's first mesh in it */
+	atlas?: { atlas: Atlas; first: number; uri?: string };
+}
+
+/** The meshes an export writes, in atlas order: every level of detail, each after shading. */
+export function glbMeshes(b: Build, opts: Pick<GlbOptions, 'lods' | 'shading' | 'bands' | 'texture' | 'atlas'> = {}): { mesh: MeshData; build: Build }[] {
+	const out: { mesh: MeshData; build: Build }[] = [];
+	const textured = !!(opts.texture || opts.atlas);
+	for (const lb of [b, ...(opts.lods ?? [])])
+		for (const m of lb.meshes) {
+			let x = opts.shading === 'flat' ? flatten(m) : m;
+			// toon without a texture: bands go into the vertex colors (with a texture they are baked per texel)
+			if (opts.shading === 'toon' && !textured) x = toonColors(x, opts.bands ?? 3);
+			out.push({ mesh: x, build: lb });
+		}
+	return out;
 }
 
 export interface GlbResult {
 	glb: Uint8Array;
 	json: Record<string, unknown>;
-	stats: { meshes: number; primitives: number; materials: number; triangles: number; joints: number; animations: number; bytes: number; lods: number; colliders: number };
+	stats: { meshes: number; primitives: number; materials: number; triangles: number; joints: number; animations: number; bytes: number; lods: number; colliders: number; texture: number; charts: number; outlines: number };
+	/** the baked atlas when `texture` was set */
+	atlas?: Atlas;
 }
 
 const FLOAT = 5126, USHORT = 5123, UINT = 5125;
@@ -77,6 +109,10 @@ class BinWriter {
 		return this.accessors.length - 1;
 	}
 
+	raw(bytes: Uint8Array): number {
+		return this.push(bytes);
+	}
+
 	bytes(): Uint8Array {
 		const pad = (4 - (this.length % 4)) % 4;
 		const out = new Uint8Array(this.length + pad);
@@ -97,6 +133,13 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	const wantRig = scene.settings?.rig !== 'none' && (opts.rig || clipDefs.length > 0);
 	const rig: Rig | null = wantRig ? buildRig(b) : null;
 	const w = new BinWriter();
+	const shading = opts.shading ?? 'smooth';
+	const toon = shading === 'toon';
+	const prepared = glbMeshes(b, opts);
+	let atlas: Atlas | undefined = opts.atlas?.atlas;
+	const first = opts.atlas?.first ?? 0;
+	if (!atlas && opts.texture) atlas = bakeAtlas(prepared, { size: opts.texture, bakeAo, toonBands: toon ? opts.bands ?? 3 : 0 });
+	const extensionsUsed = new Set<string>();
 
 	/* --------------------------------------------------------- materials */
 	const materials: Record<string, unknown>[] = [];
@@ -109,17 +152,26 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			: 'default';
 		const hit = matIndex.get(key);
 		if (hit !== undefined) return hit;
+		const pbr: Record<string, unknown> = { baseColorFactor: [1, 1, 1, 1], metallicFactor: toon ? 0 : p?.metalness ?? 0, roughnessFactor: toon ? 1 : p?.roughness ?? 0.75 };
+		if (atlas) pbr.baseColorTexture = { index: 0 };
 		const m: Record<string, unknown> = {
 			name: p ? (p.emissive ? `glow_${materials.length}` : p.metalness > 0.5 ? `metal_${materials.length}` : `surface_${materials.length}`) : 'surface',
-			pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], metallicFactor: p?.metalness ?? 0, roughnessFactor: p?.roughness ?? 0.75 }
+			pbrMetallicRoughness: pbr
 		};
+		const ext: Record<string, unknown> = {};
 		if (p?.emissive) {
 			m.emissiveFactor = p.emissive.map(srgbToLinear);
-			if (p.emissiveStrength > 1) {
-				m.extensions = { KHR_materials_emissive_strength: { emissiveStrength: p.emissiveStrength } };
+			if (p.emissiveStrength > 1 && !toon) {
+				ext.KHR_materials_emissive_strength = { emissiveStrength: p.emissiveStrength };
 				usesEmissiveStrength = true;
 			}
 		}
+		if (toon) {
+			// the light is already in the colors
+			ext.KHR_materials_unlit = {};
+			extensionsUsed.add('KHR_materials_unlit');
+		}
+		if (Object.keys(ext).length) m.extensions = ext;
 		materials.push(m);
 		matIndex.set(key, materials.length - 1);
 		return materials.length - 1;
@@ -131,21 +183,27 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	const sceneNodes: number[] = [];
 	let triangles = 0, primitiveCount = 0;
 
-	const writeMesh = (m: MeshData) => {
+	let outlineMaterial = -1;
+	const writeMesh = (src: MeshData, am?: { remap: Uint32Array; uv: Float32Array; indices: Uint32Array }, forceMaterial?: number) => {
+		// with an atlas, vertices are split along chart seams
+		const m: MeshData = am ? remapMesh(src, am.remap, am.indices) : src;
 		const n = m.positions.length / 3;
-		const col = new Float32Array(n * 4);
-		for (let v = 0; v < n; v++) {
-			const ao = bakeAo ? m.ao[v] : 1;
-			col[v * 4] = srgbToLinear(m.colors[v * 3]) * ao;
-			col[v * 4 + 1] = srgbToLinear(m.colors[v * 3 + 1]) * ao;
-			col[v * 4 + 2] = srgbToLinear(m.colors[v * 3 + 2]) * ao;
-			col[v * 4 + 3] = 1;
-		}
 		const attrs: Record<string, number> = {
 			POSITION: w.accessor(m.positions, 'VEC3', FLOAT, { target: ARRAY_BUFFER, minmax: true }),
-			NORMAL: w.accessor(m.normals, 'VEC3', FLOAT, { target: ARRAY_BUFFER }),
-			COLOR_0: w.accessor(col, 'VEC4', FLOAT, { target: ARRAY_BUFFER })
+			NORMAL: w.accessor(m.normals, 'VEC3', FLOAT, { target: ARRAY_BUFFER })
 		};
+		if (am) attrs.TEXCOORD_0 = w.accessor(am.uv, 'VEC2', FLOAT, { target: ARRAY_BUFFER });
+		else if (forceMaterial === undefined) {
+			const col = new Float32Array(n * 4);
+			for (let v = 0; v < n; v++) {
+				const ao = bakeAo ? m.ao[v] : 1;
+				col[v * 4] = srgbToLinear(m.colors[v * 3]) * ao;
+				col[v * 4 + 1] = srgbToLinear(m.colors[v * 3 + 1]) * ao;
+				col[v * 4 + 2] = srgbToLinear(m.colors[v * 3 + 2]) * ao;
+				col[v * 4 + 3] = 1;
+			}
+			attrs.COLOR_0 = w.accessor(col, 'VEC4', FLOAT, { target: ARRAY_BUFFER });
+		}
 		if (rig) {
 			const J = new Uint16Array(n * 4), Wt = new Float32Array(n * 4);
 			for (let v = 0; v < n; v++) {
@@ -163,7 +221,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 		// group triangles by material
 		const groups = new Map<number, number[]>();
 		for (let t = 0; t < m.indices.length / 3; t++) {
-			const mi = materialFor(m.triPrim[t]);
+			const mi = forceMaterial ?? materialFor(m.triPrim[t]);
 			let g = groups.get(mi);
 			if (!g) groups.set(mi, (g = []));
 			g.push(m.indices[t * 3], m.indices[t * 3 + 1], m.indices[t * 3 + 2]);
@@ -217,14 +275,29 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 
 	const levels = [b, ...(opts.lods ?? [])];
 	const lodNodes: number[] = [];
+	let k = 0, outlines = 0;
 	levels.forEach((lb, li) => {
-		for (const m of lb.meshes) {
-			const mesh = writeMesh(m);
+		for (let mi = 0; mi < lb.meshes.length; mi++, k++) {
+			const m = prepared[k].mesh;
+			const mesh = writeMesh(m, atlas?.meshes[first + k]);
 			const base = exportName(m.name) + (rig ? '_mesh' : '');
 			const node: Record<string, unknown> = { name: levels.length > 1 ? `${base}_LOD${li}` : base, mesh };
 			if (rig) node.skin = skinIndex;
 			nodes.push(node);
 			lodNodes.push(nodes.length - 1);
+			if (opts.outline && opts.outline > 0) {
+				if (outlineMaterial < 0) {
+					materials.push({ name: 'outline', pbrMetallicRoughness: { baseColorFactor: [0.02, 0.02, 0.025, 1], metallicFactor: 0, roughnessFactor: 1 }, extensions: { KHR_materials_unlit: {} } });
+					extensionsUsed.add('KHR_materials_unlit');
+					outlineMaterial = materials.length - 1;
+				}
+				const om = writeMesh(outlineMesh(m, opts.outline), undefined, outlineMaterial);
+				const onode: Record<string, unknown> = { name: levels.length > 1 ? `${base}_outline_LOD${li}` : `${base}_outline`, mesh: om };
+				if (rig) onode.skin = skinIndex;
+				nodes.push(onode);
+				lodNodes.push(nodes.length - 1);
+				outlines++;
+			}
 		}
 	});
 	// static LODs sit under one parent so importers that build LOD groups (Unity) find siblings
@@ -300,6 +373,12 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 		}
 	}
 
+	/* ----------------------------------------------------------- texture */
+	let images: Record<string, unknown>[] | undefined;
+	if (atlas) {
+		images = [opts.atlas?.uri ? { uri: opts.atlas.uri, name: 'atlas' } : { bufferView: w.raw(atlas.png), mimeType: 'image/png', name: 'atlas' }];
+	}
+
 	/* -------------------------------------------------------------- json */
 	const bin = w.bytes();
 	const json: Record<string, unknown> = {
@@ -317,7 +396,14 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 		json.skins = [{ name: 'rig', joints: jointNode, inverseBindMatrices: ibmAcc, skeleton: jointNode[0] }];
 	}
 	if (animations.length) json.animations = animations;
-	if (usesEmissiveStrength) json.extensionsUsed = ['KHR_materials_emissive_strength'];
+	if (images) {
+		json.images = images;
+		// clamp: charts sit right at the edge of the atlas in places
+		json.samplers = [{ magFilter: 9729, minFilter: 9987, wrapS: 33071, wrapT: 33071 }];
+		json.textures = [{ source: 0, sampler: 0 }];
+	}
+	if (usesEmissiveStrength) extensionsUsed.add('KHR_materials_emissive_strength');
+	if (extensionsUsed.size) json.extensionsUsed = [...extensionsUsed];
 
 	const glb = packGlb(json, bin);
 	return {
@@ -332,8 +418,32 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			animations: animations.length,
 			bytes: glb.byteLength,
 			lods: levels.length,
-			colliders
-		}
+			colliders,
+			texture: atlas?.size ?? 0,
+			charts: atlas && !opts.atlas ? atlas.charts : 0,
+			outlines
+		},
+		atlas: opts.atlas ? undefined : atlas
+	};
+}
+
+function remapMesh(m: MeshData, remap: Uint32Array, indices: Uint32Array): MeshData {
+	const n = remap.length;
+	const pick = <T extends Float32Array | Uint16Array | Int32Array>(src: T, stride: number, make: (n: number) => T): T => {
+		const out = make(n * stride);
+		for (let v = 0; v < n; v++) for (let k = 0; k < stride; k++) out[v * stride + k] = src[remap[v] * stride + k];
+		return out;
+	};
+	return {
+		...m,
+		positions: pick(m.positions, 3, (x) => new Float32Array(x)),
+		normals: pick(m.normals, 3, (x) => new Float32Array(x)),
+		colors: pick(m.colors, 3, (x) => new Float32Array(x)),
+		ao: pick(m.ao, 1, (x) => new Float32Array(x)),
+		vertPrim: pick(m.vertPrim, 1, (x) => new Int32Array(x)),
+		joints: pick(m.joints, 4, (x) => new Uint16Array(x)),
+		weights: pick(m.weights, 4, (x) => new Float32Array(x)),
+		indices
 	};
 }
 

@@ -122,7 +122,9 @@ with frame times, the joints that move, and the lowest point reached.
 
 ## `export`
 
-`{ scene, format?, path?, triangles?, effect?, bakeAo?, lods?, collision?, engine? }`. See [levels of detail and collision](export.md#levels-of-detail-and-collision)
+`{ scene, format?, path?, triangles?, effect?, bakeAo?, lods?, collision?, engine?, texture?, shading?, bands?, outline? }`.
+See [levels of detail and collision](export.md#levels-of-detail-and-collision),
+[textures](export.md#textures) and [flat, toon and outlines](export.md#flat-toon-and-outlines).
 
 | format | writes |
 |---|---|
@@ -133,6 +135,11 @@ with frame times, the joints that move, and the lowest point reached.
 
 Triangles are reduced while keeping the shape within 0.4% of its size, or down to `triangles`
 if given. See [export](export.md).
+
+## `export_kit`
+
+`{ scenes, dir?, atlas?, triangles?, embed?, shading?, bands?, outline?, collision?, engine? }`.
+Separate GLBs that share one texture atlas, plus `atlas.png`. Returns the atlas image. See [kits](export.md#kits).
 
 ## `history`
 

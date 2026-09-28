@@ -9,6 +9,8 @@ import { buildRig, critiqueClip, sampleClip } from '../anim/rig.js';
 import { simplifyBuild } from '../core/simplify.js';
 import { critique, formatReport } from '../critic/critics.js';
 import { exportGlb, exportObj } from '../export/gltf.js';
+import { exportKit } from '../export/kit.js';
+import type { Shading } from '../export/texture.js';
 import { GUIDE } from '../guide.js';
 import { renderClipStrip } from '../render/motion.js';
 import { renderSheet, VIEWS, type View } from '../render/views.js';
@@ -293,7 +295,7 @@ export class Tools {
 		});
 	}
 
-	exportScene(args: { scene: string; format?: 'glb' | 'obj' | 'json' | 'flipbook'; path?: string; triangles?: number; effect?: string; bakeAo?: boolean; lods?: number[]; collision?: 'none' | 'parts' | 'hull'; engine?: 'godot' | 'unreal' | 'unity' | 'plain' }): Promise<Result> {
+	exportScene(args: { scene: string; format?: 'glb' | 'obj' | 'json' | 'flipbook'; path?: string; triangles?: number; effect?: string; bakeAo?: boolean; lods?: number[]; collision?: 'none' | 'parts' | 'hull'; engine?: 'godot' | 'unreal' | 'unity' | 'plain'; texture?: number; shading?: Shading; bands?: number; outline?: number }): Promise<Result> {
 		return wrap(async () => {
 			const scene = this.ws.get(args.scene);
 			const fmt = args.format ?? 'glb';
@@ -321,12 +323,33 @@ export class Tools {
 			}
 			const lods = [];
 			for (const f of args.lods ?? []) lods.push(await simplifyBuild(full, { triangles: Math.max(100, Math.round(b.stats.triangles * f)) }));
-			const r = exportGlb(b, { bakeAo: args.bakeAo, lods, collision: args.collision, naming: args.engine });
+			const r = exportGlb(b, { bakeAo: args.bakeAo, lods, collision: args.collision, naming: args.engine, texture: args.texture, shading: args.shading, bands: args.bands, outline: args.outline });
 			writeFileSync(out, r.glb);
 			const s = r.stats;
+			const tex = r.atlas ? ` · ${r.atlas.size}px texture (${r.atlas.charts} charts, ${Math.round(r.atlas.coverage * 100)}% used, ${Math.round(r.atlas.texelsPerMeter)} texels/m)` : '';
+			const look = `${args.shading && args.shading !== 'smooth' ? ` · ${args.shading} shading` : ''}${s.outlines ? ` · outline` : ''}`;
 			return {
-				content: [text(`wrote ${out} · ${(s.bytes / 1024).toFixed(0)} KB · ${s.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')}) · ${s.meshes} meshes · ${s.materials} materials${s.joints ? ` · ${s.joints} joints` : ''}${s.animations ? ` · ${s.animations} animations` : ''}${s.lods > 1 ? ` · ${s.lods} levels of detail (${[b, ...lods].map((x) => x.stats.triangles).join(' / ')} triangles)` : ''}${s.colliders ? ` · ${s.colliders} convex colliders` : ''}`)]
+				content: [text(`wrote ${out} · ${(s.bytes / 1024).toFixed(0)} KB · ${s.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')}) · ${s.meshes} meshes · ${s.materials} materials${s.joints ? ` · ${s.joints} joints` : ''}${s.animations ? ` · ${s.animations} animations` : ''}${s.lods > 1 ? ` · ${s.lods} levels of detail (${[b, ...lods].map((x) => x.stats.triangles).join(' / ')} triangles)` : ''}${s.colliders ? ` · ${s.colliders} convex colliders` : ''}${tex}${look}`)]
 			};
+		});
+	}
+
+	exportKit(args: { scenes: string[]; dir?: string; atlas?: number; triangles?: number; embed?: boolean; shading?: Shading; bands?: number; outline?: number; collision?: 'none' | 'parts' | 'hull'; engine?: 'godot' | 'unreal' | 'unity' | 'plain' }): Promise<Result> {
+		return wrap(async () => {
+			if (!args.scenes.length) return fail('list the scenes that belong to the kit');
+			const items = [];
+			for (const id of args.scenes) {
+				this.ws.get(id);
+				const full = await this.ws.buildAsync(id);
+				items.push({ name: id, build: await simplifyBuild(full, args.triangles ? { triangles: args.triangles } : {}) });
+			}
+			const kit = exportKit(items, { atlas: args.atlas, embed: args.embed, shading: args.shading, bands: args.bands, outline: args.outline, collision: args.collision, naming: args.engine });
+			const dir = resolve(args.dir ?? `${this.ws.exportsDir()}/kit`);
+			mkdirSync(dir, { recursive: true });
+			if (!args.embed) writeFileSync(`${dir}/atlas.png`, kit.atlas.png);
+			for (const f of kit.files) writeFileSync(`${dir}/${f.name}.glb`, f.result.glb);
+			const lines = kit.files.map((f) => `  ${f.name}.glb · ${(f.result.stats.bytes / 1024).toFixed(0)} KB · ${f.result.stats.triangles.toLocaleString('en')} triangles`);
+			return { content: [png(kit.atlas.png), text(`wrote ${kit.files.length} models to ${dir}${args.embed ? ' (atlas embedded in each)' : ' + atlas.png'}\natlas ${kit.atlas.size}px · ${kit.atlas.charts} charts · ${Math.round(kit.atlas.coverage * 100)}% used · ${Math.round(kit.atlas.texelsPerMeter)} texels/m\n${lines.join('\n')}`)] };
 		});
 	}
 

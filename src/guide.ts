@@ -18,7 +18,9 @@ rigs it and exports it. You never place vertices.
    pixel), and use \`render { compare: "previous" }\` to see exactly what your last edit changed.
 7. Working from a picture? \`compare_reference { image, view }\` scores the silhouette against it and
    names the parts that are too wide or narrow. Fix the biggest difference, compare again.
-8. \`export\` (glb for engines; \`triangles\` sets a budget, default keeps shape within 0.4%).
+8. \`export\` (glb for engines; \`triangles\` sets a budget, default keeps shape within 0.4%;
+   \`texture: 1024\` bakes colors into a texture for engines that ignore vertex colors;
+   \`shading: "toon"\` + \`outline: 0.01\` for a cel look; \`export_kit\` for a set sharing one atlas).
 
 ## Conventions
 Meters. +Y up. The model faces **+Z** (front). The model's own **left is +X**.

@@ -263,6 +263,17 @@ export interface VertexAttrs {
 	weights: Float32Array;
 }
 
+/** How much a part colors the surface at a point (inverse square distance); -1 when it never does. */
+export function colorWeight(pr: Prim, x: number, y: number, z: number, cell: number): number {
+	if (pr.op === 'intersect') return -1;
+	if (pr.op === 'carve' && !pr.part.material?.color) return -1;
+	const raw = primDist(pr, x, y, z);
+	const d = pr.op === 'carve' ? Math.abs(raw) : Math.max(0, raw);
+	// a point well inside an added part lies on a carved cavity: the carve owns its color
+	const inside = pr.op === 'add' && raw < -cell * 0.75 ? 0.02 : 1;
+	return inside / (d * d + (cell * 0.75) ** 2);
+}
+
 function computeAttributes(
 	positions: Float32Array,
 	v0: number,
@@ -284,7 +295,6 @@ function computeAttributes(
 	const joints = new Uint16Array(n * 4);
 	const weights = new Float32Array(n * 4);
 	const h = cell * 0.5;
-	const eps = (cell * 0.75) ** 2;
 	const aoSteps = [0.02, 0.05, 0.1, 0.18].map((f) => Math.max(cell * 1.5, size * f));
 	const w: number[] = [];
 	const ids: number[] = [];
@@ -320,13 +330,9 @@ function computeAttributes(
 		const m = list ? list.length : cands.length;
 		for (let j = 0; j < m; j++) {
 			const pr = list ? cands[list[j]] : cands[j];
-			if (pr.op === 'intersect') continue;
-			if (pr.op === 'carve' && !pr.part.material?.color) continue;
-			const raw = primDist(pr, x, y, z);
-			const d = pr.op === 'carve' ? Math.abs(raw) : Math.max(0, raw);
-			// a vertex well inside an added part lies on a carved cavity: the carve owns its color
-			const inside = pr.op === 'add' && raw < -cell * 0.75 ? 0.02 : 1;
-			w.push(inside / (d * d + eps));
+			const wt = colorWeight(pr, x, y, z, cell);
+			if (wt < 0) continue;
+			w.push(wt);
 			ids.push(pr.index);
 		}
 		if (!ids.length) {

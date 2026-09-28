@@ -122,9 +122,30 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 			bakeAo: z.boolean().optional().describe('multiply ambient occlusion into vertex colors (default true)'),
 			lods: z.array(z.number().gt(0).lt(1)).max(4).optional().describe('extra levels of detail as fractions of the triangle count, e.g. [0.5, 0.2] → <name>_LOD1, _LOD2'),
 			collision: z.enum(['none', 'parts', 'hull']).optional().describe('convex collision shapes: one per part (parts, a compound collider), one for the whole model (hull)'),
-			engine: z.enum(['godot', 'unreal', 'unity', 'plain']).optional().describe('name collision nodes the way that engine picks them up (godot: -convcolonly, unreal: UCX_, unity: _collider)')
+			engine: z.enum(['godot', 'unreal', 'unity', 'plain']).optional().describe('name collision nodes the way that engine picks them up (godot: -convcolonly, unreal: UCX_, unity: _collider)'),
+			texture: z.number().int().min(64).max(8192).optional().describe('bake colors into a texture of this many pixels (e.g. 1024) with UVs, for engines whose default material ignores vertex colors'),
+			shading: z.enum(['smooth', 'flat', 'toon']).optional().describe('smooth (default) · flat: faceted low-poly normals · toon: light baked in bands, unlit material'),
+			bands: z.number().int().min(2).max(8).optional().describe('light steps for toon shading (default 3)'),
+			outline: z.number().min(0).max(0.2).optional().describe('inverted-hull outline this many meters wide, e.g. 0.01 (toon look)'),
 		}
 	}, (a) => t.exportScene(a));
+
+	server.registerTool('export_kit', {
+		title: 'Export a kit',
+		description: 'Export several scenes as separate GLBs that share one texture atlas (atlas.png next to them, or embedded in each with embed). Engines load the texture once and can batch the whole kit. Returns the atlas image.',
+		inputSchema: {
+			scenes: z.array(z.string()).min(1).max(64),
+			dir: z.string().optional().describe('output folder (default <workspace>/exports/kit)'),
+			atlas: z.number().int().min(64).max(8192).optional().describe('atlas size in pixels (default 2048)'),
+			triangles: z.number().int().min(100).max(2_000_000).optional().describe('triangle budget per scene'),
+			embed: z.boolean().optional(),
+			shading: z.enum(['smooth', 'flat', 'toon']).optional().describe('smooth (default) · flat: faceted low-poly normals · toon: light baked in bands, unlit material'),
+			bands: z.number().int().min(2).max(8).optional().describe('light steps for toon shading (default 3)'),
+			outline: z.number().min(0).max(0.2).optional().describe('inverted-hull outline this many meters wide, e.g. 0.01 (toon look)'),
+			collision: z.enum(['none', 'parts', 'hull']).optional(),
+			engine: z.enum(['godot', 'unreal', 'unity', 'plain']).optional()
+		}
+	}, (a) => t.exportKit(a));
 
 	server.registerTool('set_layout', {
 		title: 'Place many objects',

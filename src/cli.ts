@@ -5,7 +5,8 @@
  * clayform new <template> [-o file]         write a template as a scene file
  * clayform render <scene> [-o png] [--views a,b] [--mode parts] [--size 384]
  * clayform inspect <scene>                  critics + part summary
- * clayform export <scene> [-o out.glb] [--triangles N]
+ * clayform export <scene> [-o out.glb] [--triangles N] [--texture 1024] [--shading flat|toon]
+ * clayform kit <scene...> [-o dir] [--atlas 2048]   several models sharing one texture
  * clayform motion <scene> <clip> [-o png] [--view left]
  * clayform effect <scene> <effect> [-o png]
  * clayform view <scene|template|file.glb>    local three.js viewer (plays clips)
@@ -72,6 +73,20 @@ function loadSceneSoft(path: string): Scene {
 
 const stem = (p: string) => basename(p).replace(/\.clay\.json$|\.json$/i, '');
 
+/** The look flags shared by export and kit. */
+function lookFlags() {
+	const shading = flags.get('shading');
+	if (shading && !['smooth', 'flat', 'toon'].includes(shading)) die('--shading is smooth, flat or toon');
+	const num = (k: string) => (flags.has(k) ? Number(flags.get(k)) : undefined);
+	return {
+		shading: shading as 'smooth' | 'flat' | 'toon' | undefined,
+		bands: num('bands'),
+		outline: num('outline'),
+		collision: flags.get('collision') as 'parts' | 'hull' | undefined,
+		naming: flags.get('engine') as 'godot' | 'unreal' | 'unity' | undefined
+	};
+}
+
 async function main() {
 	switch (cmd) {
 		case 'mcp': {
@@ -127,9 +142,29 @@ async function main() {
 			else {
 				const lods = [];
 				for (const f of (flags.get('lods') ?? '').split(',').filter(Boolean).map(Number)) lods.push(await simplifyBuild(full, { triangles: Math.max(100, Math.round(b.stats.triangles * f)) }));
-				writeFileSync(out, exportGlb(b, { lods, collision: flags.get('collision') as 'parts' | 'hull' | undefined, naming: flags.get('engine') as 'godot' | undefined }).glb);
+				const r = exportGlb(b, { lods, texture: flags.has('texture') ? Number(flags.get('texture')) : undefined, ...lookFlags() });
+				writeFileSync(out, r.glb);
+				if (r.atlas) console.log(`texture ${r.atlas.size}px · ${r.atlas.charts} charts · ${Math.round(r.atlas.coverage * 100)}% used · ${Math.round(r.atlas.texelsPerMeter)} texels per meter`);
 			}
 			console.log(`wrote ${out} · ${b.stats.triangles} triangles (from ${full.stats.triangles})`);
+			return;
+		}
+		case 'kit': {
+			if (!pos.length) die('usage: clayform kit <scene|template> [more …] [-o dir] [--atlas 2048] [--triangles N] [--embed]');
+			const { exportKit } = await import('./export/kit.js');
+			const { mkdirSync } = await import('node:fs');
+			const dir = flags.get('out') ?? 'kit';
+			const tri = flags.get('triangles');
+			const items = [];
+			for (const ref of pos) {
+				const full = await buildSceneAsync(loadScene(ref));
+				items.push({ name: stem(ref), build: await simplifyBuild(full, tri ? { triangles: Number(tri) } : {}) });
+			}
+			const kit = exportKit(items, { atlas: flags.has('atlas') ? Number(flags.get('atlas')) : undefined, embed: flags.has('embed'), ...lookFlags() });
+			mkdirSync(dir, { recursive: true });
+			if (!flags.has('embed')) writeFileSync(`${dir}/atlas.png`, kit.atlas.png);
+			for (const f of kit.files) writeFileSync(`${dir}/${f.name}.glb`, f.result.glb);
+			console.log(`wrote ${kit.files.length} models to ${dir}/ · atlas ${kit.atlas.size}px, ${kit.atlas.charts} charts, ${Math.round(kit.atlas.coverage * 100)}% used`);
 			return;
 		}
 		case 'motion': {
@@ -240,6 +275,8 @@ async function main() {
   clayform render <scene|template> [-o out.png] [--views front,left] [--mode parts] [--size 384]
   clayform inspect <scene|template>     part summary + critics (exit 2 on errors)
   clayform export <scene|template> [-o out.glb|.obj] [--triangles N] [--lods 0.5,0.2] [--collision parts|hull] [--engine godot|unreal|unity]
+                 [--texture 1024] [--shading flat|toon] [--bands 3] [--outline 0.01]
+  clayform kit <scene|template> [more …] [-o dir] [--atlas 2048] [--embed]   one shared texture atlas
   clayform motion <scene> [clip] [-o out.png] [--view left]
   clayform effect <scene> [effect] [-o out.png]
   clayform view <scene|template|file.glb> [--port 5231] [--watch]   three.js viewer, live reload

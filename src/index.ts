@@ -10,6 +10,8 @@ export { critique, formatReport, type Issue, type Report } from './critic/critic
 export { renderSheet, renderTiles, cameraFor, VIEWS, DEFAULT_VIEWS, type View, type Sheet, type SheetOptions } from './render/views.js';
 export { renderClipStrip } from './render/motion.js';
 export { encodePng } from './render/png.js';
+export { bakeAtlas, flatten, outlineMesh, toonColors, type Atlas, type AtlasMesh, type AtlasSource, type Shading } from './export/texture.js';
+export { exportKit, type KitItem, type KitOptions, type KitResult } from './export/kit.js';
 export { buildRig, sampleClip, poseMeshes, critiqueClip, type Rig, type SampledClip } from './anim/rig.js';
 export { exportGlb, exportObj, type GlbOptions, type GlbResult } from './export/gltf.js';
 export { bakeEffect, resolveEffect, PRESETS as EFFECT_PRESETS_TABLE, type Flipbook } from './vfx/effects.js';
