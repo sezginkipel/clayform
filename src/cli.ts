@@ -201,6 +201,27 @@ async function main() {
 			console.log(`IoU ${fit.iou.toFixed(2)} · overlay ${out}\n${fit.advice.map((a) => '• ' + a).join('\n')}`);
 			return;
 		}
+		case 'layout': {
+			const { buildLayout, critiqueLayout, describeLayout, mergeBuilds, parseLayout } = await import('./layout.js');
+			if (!pos[0]) die('usage: clayform layout <file.layout.json> [--render out.png] [--export out.glb] [--triangles N]');
+			const parsed = parseLayout(JSON.parse(readFileSync(pos[0]!, 'utf8')));
+			if (!parsed.ok) die(parsed.error);
+			const resolveRef = (ref: string) => loadSceneSoft(ref);
+			const lb = buildLayout((parsed as { ok: true; layout: import('./layout.js').Layout }).layout, resolveRef);
+			console.log(describeLayout(lb));
+			for (const i of critiqueLayout(lb)) console.log(`${i.severity.toUpperCase()} [${i.code}] ${i.message}`);
+			if (flags.get('render')) {
+				writeFileSync(flags.get('render')!, renderSheet(lb.merged, { views: ['top', 'three_quarter'], size: 420 }).png);
+				console.log(`wrote ${flags.get('render')}`);
+			}
+			if (flags.get('export')) {
+				const simplified = new Map();
+				for (const [ref, b] of lb.builds) simplified.set(ref, await simplifyBuild(b, flags.get('triangles') ? { triangles: Number(flags.get('triangles')) } : {}));
+				writeFileSync(flags.get('export')!, exportGlb(mergeBuilds(lb, simplified), { rig: false }).glb);
+				console.log(`wrote ${flags.get('export')}`);
+			}
+			return;
+		}
 		case 'guide':
 			console.log(GUIDE);
 			return;
@@ -222,6 +243,7 @@ async function main() {
   clayform effect <scene> [effect] [-o out.png]
   clayform view <scene|template|file.glb> [--port 5231] [--watch]   three.js viewer, live reload
   clayform compare <scene> <ref.png> [--view front] [-o overlay.png]   fit to a reference image
+  clayform layout <file.layout.json> [--render out.png] [--export out.glb]   place many objects
   clayform guide                        the manual agents read`);
 	}
 }

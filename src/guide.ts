@@ -99,6 +99,11 @@ resolution (cells on the longest axis, default 96; raise for thin parts) · edge
 symmetry "x" (critics check it) · budget (triangle budget) · screenHeight (px the model is tall in
 the game; critics flag details a player cannot see) · ao · rig auto|none.
 
+## Layouts
+\`set_layout\` places many scenes or templates together: items with a position, yaw and scale,
+and patterns (row, grid, circle, scatter). \`render_layout\` checks that items do not pass through
+each other; \`export_layout\` writes one GLB.
+
 ## Tips
 - Recolor with the palette: change \`palette.skin\` once.
 - Proportions come from templates; stretch with \`scale\` rather than rewriting shapes.

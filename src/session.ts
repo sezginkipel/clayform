@@ -10,6 +10,7 @@ import { compile } from './core/compile.js';
 import { applyOps } from './core/ops.js';
 import { emptyScene, parseScene, type Scene } from './core/schema.js';
 import { getTemplate } from './templates/index.js';
+import { buildLayout, parseLayout, type Layout, type LayoutBuild } from './layout.js';
 
 interface Entry {
 	scene: Scene;
@@ -22,6 +23,7 @@ export class Workspace {
 	readonly dir: string;
 	private scenes = new Map<string, Entry>();
 	private cache: { key: string; build: Build }[] = [];
+	private layouts = new Map<string, Layout>();
 
 	constructor(dir = process.env.CLAYFORM_WORKSPACE ?? '.clayform') {
 		this.dir = resolve(dir);
@@ -167,6 +169,50 @@ export class Workspace {
 		this.cache.unshift({ key, build });
 		this.cache.length = Math.min(this.cache.length, 4);
 		return build;
+	}
+
+	/* ---------------------------------------------------------- layouts */
+
+	/** A scene reference in a layout: a workspace scene id, a template id, or a .clay.json path. */
+	resolveScene(ref: string): Scene {
+		if (this.scenes.has(ref)) return this.scenes.get(ref)!.scene;
+		const t = getTemplate(ref);
+		if (t) return t.scene;
+		const file = resolve(ref);
+		if (existsSync(file)) {
+			const r = parseScene(JSON.parse(readFileSync(file, 'utf8')));
+			if (!r.ok) throw new Error(`${ref} is not a valid scene:\n${r.error}`);
+			return r.scene;
+		}
+		throw new Error(`layout refers to "${ref}", which is not a scene in this workspace, a template, or a file`);
+	}
+
+	setLayout(name: string, doc: unknown): { id: string; layout: Layout } {
+		const r = parseLayout(doc);
+		if (!r.ok) throw new Error(r.error);
+		const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'layout';
+		mkdirSync(join(this.dir, 'layouts'), { recursive: true });
+		writeFileSync(join(this.dir, 'layouts', `${id}.layout.json`), JSON.stringify(r.layout, null, 2));
+		this.layouts.set(id, r.layout);
+		return { id, layout: r.layout };
+	}
+
+	layout(id: string): Layout {
+		const hit = this.layouts.get(id);
+		if (hit) return hit;
+		const file = join(this.dir, 'layouts', `${id}.layout.json`);
+		if (existsSync(file)) {
+			const r = parseLayout(JSON.parse(readFileSync(file, 'utf8')));
+			if (r.ok) {
+				this.layouts.set(id, r.layout);
+				return r.layout;
+			}
+		}
+		throw new Error(`no layout "${id}" — create one with set_layout`);
+	}
+
+	buildLayout(id: string): LayoutBuild {
+		return buildLayout(this.layout(id), (ref) => this.resolveScene(ref));
 	}
 
 	exportsDir(): string {

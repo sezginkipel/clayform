@@ -3,7 +3,7 @@
  * Run: npx tsx scripts/docs-images.ts
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildScene } from '../src/core/build.js';
 import { applyOps } from '../src/core/ops.js';
 import { renderClipStrip } from '../src/render/motion.js';
@@ -31,6 +31,16 @@ writeFileSync('docs/goblin-walk.png', renderClipStrip(goblin, 'walk', { frames: 
 const torch = getTemplate('torch')!.scene;
 writeFileSync('docs/fire.png', bakeEffect(resolveEffect(torch, torch.effects![0])).preview);
 console.log('docs/goblin.png goblin-parts.png goblin-walk.png fire.png goblin.clay.json');
+
+// The example camp layout.
+{
+	const { buildLayout, parseLayout } = await import('../src/layout.js');
+	const parsed = parseLayout(JSON.parse(readFileSync('docs/examples/camp.layout.json', 'utf8')));
+	if (!parsed.ok) throw new Error(parsed.error);
+	const lb = buildLayout(parsed.layout, (ref) => getTemplate(ref)!.scene);
+	writeFileSync('docs/camp.png', renderSheet(lb.merged, { views: ['three_quarter', 'top'], size: 420, labels: false }).png);
+	console.log('docs/camp.png');
+}
 
 // Fitting a reference: the snowman's own silhouette as the reference, and a head 40% too big.
 {

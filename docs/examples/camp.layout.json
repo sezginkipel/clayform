@@ -1,0 +1,83 @@
+{
+  "format": "clayform-layout/1",
+  "name": "Camp",
+  "items": [
+    {
+      "id": "fire",
+      "scene": "torch",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "chest",
+      "scene": "chest",
+      "position": [
+        2.2,
+        0.4
+      ],
+      "rotation": -30
+    }
+  ],
+  "patterns": [
+    {
+      "id": "shroom",
+      "scene": "mushroom",
+      "type": "circle",
+      "count": 7,
+      "radius": 1.1,
+      "rotate": "random",
+      "scaleJitter": 0.25,
+      "seed": 3
+    },
+    {
+      "id": "barrel",
+      "scene": "barrel",
+      "type": "row",
+      "count": 3,
+      "spacing": 0.75,
+      "origin": [
+        -2.2,
+        -1.2
+      ],
+      "direction": 90
+    },
+    {
+      "id": "tree",
+      "scene": "tree",
+      "type": "scatter",
+      "count": 5,
+      "area": [
+        9,
+        5
+      ],
+      "origin": [
+        0,
+        -3.8
+      ],
+      "minGap": 1.8,
+      "rotate": "random",
+      "scaleJitter": 0.2,
+      "seed": 11
+    },
+    {
+      "id": "rock",
+      "scene": "rock",
+      "type": "scatter",
+      "count": 4,
+      "area": [
+        7,
+        3
+      ],
+      "origin": [
+        0,
+        2.6
+      ],
+      "minGap": 1.5,
+      "rotate": "random",
+      "scaleJitter": 0.3,
+      "seed": 5
+    }
+  ]
+}

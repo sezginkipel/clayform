@@ -99,6 +99,7 @@ WARN [asymmetric] declared X symmetry is off by 1.3 cm on average; worst: orb (4
 | `preview_motion` | A clip as a labelled film strip |
 | `preview_effect` | An effect's frames |
 | `export` | `glb` · `obj` · `json` · `flipbook` (sprite sheet PNG + JSON), with an optional triangle budget |
+| `set_layout` · `render_layout` · `export_layout` | Place many scenes or templates together (rows, grids, circles, scatters), check that they do not pass through each other, export one GLB |
 | `history` | Undo, redo, named snapshots |
 
 ## The scene document

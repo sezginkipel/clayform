@@ -126,6 +126,24 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 		}
 	}, (a) => t.exportScene(a));
 
+	server.registerTool('set_layout', {
+		title: 'Place many objects',
+		description: 'Create or replace a layout: many scenes or templates placed together (a street, a dungeon corner, a forest patch). layout = { format: "clayform-layout/1", name, items: [{ id, scene, position: [x, z] or [x, y, z], rotation (yaw deg), scale }], patterns: [{ id, scene, type: row|grid|circle|scatter, count, spacing, columns, radius, area: [w, d], origin: [x, z], direction, rotate: none|random|face_center|face_out|deg, scaleJitter, minGap, seed }] }. scene is a workspace scene id, a template id or a .clay.json path.',
+		inputSchema: { name: z.string().min(1).max(80), layout: z.record(z.string(), z.unknown()) }
+	}, (a) => t.setLayout(a));
+
+	server.registerTool('render_layout', {
+		title: 'Look at a layout',
+		description: 'Render a layout (default views: top and three_quarter) and check it: items that pass through each other, items lifted off the ground.',
+		inputSchema: { layout: z.string(), views: z.array(view).max(6).optional(), size: z.number().int().min(128).max(768).optional(), mode: z.enum(['shaded', 'parts', 'clay']).optional() }
+	}, (a) => t.renderLayout(a));
+
+	server.registerTool('export_layout', {
+		title: 'Export a layout',
+		description: 'Write the whole layout as one GLB, one node per item. triangles is a budget per distinct scene.',
+		inputSchema: { layout: z.string(), path: z.string().optional(), triangles: z.number().int().min(100).max(2_000_000).optional() }
+	}, (a) => t.exportLayout(a));
+
 	server.registerTool('history', {
 		title: 'Undo, redo, snapshots',
 		description: 'undo · redo · snapshot{label} · restore{label} · list. Every edit is one undo step.',

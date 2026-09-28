@@ -19,6 +19,8 @@ import { bakeEffect, resolveEffect } from '../vfx/effects.js';
 import { measureBetween, measurePart, measureRatio, partAtPixel } from '../measure.js';
 import { fitReference } from '../reference.js';
 import { findLibraryParts } from '../library/parts.js';
+import { critiqueLayout, describeLayout, mergeBuilds } from '../layout.js';
+import type { Build } from '../core/build.js';
 import { resolveAsset } from '../core/meshload.js';
 import { buildScene } from '../core/build.js';
 import { renderTiles } from '../render/views.js';
@@ -205,6 +207,45 @@ export class Tools {
 					text(`fit against ${args.image} (${typeof view === 'string' ? view : 'custom'} view): IoU ${fit.iou.toFixed(2)} — gray both, orange only in the reference, blue only in the model\n${fit.advice.map((a) => '• ' + a).join('\n')}\nFix the biggest difference first, then compare again: the score should go up.`)
 				]
 			};
+		});
+	}
+
+	setLayout(args: { name: string; layout: unknown }): Promise<Result> {
+		return wrap(() => {
+			const { id } = this.ws.setLayout(args.name, args.layout);
+			const lb = this.ws.buildLayout(id);
+			const issues = critiqueLayout(lb);
+			return { content: [text(`saved layout "${id}"\n${describeLayout(lb)}\n${issues.length ? issues.map((i) => `${i.severity.toUpperCase()} [${i.code}] ${i.message}`).join('\n') : 'no overlaps'}`)] };
+		});
+	}
+
+	renderLayout(args: { layout: string; views?: unknown; size?: number; mode?: 'shaded' | 'parts' | 'clay' }): Promise<Result> {
+		return wrap(() => {
+			const lb = this.ws.buildLayout(args.layout);
+			const views = parseViews(args.views) ?? ['top', 'three_quarter'];
+			const sheet = renderSheet(lb.merged, { views, size: Math.max(128, Math.min(768, args.size ?? 420)), mode: args.mode ?? 'shaded' });
+			const issues = critiqueLayout(lb);
+			return {
+				content: [
+					png(sheet.png),
+					text(`${describeLayout(lb)}\nviews: ${sheet.views.join(', ')}\n${issues.length ? issues.map((i) => `${i.severity.toUpperCase()} [${i.code}] ${i.message}`).join('\n') : 'no overlaps'}`)
+				]
+			};
+		});
+	}
+
+	exportLayout(args: { layout: string; path?: string; triangles?: number }): Promise<Result> {
+		return wrap(async () => {
+			const lb = this.ws.buildLayout(args.layout);
+			// simplify each distinct scene once, then rebuild the merged layout from the simplified builds
+			const simplified = new Map<string, Build>();
+			for (const [ref, b] of lb.builds) simplified.set(ref, await simplifyBuild(b, args.triangles ? { triangles: args.triangles } : {}));
+			const merged = mergeBuilds(lb, simplified);
+			const out = resolve(args.path ?? `${this.ws.exportsDir()}/${args.layout}.glb`);
+			mkdirSync(dirname(out), { recursive: true });
+			const r = exportGlb(merged, { rig: false });
+			writeFileSync(out, r.glb);
+			return { content: [text(`wrote ${out} · ${(r.stats.bytes / 1024).toFixed(0)} KB · ${lb.placed.length} items · ${r.stats.triangles.toLocaleString('en')} triangles`)] };
 		});
 	}
 

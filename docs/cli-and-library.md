@@ -16,6 +16,7 @@ Wherever a command takes a scene, you can also give a template id.
 | `clayform effect <scene> [effect] [-o png]` | flipbook + `.json` + `.preview.png` |
 | `clayform view <scene\|template\|file.glb> [--port 5231] [--watch]` | local three.js viewer that plays clips. `--watch` reloads when the scene file changes, and when an edit is invalid it keeps the last good version and shows the error |
 | `clayform compare <scene> <reference.png> [--view front] [-o overlay.png]` | fit a model to a reference image |
+| `clayform layout <file.layout.json> [--render out.png] [--export out.glb] [--triangles N]` | check, render and export a [layout](layouts.md) |
 | `clayform guide` | print the agent manual |
 
 ## Library
