@@ -25,6 +25,8 @@ export interface MeshData {
 	weights: Float32Array;
 	/** For a separate part: the prim it belongs to; -1 for the fused body. */
 	prim: number;
+	/** After sharp-edge splitting: the welded vertex each vertex came from (for connectivity). */
+	weld?: Uint32Array;
 }
 
 export interface Build {
@@ -41,6 +43,7 @@ export interface Build {
 export interface BuildOptions {
 	resolution?: number;
 	ao?: boolean;
+	edges?: 'soft' | 'sharp';
 }
 
 const BLOCK = 4;
@@ -50,6 +53,7 @@ export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
 	const c = compile(scene);
 	const res = opts.resolution ?? scene.settings?.resolution ?? 96;
 	const wantAo = opts.ao ?? scene.settings?.ao ?? true;
+	const sharp = (opts.edges ?? scene.settings?.edges) === 'sharp';
 	const meshes: MeshData[] = [];
 	let samples = 0;
 
@@ -112,10 +116,7 @@ export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
 				return { ev: (x, y, z) => bodyField(c, x, y, z, l.prims, l.sculpts), lip: l.lip };
 			}
 		};
-		const raw = surfaceNets(field, cell);
-		samples += raw.samples;
-
-		// attribute pass: lists for a vertex's block, grown by `reach` (cached per block)
+		// neighbourhood lists for a point's block, grown by `reach` (cached per block)
 		const blockSize = BLOCK * cell;
 		const near = (x: number, y: number, z: number, reach: number): List | null => {
 			const bi = Math.floor((x - min[0]) / blockSize), bj = Math.floor((y - min[1]) / blockSize), bk = Math.floor((z - min[2]) / blockSize);
@@ -123,7 +124,19 @@ export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
 			const bmax: V3 = [min[0] + (bi + 1) * blockSize + reach, min[1] + (bj + 1) * blockSize + reach, min[2] + (bk + 1) * blockSize + reach];
 			return listFor(bmin, bmax);
 		};
-		meshes.push(attributes('body', raw.positions, raw.indices, cell, c, c.body, -1, near, (x, y, z) => bodyField(c, x, y, z), wantAo, ext));
+		const gradNear = (x: number, y: number, z: number): V3 => {
+			const l = near(x, y, z, cell * 3);
+			const e = cell * 0.25;
+			const g = (px: number, py: number, pz: number) => (l ? bodyField(c, px, py, pz, l.prims, l.sculpts) : bodyField(c, px, py, pz));
+			const gx = g(x + e, y, z) - g(x - e, y, z), gy = g(x, y + e, z) - g(x, y - e, z), gz = g(x, y, z + e) - g(x, y, z - e);
+			const n = Math.hypot(gx, gy, gz) || 1;
+			return [gx / n, gy / n, gz / n];
+		};
+		const raw = surfaceNets(field, cell, sharp ? { normal: gradNear } : {});
+		samples += raw.samples;
+
+		const body = attributes('body', raw.positions, raw.indices, cell, c, c.body, -1, near, (x, y, z) => bodyField(c, x, y, z), wantAo, ext);
+		meshes.push(sharp ? splitSharp(body, 40) : body);
 	}
 
 	/* ---------------------------------------------------- separate parts */
@@ -139,9 +152,16 @@ export function buildScene(scene: Scene, opts: BuildOptions = {}): Build {
 			lip: 1.25 + (pr.detail ? (5.5 * pr.detail.amount) / pr.detail.scale : 0),
 			block: () => ({ ev: f, lip: 1.25 + (pr.detail ? (5.5 * pr.detail.amount) / pr.detail.scale : 0) })
 		};
-		const raw = surfaceNets(field, sc);
+		const gradSep = (x: number, y: number, z: number): V3 => {
+			const h = sc * 0.25;
+			const gx = f(x + h, y, z) - f(x - h, y, z), gy = f(x, y + h, z) - f(x, y - h, z), gz = f(x, y, z + h) - f(x, y, z - h);
+			const n = Math.hypot(gx, gy, gz) || 1;
+			return [gx / n, gy / n, gz / n];
+		};
+		const raw = surfaceNets(field, sc, sharp ? { normal: gradSep } : {});
 		samples += raw.samples;
-		meshes.push(attributes(pr.id, raw.positions, raw.indices, sc, c, [pr], pr.index, () => null, f, wantAo, e));
+		const m = attributes(pr.id, raw.positions, raw.indices, sc, c, [pr], pr.index, () => null, f, wantAo, e);
+		meshes.push(sharp ? splitSharp(m, 40) : m);
 	}
 
 	/* ------------------------------------------------------------ ground */
@@ -313,3 +333,81 @@ export function grounded(b: Build, p: V3): V3 {
 }
 
 export { bodyBase };
+
+/**
+ * Give sharp edges sharp shading: split a vertex where its faces meet at more
+ * than `angle` degrees, so each side keeps its own normal. `weld` remembers
+ * the original vertex so connectivity checks still see one surface.
+ */
+export function splitSharp(m: MeshData, angle: number): MeshData {
+	const nv = m.positions.length / 3, nt = m.indices.length / 3;
+	const P = m.positions, I = m.indices;
+	const fn = new Float32Array(nt * 3);
+	for (let t = 0; t < nt; t++) {
+		const a = I[t * 3] * 3, b = I[t * 3 + 1] * 3, c = I[t * 3 + 2] * 3;
+		const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+		const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+		// area-weighted: keep the cross product unnormalized for averaging, store unit for tests
+		fn[t * 3] = uy * vz - uz * vy;
+		fn[t * 3 + 1] = uz * vx - ux * vz;
+		fn[t * 3 + 2] = ux * vy - uy * vx;
+	}
+	const unit = (t: number): V3 => {
+		const l = Math.hypot(fn[t * 3], fn[t * 3 + 1], fn[t * 3 + 2]) || 1;
+		return [fn[t * 3] / l, fn[t * 3 + 1] / l, fn[t * 3 + 2] / l];
+	};
+	// faces per vertex
+	const start = new Uint32Array(nv + 1);
+	for (let k = 0; k < I.length; k++) start[I[k] + 1]++;
+	for (let v = 0; v < nv; v++) start[v + 1] += start[v];
+	const fill = start.slice(0, nv);
+	const faces = new Uint32Array(I.length);
+	for (let k = 0; k < I.length; k++) faces[fill[I[k]]++] = (k / 3) | 0;
+	const cos = Math.cos((angle * Math.PI) / 180);
+	const out: { src: number; n: V3 }[] = [];
+	const corner = new Uint32Array(I.length);
+	for (let v = 0; v < nv; v++) {
+		const list = Array.from(faces.subarray(start[v], start[v + 1]));
+		const groups: { n: V3; sum: V3; tris: number[] }[] = [];
+		for (const t of list) {
+			const u = unit(t);
+			let g = groups.find((q) => q.n[0] * u[0] + q.n[1] * u[1] + q.n[2] * u[2] > cos);
+			if (!g) groups.push((g = { n: u, sum: [0, 0, 0], tris: [] }));
+			g.sum = [g.sum[0] + fn[t * 3], g.sum[1] + fn[t * 3 + 1], g.sum[2] + fn[t * 3 + 2]];
+			const l = Math.hypot(...g.sum) || 1;
+			g.n = [g.sum[0] / l, g.sum[1] / l, g.sum[2] / l];
+			g.tris.push(t);
+		}
+		if (groups.length <= 1) {
+			const id = out.length;
+			out.push({ src: v, n: [m.normals[v * 3], m.normals[v * 3 + 1], m.normals[v * 3 + 2]] });
+			for (const t of list) for (let k = 0; k < 3; k++) if (I[t * 3 + k] === v) corner[t * 3 + k] = id;
+			continue;
+		}
+		for (const g of groups) {
+			const id = out.length;
+			out.push({ src: v, n: g.n });
+			for (const t of g.tris) for (let k = 0; k < 3; k++) if (I[t * 3 + k] === v) corner[t * 3 + k] = id;
+		}
+	}
+	const n = out.length;
+	const pick = <T extends Float32Array | Uint16Array | Int32Array>(arr: T, comps: number, make: (len: number) => T): T => {
+		const r = make(n * comps);
+		for (let i = 0; i < n; i++) for (let c = 0; c < comps; c++) r[i * comps + c] = arr[out[i].src * comps + c];
+		return r;
+	};
+	const normals = new Float32Array(n * 3);
+	out.forEach((o, i) => normals.set(o.n, i * 3));
+	return {
+		...m,
+		positions: pick(m.positions, 3, (l) => new Float32Array(l)),
+		normals,
+		colors: pick(m.colors, 3, (l) => new Float32Array(l)),
+		ao: pick(m.ao, 1, (l) => new Float32Array(l)),
+		vertPrim: pick(m.vertPrim, 1, (l) => new Int32Array(l)),
+		joints: pick(m.joints, 4, (l) => new Uint16Array(l)),
+		weights: pick(m.weights, 4, (l) => new Float32Array(l)),
+		indices: corner,
+		weld: Uint32Array.from(out.map((o) => (m.weld ? m.weld[o.src] : o.src)))
+	};
+}

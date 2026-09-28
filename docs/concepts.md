@@ -126,6 +126,17 @@ Sculpts are applied after all parts, in order, anchored like attachments:
 | `crease` | cut a groove from `at` to `to`, `radius` wide | groove depth |
 | `noise` | roughen locally, or everywhere without `at` | meters |
 
+## Sharp or soft edges
+
+By default edges are rounded to the cell size, which suits creatures and clay-like props. Set
+`settings.edges: "sharp"` for hard-surface models: vertices are placed by dual contouring, so they
+land on real edges and corners, and normals are split where faces meet steeply, so the edges also
+shade as edges. The house, chest, sword, robot and crystal templates use it.
+
+Details smaller than about two cells (a band that stands out 5 mm on a 1 m chest at
+resolution 120) can look serrated in sharp mode. Make them stand out a little more, or raise the
+resolution.
+
 ## Resolution and triangles
 
 `settings.resolution` is the number of cells along the longest axis (default 96). Parts thinner

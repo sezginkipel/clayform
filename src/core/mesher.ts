@@ -1,7 +1,13 @@
 /**
- * Surface nets (a simple dual contouring) over a sampled distance field.
+ * Surface nets over a sampled distance field, with optional dual contouring.
  *
- * The grid is split into 8³ blocks. For each block the caller returns an
+ * Both share the same topology (one vertex per cell with a sign change, one
+ * quad per crossing edge). Surface nets put the vertex at the average of the
+ * edge crossings, which rounds every edge to the cell size. Dual contouring
+ * instead solves a tiny least-squares problem (QEF) from the crossings and the
+ * field normals there, so vertices land on edges and corners.
+ *
+ * The grid is split into 4³ blocks. For each block the caller returns an
  * evaluator restricted to the primitives that can reach it (or null when
  * nothing can), and blocks whose center is far from any surface are filled
  * with a single value. Only the thin shell around the surface is sampled
@@ -36,7 +42,26 @@ const EDGES: [number, number][] = [
 	[0, 4], [1, 5], [2, 6], [3, 7]
 ];
 
-export function surfaceNets(f: MeshField, cell: number): RawMesh {
+export interface NetsOptions {
+	/** Field normal at a world point. When given, vertices are placed by dual contouring. */
+	normal?: (x: number, y: number, z: number) => V3;
+}
+
+/** Solve (AᵀA + λI) y = Aᵀb for a symmetric 3×3 matrix (Cramer). */
+function solve3(a: number[], b: number[], lambda: number): V3 {
+	const m00 = a[0] + lambda, m01 = a[1], m02 = a[2], m11 = a[3] + lambda, m12 = a[4], m22 = a[5] + lambda;
+	const c00 = m11 * m22 - m12 * m12, c01 = m02 * m12 - m01 * m22, c02 = m01 * m12 - m02 * m11;
+	const det = m00 * c00 + m01 * c01 + m02 * c02;
+	if (Math.abs(det) < 1e-12) return [0, 0, 0];
+	const c11 = m00 * m22 - m02 * m02, c12 = m01 * m02 - m00 * m12, c22 = m00 * m11 - m01 * m01;
+	return [
+		(c00 * b[0] + c01 * b[1] + c02 * b[2]) / det,
+		(c01 * b[0] + c11 * b[1] + c12 * b[2]) / det,
+		(c02 * b[0] + c12 * b[1] + c22 * b[2]) / det
+	];
+}
+
+export function surfaceNets(f: MeshField, cell: number, opts: NetsOptions = {}): RawMesh {
 	const nx = Math.max(2, Math.ceil((f.max[0] - f.min[0]) / cell) + 1);
 	const ny = Math.max(2, Math.ceil((f.max[1] - f.min[1]) / cell) + 1);
 	const nz = Math.max(2, Math.ceil((f.max[2] - f.min[2]) / cell) + 1);
@@ -81,6 +106,7 @@ export function surfaceNets(f: MeshField, cell: number): RawMesh {
 	const cellVert = new Int32Array(cx * cy * cz).fill(-1);
 	const pos: number[] = [];
 	const corner = new Float32Array(8);
+	const crossings: number[] = [];
 	for (let k = 0; k < cz; k++)
 		for (let j = 0; j < cy; j++)
 			for (let i = 0; i < cx; i++) {
@@ -92,19 +118,39 @@ export function surfaceNets(f: MeshField, cell: number): RawMesh {
 				}
 				if (mask === 0 || mask === 255) continue;
 				let sx = 0, sy = 0, sz = 0, n = 0;
+				crossings.length = 0;
 				for (const [a, b] of EDGES) {
 					const va = corner[a], vb = corner[b];
 					if (va < 0 === vb < 0) continue;
 					const t = va / (va - vb);
 					const ax = a & 1, ay = (a >> 1) & 1, az = (a >> 2) & 1;
 					const bx = b & 1, by = (b >> 1) & 1, bz = (b >> 2) & 1;
-					sx += ax + (bx - ax) * t;
-					sy += ay + (by - ay) * t;
-					sz += az + (bz - az) * t;
+					const px = ax + (bx - ax) * t, py = ay + (by - ay) * t, pz = az + (bz - az) * t;
+					sx += px;
+					sy += py;
+					sz += pz;
 					n++;
+					if (opts.normal) crossings.push(px, py, pz);
+				}
+				let vx = sx / n, vy = sy / n, vz = sz / n;
+				if (opts.normal) {
+					// QEF in cell units around the mass point: minimize Σ (nᵢ·(x − pᵢ))² + λ|x − m|²
+					const ata = [0, 0, 0, 0, 0, 0], atb = [0, 0, 0];
+					for (let c = 0; c < crossings.length; c += 3) {
+						const px = crossings[c], py = crossings[c + 1], pz = crossings[c + 2];
+						const nn = opts.normal(ox + (i + px) * cell, oy + (j + py) * cell, oz + (k + pz) * cell);
+						const d = nn[0] * (px - vx) + nn[1] * (py - vy) + nn[2] * (pz - vz);
+						ata[0] += nn[0] * nn[0]; ata[1] += nn[0] * nn[1]; ata[2] += nn[0] * nn[2];
+						ata[3] += nn[1] * nn[1]; ata[4] += nn[1] * nn[2]; ata[5] += nn[2] * nn[2];
+						atb[0] += nn[0] * d; atb[1] += nn[1] * d; atb[2] += nn[2] * d;
+					}
+					const y = solve3(ata, atb, 0.05);
+					vx = Math.min(1, Math.max(0, vx + y[0]));
+					vy = Math.min(1, Math.max(0, vy + y[1]));
+					vz = Math.min(1, Math.max(0, vz + y[2]));
 				}
 				cellVert[i + cx * (j + cy * k)] = pos.length / 3;
-				pos.push(ox + (i + sx / n) * cell, oy + (j + sy / n) * cell, oz + (k + sz / n) * cell);
+				pos.push(ox + (i + vx) * cell, oy + (j + vy) * cell, oz + (k + vz) * cell);
 			}
 
 	const idx: number[] = [];

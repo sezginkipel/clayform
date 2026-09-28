@@ -66,6 +66,14 @@
           "description": "compute ambient occlusion into vertex shading (default true)",
           "type": "boolean"
         },
+        "edges": {
+          "description": "soft (default) rounds edges to the cell size, good for organic shapes; sharp keeps real corners and edges (crates, blades, buildings, robots)",
+          "type": "string",
+          "enum": [
+            "soft",
+            "sharp"
+          ]
+        },
         "rig": {
           "description": "auto: skeleton from parts when clips exist",
           "type": "string",

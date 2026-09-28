@@ -264,8 +264,17 @@ interface Comp {
 	center: V3;
 }
 
+/** Vertex index with sharp-edge splits undone, so a split edge still counts as connected. */
+function welded(m: MeshData): { at: (i: number) => number; n: number } {
+	if (!m.weld) return { at: (i) => i, n: m.positions.length / 3 };
+	const w = m.weld;
+	let n = 0;
+	for (let i = 0; i < w.length; i++) if (w[i] + 1 > n) n = w[i] + 1;
+	return { at: (i) => w[i], n };
+}
+
 function components(m: MeshData): Comp[] {
-	const n = m.positions.length / 3;
+	const { at: W, n } = welded(m);
 	const parent = new Int32Array(n);
 	for (let i = 0; i < n; i++) parent[i] = i;
 	const find = (x: number): number => {
@@ -277,13 +286,13 @@ function components(m: MeshData): Comp[] {
 	};
 	const idx = m.indices;
 	for (let t = 0; t < idx.length; t += 3) {
-		const a = find(idx[t]), b = find(idx[t + 1]), c = find(idx[t + 2]);
+		const a = find(W(idx[t])), b = find(W(idx[t + 1]));
 		parent[b] = a;
-		parent[find(c)] = a;
+		parent[find(W(idx[t + 2]))] = a;
 	}
 	const map = new Map<number, Comp & { sx: number; sy: number; sz: number; nv: number }>();
 	for (let t = 0; t < idx.length / 3; t++) {
-		const root = find(idx[t * 3]);
+		const root = find(W(idx[t * 3]));
 		let e = map.get(root);
 		if (!e) {
 			e = { tris: 0, prims: new Map(), center: [0, 0, 0], sx: 0, sy: 0, sz: 0, nv: 0 };
@@ -304,11 +313,11 @@ function components(m: MeshData): Comp[] {
 
 function openEdges(m: MeshData): { bad: number; total: number } {
 	const edges = new Map<number, number>();
-	const n = m.positions.length / 3;
+	const { at: W, n } = welded(m);
 	const idx = m.indices;
 	for (let t = 0; t < idx.length; t += 3)
 		for (let e = 0; e < 3; e++) {
-			const a = idx[t + e], b = idx[t + ((e + 1) % 3)];
+			const a = W(idx[t + e]), b = W(idx[t + ((e + 1) % 3)]);
 			const k = a < b ? a * n + b : b * n + a;
 			edges.set(k, (edges.get(k) ?? 0) + 1);
 		}

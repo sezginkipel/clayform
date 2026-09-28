@@ -111,7 +111,7 @@ const car = S('Toy car', {
 const house = S('Cottage', {
 	notes: 'Small cottage ~2.4 m tall. Door and windows are carved; chimney on the roof.',
 	palette: { wall: '#efe3cf', roof: '#b4533b', wood: '#7a4d30', glass: '#8ec6dd', stone: '#8f8a84' },
-	settings: { resolution: 120 },
+	settings: { resolution: 120, edges: 'sharp' },
 	parts: [
 		{ id: 'walls', role: 'body', shape: { type: 'box', size: [2, 1.4, 1.6], rounding: 0.04 }, position: [0, 0.7, 0], material: { color: 'wall', roughness: 0.9 }, detail: { amount: 0.006, scale: 0.06 } },
 		{ id: 'roof', shape: { type: 'prism', size: [2.35, 0.95, 1.9], rounding: 0.03 }, attach: { to: 'walls', side: 'top', embed: 0.05 }, rotation: [0, 90, 0], scale: [1, 1, 1.22], material: { color: 'roof', roughness: 0.8 } },
@@ -162,7 +162,7 @@ const mushroom = S('Mushroom', {
 const sword = S('Sword', {
 	notes: 'Hero sword ~1 m, lying along Y. Blade metal, gold guard, leather grip.',
 	palette: { steel: '#c9ced6', gold: '#d9a441', leather: '#6b3f26', gem: '#4bb0e0' },
-	settings: { resolution: 200, ground: 'auto', symmetry: 'x' },
+	settings: { resolution: 200, ground: 'auto', symmetry: 'x', edges: 'sharp' },
 	parts: [
 		{ id: 'grip', role: 'body', shape: { type: 'cylinder', height: 0.2, radius: 0.022, rounding: 0.01 }, position: [0, 0.14, 0], material: { color: 'leather', roughness: 0.85 }, pattern: { kind: 'stripes', color: '#4e2c1a', scale: 0.02, amount: 0.8 } },
 		{ id: 'pommel', shape: { type: 'sphere', radius: 0.035 }, attach: { to: 'grip', side: 'bottom', embed: 0.35 }, material: { color: 'gold', metalness: 1, roughness: 0.3 } },
@@ -177,13 +177,13 @@ const sword = S('Sword', {
 const chest = S('Treasure chest', {
 	notes: 'Wooden chest ~0.9 m: half-round lid, metal bands, gold lock. Carve order matters — lid_cut only trims the lid parts listed before it.',
 	palette: { wood: '#8a5a34', wood_dark: '#6e4527', band: '#6d6f75', gold: '#e0b04a' },
-	settings: { resolution: 120, symmetry: 'x' },
+	settings: { resolution: 120, symmetry: 'x', edges: 'sharp' },
 	parts: [
 		{ id: 'lid', shape: { type: 'cylinder', height: 0.9, radius: 0.28, rounding: 0.03 }, attach: { to: 'box', side: 'top', embed: 1 }, rotation: [0, 0, 90], scale: [0.6, 1, 1], material: { color: 'wood', roughness: 0.85 }, pattern: { kind: 'stripes', color: 'wood_dark', scale: 0.05, amount: 0.45, axis: 'y' } },
-		{ id: 'lid_band', shape: { type: 'cylinder', height: 0.07, radius: 0.297, rounding: 0.01 }, attach: { to: 'box', side: 'top', offset: [0.66, 0], embed: 1 }, rotation: [0, 0, 90], scale: [0.6, 1, 1], mirror: true, material: { color: 'band', metalness: 0.9, roughness: 0.4 } },
+		{ id: 'lid_band', shape: { type: 'cylinder', height: 0.07, radius: 0.3, rounding: 0.008 }, attach: { to: 'box', side: 'top', offset: [0.66, 0], embed: 1 }, rotation: [0, 0, 90], scale: [0.6, 1, 1], mirror: true, material: { color: 'band', metalness: 0.9, roughness: 0.4 } },
 		{ id: 'lid_cut', shape: { type: 'box', size: [1.2, 0.4, 0.8] }, attach: { to: 'box', side: 'top', embed: 1 }, position: [0, -0.2, 0], op: 'carve' },
 		{ id: 'box', role: 'body', shape: { type: 'box', size: [0.9, 0.46, 0.56], rounding: 0.03 }, position: [0, 0.23, 0], material: { color: 'wood', roughness: 0.85 }, pattern: { kind: 'stripes', color: 'wood_dark', scale: 0.05, amount: 0.45 } },
-		{ id: 'band', shape: { type: 'box', size: [0.07, 0.475, 0.59], rounding: 0.012 }, attach: { to: 'box', side: 'center', embed: 1 }, position: [0.3, 0.004, 0], mirror: true, material: { color: 'band', metalness: 0.9, roughness: 0.4 } },
+		{ id: 'band', shape: { type: 'box', size: [0.07, 0.5, 0.6], rounding: 0.008 }, attach: { to: 'box', side: 'center', embed: 1 }, position: [0.3, 0.004, 0], mirror: true, material: { color: 'band', metalness: 0.9, roughness: 0.4 } },
 		{ id: 'lock', shape: { type: 'box', size: [0.1, 0.12, 0.04], rounding: 0.015 }, attach: { to: 'box', side: 'front', offset: [0, 0.82], embed: 0.4 }, material: { color: 'gold', metalness: 1, roughness: 0.3 } }
 	]
 });
@@ -234,7 +234,7 @@ const spaceship = S('Spaceship', {
 const robot = S('Robot', {
 	notes: 'Boxy robot ~1.2 m with glowing eyes and antenna.',
 	palette: { metal: '#c7ccd4', dark: '#3a3e46', glow: '#5ff0c8', accent: '#f0a33a' },
-	settings: { resolution: 120, symmetry: 'x' },
+	settings: { resolution: 120, symmetry: 'x', edges: 'sharp' },
 	parts: [
 		{ id: 'torso', role: 'body', shape: { type: 'box', size: [0.46, 0.44, 0.3], rounding: 0.07 }, position: [0, 0.64, 0], material: { color: 'metal', metalness: 0.7, roughness: 0.35 } },
 		{ id: 'chest_light', shape: { type: 'cylinder', height: 0.03, radius: 0.05 }, attach: { to: 'torso', side: 'front', offset: [0, 0.3], embed: 0.5 }, rotation: [90, 0, 0], material: { color: 'accent', emissive: 'accent', emissiveStrength: 1.5 } },
@@ -255,7 +255,7 @@ const robot = S('Robot', {
 const crystal = S('Crystal cluster', {
 	notes: 'Glowing crystal cluster ~0.7 m on a rock base.',
 	palette: { crystal: '#7fd8ff', core: '#3a8fe0', rock: '#6f6a66' },
-	settings: { resolution: 130 },
+	settings: { resolution: 130, edges: 'sharp' },
 	parts: [
 		{ id: 'base', role: 'body', shape: { type: 'ellipsoid', radii: [0.34, 0.12, 0.3] }, material: { color: 'rock', roughness: 0.95 }, detail: { amount: 0.025, scale: 0.08 } },
 		{ id: 'spire', shape: { type: 'cone', height: 0.62, radius: 0.1, topRadius: 0.0, rounding: 0.01, sides: 6 }, attach: { to: 'base', side: 'top', embed: 0.25 }, material: { color: 'crystal', roughness: 0.1, emissive: 'core', emissiveStrength: 1.2 } },

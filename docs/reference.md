@@ -28,6 +28,7 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `symmetry` | `x` · `none` | declare mirror symmetry so critics check it |
 | `budget` | integer (≥100, ≤2000000) | triangle budget for critics |
 | `ao` | boolean | compute ambient occlusion into vertex shading (default true) |
+| `edges` | `soft` · `sharp` | soft (default) rounds edges to the cell size, good for organic shapes; sharp keeps real corners and edges (crates, blades, buildings, robots) |
 | `rig` | `auto` · `none` | auto: skeleton from parts when clips exist |
 
 ## Part
