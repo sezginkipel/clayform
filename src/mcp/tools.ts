@@ -18,6 +18,7 @@ import { TEMPLATES } from '../templates/index.js';
 import { bakeEffect, resolveEffect } from '../vfx/effects.js';
 import { measureBetween, measurePart, measureRatio, partAtPixel } from '../measure.js';
 import { fitReference } from '../reference.js';
+import { findLibraryParts } from '../library/parts.js';
 import { resolveAsset } from '../core/meshload.js';
 import { buildScene } from '../core/build.js';
 import { renderTiles } from '../render/views.js';
@@ -77,6 +78,14 @@ export class Tools {
 			const { id, scene } = this.ws.create(args.name, args.template);
 			const b = this.ws.build(id);
 			return { content: [text(`created scene "${id}"${args.template ? ` from template ${args.template}` : ''}\n\n${describe(scene)}\n\n${formatReport(critique(b))}`)] };
+		});
+	}
+
+	listParts(args: { query?: string }): Promise<Result> {
+		return wrap(() => {
+			const list = findLibraryParts(args.query);
+			if (!list.length) return { content: [text(`no library part matches "${args.query}" — try eye, ear, tail, wheel, window, hat`)] };
+			return { content: [text(list.map((p) => `${p.name} — ${p.description} [${p.tags.join(', ')}] · usual side: ${p.side}${p.pair ? ' · mirrored pair' : ''}`).join('\n') + '\n\nAdd one with edit: {"op":"add_library_part","name":"eye_cartoon","id":"eye","attach":{"to":"head","offset":[0.4,0.1]}}')] };
 		});
 	}
 

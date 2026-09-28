@@ -12,6 +12,10 @@ with the reason and a fix, never as a crash.
 
 No arguments. One line per template: id, title, tags, what to change. See [templates](templates.md).
 
+## `list_parts`
+
+`{ query? }`. Search the [part library](parts.md). Add a part with the `add_library_part` edit op.
+
 ## `new_scene`
 
 `{ name, template? }`. Creates a scene (id = a slug of the name) and returns a part summary
@@ -30,6 +34,7 @@ changed and the critics, plus a three-quarter image when `render: true`.
 | op | fields |
 |---|---|
 | `add_part` | `part`, `after?` (a part id, or `"start"`) |
+| `add_library_part` | `name`, `id`, `attach`, `size?`, `mirror?`, `color?`, `after?` |
 | `update_part` | `id`, `set` |
 | `remove_part` | `id`, `cascade?` (also remove parts attached to it) |
 | `rename_part` | `id`, `to` (references follow) |

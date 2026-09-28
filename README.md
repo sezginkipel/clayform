@@ -89,6 +89,7 @@ WARN [asymmetric] declared X symmetry is off by 1.3 cm on average; worst: orb (4
 |---|---|
 | `guide` | The manual an agent reads once (topic `schema` returns the full JSON Schema) |
 | `list_templates` | 19 tuned starting points: biped, quadruped, bird, fish, slime, robot, snowman, car, spaceship, cottage, tree, rock, mushroom, crystal, sword, chest, barrel, potion, torch |
+| `list_parts` | A library of reusable parts (eyes, ears, horns, tails, wings, limbs, wheels, windows, doors, hats), added with one edit op |
 | `new_scene` · `list_scenes` · `get_scene` · `import_scene` | Scenes in the workspace; `get_scene` summarizes parts with resolved world positions |
 | `edit` | Atomic batch of ops (add/update/remove/rename/duplicate parts, sculpts, clips, effects, settings, palette). Returns what changed and the critics |
 | `render` | Labelled multi-view PNG; modes `shaded`, `parts`, `clay`, `normals`, `depth`; `compare: "previous"` shows before and after the last edit |

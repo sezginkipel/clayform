@@ -19,6 +19,7 @@ and exports glTF.
 | [FAQ](faq.md) | common questions and honest limits |
 | [Scene reference](reference.md) | every field (generated from the schema) |
 | [Templates](templates.md) | the starting points, with renders |
+| [Part library](parts.md) | reusable eyes, ears, noses, horns, tails, wings, limbs, wheels, windows, doors, hats … |
 
 The same manual the agent reads is in [`src/guide.ts`](../src/guide.ts) (the `guide` tool).
 The JSON Schema for scene files is [`schema/clayform.schema.json`](../schema/clayform.schema.json).

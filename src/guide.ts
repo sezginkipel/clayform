@@ -84,7 +84,8 @@ alpha, emitter, blend, burst, duration, frames, tile. \`preview_effect\` shows f
 \`export\` with format "flipbook" writes a sprite sheet PNG + JSON.
 
 ## Edit ops
-add_part{part, after?} · update_part{id, set} · remove_part{id, cascade?} · rename_part{id, to} ·
+add_part{part, after?} · add_library_part{name, id, attach, size?, mirror?, color?} (see list_parts) ·
+update_part{id, set} · remove_part{id, cascade?} · rename_part{id, to} ·
 duplicate_part{id, as, set?} · add_sculpt / update_sculpt / remove_sculpt ·
 add_clip / update_clip / remove_clip · add_effect / update_effect / remove_effect ·
 set_settings{set} · set_palette{set} · set_meta{name?, notes?} · replace{scene}.

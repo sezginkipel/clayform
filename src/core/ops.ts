@@ -5,13 +5,24 @@
  */
 
 import { z } from 'zod';
-import { Clip, Effect, FORMAT, Part, Scene, Sculpt, Settings, formatZodError, parseScene, type Scene as SceneT } from './schema.js';
+import { Anchor, Clip, Color, Effect, FORMAT, Id as PartId, Part, Scene, Sculpt, Settings, formatZodError, parseScene, type Scene as SceneT } from './schema.js';
+import { expandLibraryPart } from '../library/parts.js';
 
 const Id = z.string();
 const Patch = z.record(z.string(), z.unknown());
 
 export const Op = z.discriminatedUnion('op', [
 	z.strictObject({ op: z.literal('add_part'), part: Part, after: z.string().optional().describe('insert after this part id ("start" for first); default: end') }),
+	z.strictObject({
+		op: z.literal('add_library_part'),
+		name: z.string().describe('library part name from list_parts'),
+		id: PartId.describe('id for the root; the others become id_<suffix>'),
+		attach: Anchor.partial({ side: true }).describe('where the root goes; side defaults to the usual side of the library part'),
+		size: z.number().positive().max(20).optional().describe('scale the whole group (1 = sized for a ~1 m character)'),
+		mirror: z.boolean().optional().describe('pairs (eyes, ears, wings) mirror by default'),
+		color: Color.optional().describe('root color; parts without a color take the color of the part they attach to'),
+		after: z.string().optional()
+	}),
 	z.strictObject({ op: z.literal('update_part'), id: Id, set: Patch.describe('fields to change; objects merge, arrays replace, null removes a field') }),
 	z.strictObject({ op: z.literal('remove_part'), id: Id, cascade: z.boolean().optional().describe('also remove parts attached to it') }),
 	z.strictObject({ op: z.literal('rename_part'), id: Id, to: Id }),
@@ -77,6 +88,26 @@ export function applyOps(scene: SceneT, ops: unknown[]): OpResult {
 					s.parts.splice(j + 1, 0, op.part);
 				}
 				changes.push(`+ part ${op.part.id}`);
+				break;
+			}
+			case 'add_library_part': {
+				const target = s.parts.find((p) => p.id === op.attach.to);
+				if (!target) return fail(`no part "${op.attach.to}" to attach ${op.name} to`);
+				let group: SceneT['parts'];
+				try {
+					group = expandLibraryPart(op.name, op.id, op.attach as never, { size: op.size, mirror: op.mirror, color: op.color });
+				} catch (e) {
+					return fail(e instanceof Error ? e.message : String(e));
+				}
+				for (const p of group) {
+					if (findPart(p.id) >= 0) return fail(`part "${p.id}" already exists — pick another id for ${op.name}`);
+					if (!p.material?.color && target.material?.color) p.material = { ...(p.material ?? {}), color: target.material.color };
+				}
+				const at = op.after ? findPart(op.after) : -1;
+				if (op.after && at < 0) return fail(`no part "${op.after}" to insert after`);
+				if (at >= 0) s.parts.splice(at + 1, 0, ...group);
+				else s.parts.push(...group);
+				changes.push(`+ ${op.name} as ${group.map((p) => p.id).join(', ')}`);
 				break;
 			}
 			case 'update_part': {

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { buildScene } from '../core/build.js';
 import { applyOps } from '../core/ops.js';
 import { critique } from '../critic/critics.js';
-import { referenceMarkdown, schemaJson, templatesMarkdown } from '../docs-gen.js';
+import { partsMarkdown, referenceMarkdown, schemaJson, templatesMarkdown } from '../docs-gen.js';
 import { getTemplate } from '../templates/index.js';
 
 const read = (p: string) => readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
@@ -17,6 +17,7 @@ describe('generated docs are current (run: npx tsx scripts/gen-docs.ts)', () => 
 	it('reference, templates and JSON Schema', () => {
 		expect(read('docs/reference.md')).toBe(referenceMarkdown());
 		expect(read('docs/templates.md')).toBe(templatesMarkdown());
+		expect(read('docs/parts.md')).toBe(partsMarkdown());
 		expect(read('schema/clayform.schema.json')).toBe(schemaJson());
 	});
 });

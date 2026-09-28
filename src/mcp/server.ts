@@ -37,6 +37,12 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 		inputSchema: {}
 	}, () => t.listTemplates());
 
+	server.registerTool('list_parts', {
+		title: 'Find reusable parts',
+		description: 'Search the part library (eyes, ears, noses, horns, tails, wings, limbs, wheels, windows, doors, hats, backpacks …). Add one with the edit op add_library_part.',
+		inputSchema: { query: z.string().optional().describe('a word like eye, tail, vehicle, robot') }
+	}, (a) => t.listParts(a));
+
 	server.registerTool('new_scene', {
 		title: 'Create a scene',
 		description: 'Create a scene, optionally from a template. Returns its id, a part summary with world positions, and critics.',
@@ -54,7 +60,7 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 	server.registerTool('edit', {
 		title: 'Edit a scene (atomic batch)',
 		description:
-			'Apply ops in order; all or nothing. Ops: add_part{part,after?} update_part{id,set} remove_part{id,cascade?} rename_part{id,to} duplicate_part{id,as,set?} add_sculpt{sculpt} update_sculpt{id,set} remove_sculpt{id} add_clip{clip} update_clip{id,set} remove_clip{id} add_effect{effect} update_effect{id,set} remove_effect{id} set_settings{set} set_palette{set} set_meta{name?,notes?} replace{scene}. `set` merges objects, replaces arrays, null removes. Returns what changed and the critics. See guide for part/sculpt/clip/effect fields.',
+			'Apply ops in order; all or nothing. Ops: add_part{part,after?} add_library_part{name,id,attach,size?,mirror?,color?} update_part{id,set} remove_part{id,cascade?} rename_part{id,to} duplicate_part{id,as,set?} add_sculpt{sculpt} update_sculpt{id,set} remove_sculpt{id} add_clip{clip} update_clip{id,set} remove_clip{id} add_effect{effect} update_effect{id,set} remove_effect{id} set_settings{set} set_palette{set} set_meta{name?,notes?} replace{scene}. `set` merges objects, replaces arrays, null removes. Returns what changed and the critics. See guide for part/sculpt/clip/effect fields.',
 		inputSchema: {
 			scene,
 			ops: z.array(z.record(z.string(), z.unknown())).min(1).max(200).describe('e.g. [{"op":"update_part","id":"head","set":{"shape":{"radius":0.24}}}]'),
