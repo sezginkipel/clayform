@@ -5,11 +5,11 @@
 You need Node 20 or newer. Clayform installs from GitHub and builds itself.
 
 ```bash
-claude mcp add clayform -- npx -y github:sezginkipel/clayform mcp
+claude mcp add clayform -- npx -y @s1444/clayform mcp
 ```
 
 Other MCP clients (Cursor, Claude Desktop, …) take the same command:
-`npx -y github:sezginkipel/clayform mcp`. For a fixed version, install the tarball from
+`npx -y @s1444/clayform mcp` (or directly from GitHub: `npx -y github:sezginkipel/clayform mcp`). For a fixed version, install the tarball from
 [Releases](https://github.com/sezginkipel/clayform/releases).
 
 Scenes are saved as `.clay.json` files in `./.clayform/scenes/`, and exports go to

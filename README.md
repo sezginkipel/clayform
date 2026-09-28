@@ -27,13 +27,14 @@ Clayform changes the medium instead:
 
 ## Quick start
 
-Requires Node 20+. Clayform installs straight from GitHub (it builds itself on install):
+Requires Node 20+. Install from npm:
 
 ```bash
-claude mcp add clayform -- npx -y github:sezginkipel/clayform mcp
+claude mcp add clayform -- npx -y @s1444/clayform mcp
 ```
 
-For any other MCP client, the command is `npx -y github:sezginkipel/clayform mcp`.
+For any other MCP client, the command is `npx -y @s1444/clayform mcp`.
+You can also run directly from GitHub: `npx -y github:sezginkipel/clayform mcp`.
 Scenes are saved in `./.clayform/` (change it with `--workspace <dir>` or the
 `CLAYFORM_WORKSPACE` environment variable).
 
