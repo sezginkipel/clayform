@@ -151,6 +151,9 @@ const PERIOD: Record<string, number> = {
 };
 
 const TAU = Math.PI * 2;
+const sub3 = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+/** Clips that cycle; the rest play once. */
+const LOOPS = new Set(['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod']);
 const isQuat = (r: V3 | Quat): r is Quat => r.length === 4;
 
 function sideOf(p: Prim, cx: number) {
@@ -158,7 +161,7 @@ function sideOf(p: Prim, cx: number) {
 }
 
 /** Procedural drivers per joint for one clip. */
-function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<number, Driver>; speed: number } {
+function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<number, Driver>; speed: number; followThrough: (duration: number, loop: boolean) => void } {
 	const prims = b.compiled.prims;
 	const amp = clip.amplitude ?? 1;
 	const period = (PERIOD[clip.type] ?? 1) / (clip.speed ?? 1);
@@ -316,6 +319,83 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 		return reach / (duty * period);
 	};
 
+	/**
+	 * Secondary motion: the tip of each tail, ear and antenna is a point on a
+	 * damped spring that chases where the tip would be if the part were rigid.
+	 * The lag between the two becomes an extra turn at the part's pivot, baked
+	 * into the clip. Looping clips are simulated for three cycles and the last
+	 * one kept, so the clip still loops.
+	 */
+	const followThrough = (D: number, loop: boolean) => {
+		const springs: Record<string, number> = { tail: 2.2, ear: 3.5, antenna: 3, hair: 2.5 };
+		const followers = prims.filter((p) => springs[p.role] && !p.hidden && p.op === 'add');
+		const dt = 1 / 120;
+		for (const p of followers) {
+			const J = j(p);
+			const jt = rig.joints[J];
+			// tip: the point of the part (and what rides on it) farthest from its pivot
+			const sub = new Set([p.index]);
+			for (const q of prims) if (q.parent >= 0 && sub.has(q.parent)) sub.add(q.index);
+			let tip: V3 | null = null, far = 0;
+			for (const m of b.meshes) {
+				const step = Math.max(1, Math.floor(m.positions.length / 3 / 4000));
+				for (let v = 0; v < m.positions.length / 3; v += step) {
+					if (!sub.has(m.prim >= 0 ? m.prim : m.vertPrim[v])) continue;
+					const q: V3 = [m.positions[v * 3], m.positions[v * 3 + 1], m.positions[v * 3 + 2]];
+					const d = Math.hypot(q[0] - jt.rest[0], q[1] - jt.rest[1], q[2] - jt.rest[2]);
+					if (d > far) { far = d; tip = q; }
+				}
+			}
+			if (!tip || far < b.cell * 2) continue;
+			const tipLocal = sub3(tip, jt.rest);
+			const omega = TAU * springs[p.role], zeta = 0.3;
+			const t0 = loop ? -2 * D : 0;
+			const steps = Math.round((D - t0) / dt);
+			const keep = Math.round(D / dt);
+			const lags: Quat[] = [];
+			let x: V3 | null = null, vel: V3 = [0, 0, 0];
+			let peak = 0;
+			for (let k = 0; k <= steps; k++) {
+				const t = t0 + k * dt;
+				const W = worldAt(J, t);
+				const pivot = m4Point(W, [0, 0, 0]);
+				const rigid = m4Point(W, tipLocal);
+				if (!x) x = rigid;
+				else {
+					const acc: V3 = [0, 1, 2].map((a) => omega * omega * (rigid[a] - x![a]) - 2 * zeta * omega * vel[a]) as V3;
+					vel = add(vel, [acc[0] * dt, acc[1] * dt, acc[2] * dt]);
+					x = add(x, [vel[0] * dt, vel[1] * dt, vel[2] * dt]);
+					// stay on the part's length: drop the stretch and the radial speed
+					const r = sub3(x, pivot);
+					const rl = Math.hypot(...r) || 1;
+					x = add(pivot, [(r[0] / rl) * far, (r[1] / rl) * far, (r[2] / rl) * far]);
+					const radial = (vel[0] * r[0] + vel[1] * r[1] + vel[2] * r[2]) / rl;
+					vel = [vel[0] - (radial * r[0]) / rl, vel[1] - (radial * r[1]) / rl, vel[2] - (radial * r[2]) / rl];
+				}
+				if (k < steps - keep) continue;
+				// the lag as a turn in the parent's frame, applied before the part's own turn
+				const Pinv = m4Invert(worldAt(jt.parent, t));
+				const dr = norm(sub3(m4Point(Pinv, rigid), m4Point(Pinv, pivot)));
+				const ds = norm(sub3(m4Point(Pinv, x), m4Point(Pinv, pivot)));
+				const q = qFromTo(dr, ds);
+				peak = Math.max(peak, 2 * Math.acos(Math.min(1, Math.abs(q[3]))));
+				lags.push(q);
+			}
+			if (peak < 0.5 * DEG) continue;
+			const lagAt = (t: number): Quat => {
+				let u = (t / dt) % lags.length;
+				if (u < 0) u += lags.length;
+				const i = Math.floor(u), f = u - i;
+				return qSlerp(lags[Math.min(i, lags.length - 1)], lags[Math.min(i + 1, lags.length - 1)], f);
+			};
+			const prev = drive.get(J);
+			drive.set(J, (t) => {
+				const m = prev ? prev(t) : {};
+				return { ...m, rot: qMul(lagAt(t), toQuat(m.rot)) };
+			});
+		}
+	};
+
 	switch (clip.type) {
 		case 'walk':
 		case 'run': {
@@ -423,7 +503,7 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 		case 'keyframes':
 			break;
 	}
-	return { period, drive, speed };
+	return { period, drive, speed, followThrough };
 }
 
 function toQuat(r: V3 | Quat | undefined): Quat {
@@ -457,7 +537,7 @@ function trackDriver(keys: NonNullable<Clip['tracks']>[number]['keys']): Driver 
 }
 
 export function sampleClip(b: Build, rig: Rig, clip: Clip): SampledClip {
-	const { period, drive, speed } = drivers(b, rig, clip);
+	const { period, drive, speed, followThrough } = drivers(b, rig, clip);
 	let duration = clip.duration ?? period;
 	for (const tr of clip.tracks ?? []) {
 		const p = b.compiled.byId.get(tr.part);
@@ -469,6 +549,8 @@ export function sampleClip(b: Build, rig: Rig, clip: Clip): SampledClip {
 		if (clip.type === 'keyframes' && clip.duration === undefined) duration = Math.max(duration === period ? 0 : duration, ...tr.keys.map((k) => k.t));
 	}
 	if (duration <= 0) duration = 1;
+	// after the keyframe tracks, so the springs feel everything that moves
+	if (clip.secondary !== false) followThrough(duration, LOOPS.has(clip.type));
 	const fps = clip.fps ?? 30;
 	const frames = Math.max(2, Math.round(duration * fps) + 1);
 	const times = Array.from({ length: frames }, (_, i) => (i / (frames - 1)) * duration);
@@ -489,7 +571,7 @@ export function sampleClip(b: Build, rig: Rig, clip: Clip): SampledClip {
 		}
 		channels.push({ joint, rot, off, scl: hasScl ? scl : null });
 	}
-	return { id: clip.id, type: clip.type, duration, fps, times, channels, speed, loop: clip.type !== 'keyframes' };
+	return { id: clip.id, type: clip.type, duration, fps, times, channels, speed, loop: LOOPS.has(clip.type) };
 }
 
 /* ------------------------------------------------------------------ pose */

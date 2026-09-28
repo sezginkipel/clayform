@@ -54,6 +54,18 @@ Measured on the templates' walks (biped, robot, knight, quadruped, cat, chicken,
 a foot moves at most 0.3 cm between touchdown and lift-off, except the baby dragon's right front
 foot at 1.1 cm. A cell is 0.4–1.1 cm on those models.
 
+### Follow-through
+
+Tails, ears, antennas and hair (`tail`, `ear`, `antenna`, `hair` roles) get secondary motion on
+top of their own sway. The tip of each is a point on a damped spring that chases where the tip
+would be if the part were rigid: when the body turns, the tail trails, swings past when the body
+stops, and settles. The lag becomes an extra turn at the part's pivot, baked into the clip, and
+chained parts (a tail made of several `tail` parts) each follow the one before. Looping clips are
+simulated for three cycles and the last one is kept, so the clip still loops. Ears spring at
+3.5 Hz, antennas at 3, hair at 2.5 and tails at 2.2, all with the same light damping.
+
+`"secondary": false` on a clip turns it off.
+
 ## Clip types
 
 `idle`, `walk`, `run`, `hop` (with squash and stretch), `fly`, `swim`, `drive`, `spin` (the

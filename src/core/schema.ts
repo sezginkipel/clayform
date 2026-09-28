@@ -192,7 +192,8 @@ export const Clip = z.strictObject({
 	duration: num.min(0.1).max(60).optional().describe('seconds; default one natural cycle'),
 	target: Id.optional().describe('part to drive for wave/nod/spin (default: auto)'),
 	tracks: z.array(Track).max(128).optional().describe('keyframes (type "keyframes") or layered on top of a procedural clip'),
-	fps: z.number().int().min(4).max(60).optional().describe('sample rate for export (default 30)')
+	fps: z.number().int().min(4).max(60).optional().describe('sample rate for export (default 30)'),
+	secondary: z.boolean().optional().describe('springy follow-through on tails, ears and antennas, driven by how the body moves (default true)')
 });
 export type Clip = z.infer<typeof Clip>;
 

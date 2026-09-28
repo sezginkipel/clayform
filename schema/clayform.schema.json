@@ -1264,6 +1264,10 @@
             "type": "integer",
             "minimum": 4,
             "maximum": 60
+          },
+          "secondary": {
+            "description": "springy follow-through on tails, ears and antennas, driven by how the body moves (default true)",
+            "type": "boolean"
           }
         },
         "required": [

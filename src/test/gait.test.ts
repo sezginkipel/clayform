@@ -106,3 +106,52 @@ describe('planted walks', () => {
 		expect(anims.find((a) => a.name === 'idle')!.extras).toBeUndefined();
 	});
 });
+
+describe('secondary motion', () => {
+	const angle = (q: number[], r: number[]) => 2 * Math.acos(Math.min(1, Math.abs(q[0] * r[0] + q[1] * r[1] + q[2] * r[2] + q[3] * r[3])));
+
+	it('tails and ears follow through with a spring and the clip still loops', () => {
+		const b = buildScene(getTemplate('quadruped')!.scene);
+		const rig = buildRig(b);
+		const def = b.compiled.scene.clips!.find((c) => c.id === 'walk')!;
+		const on = sampleClip(b, rig, def), off = sampleClip(b, rig, { ...def, secondary: false });
+		for (const id of ['tail', 'ear']) {
+			const J = rig.byPrim.get(b.compiled.byId.get(id)!.index)!;
+			const a = on.channels.find((c) => c.joint === J)!, z = off.channels.find((c) => c.joint === J)!;
+			const extra = Math.max(...a.rot.map((q, i) => angle(q, z.rot[i])));
+			expect(extra, id).toBeGreaterThan(2 * (Math.PI / 180));
+			expect(angle(a.rot[0], a.rot[a.rot.length - 1]), id).toBeLessThan(0.5 * (Math.PI / 180));
+		}
+		expect(critiqueClip(b, rig, on, true).issues).toEqual([]);
+	});
+
+	it('the follow-through lags the motion that drives it', () => {
+		// a still tail on a body that sways: the tail turns only through the spring, after the body
+		const r = applyOps(getTemplate('quadruped')!.scene, [
+			{ op: 'add_clip', clip: { id: 'sway', type: 'keyframes', duration: 2, tracks: [{ part: 'body', keys: [{ t: 0, rotation: [0, 0, 0] }, { t: 0.3, rotation: [0, 25, 0] }, { t: 2, rotation: [0, 25, 0] }] }] } }
+		]);
+		if (!r.ok) throw new Error(r.error);
+		const b = buildScene(r.scene);
+		const rig = buildRig(b);
+		const clip = sampleClip(b, rig, r.scene.clips!.find((c) => c.id === 'sway')!);
+		const J = rig.byPrim.get(b.compiled.byId.get('tail')!.index)!;
+		const ch = clip.channels.find((c) => c.joint === J)!;
+		// signed turn about Y (the body turns +25°): the tail trails during the turn, overshoots after the stop, then settles
+		const yaw = ch.rot.map((q) => 2 * Math.atan2(q[1], q[3]));
+		const during = yaw.filter((_, i) => clip.times[i] > 0.05 && clip.times[i] < 0.3);
+		const after = yaw.filter((_, i) => clip.times[i] > 0.3 && clip.times[i] < 0.8);
+		expect(Math.min(...during)).toBeLessThan(-3 * (Math.PI / 180));
+		expect(Math.max(...after)).toBeGreaterThan(1 * (Math.PI / 180));
+		expect(Math.abs(yaw[yaw.length - 1])).toBeLessThan(0.5 * (Math.PI / 180));
+	});
+
+	it('can be turned off per clip', () => {
+		const b = buildScene(getTemplate('quadruped')!.scene);
+		const rig = buildRig(b);
+		const clip = sampleClip(b, rig, { id: 'i', type: 'idle', secondary: false });
+		const J = rig.byPrim.get(b.compiled.byId.get('tail')!.index)!;
+		const plain = sampleClip(b, rig, { id: 'i', type: 'idle' });
+		const a = clip.channels.find((c) => c.joint === J)!.rot, z = plain.channels.find((c) => c.joint === J)!.rot;
+		expect(a.some((q, i) => angle(q, z[i]) > 1e-4)).toBe(true);
+	});
+});

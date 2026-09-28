@@ -144,6 +144,7 @@ A target can also be `{ "point": [x, y, z] }` in world space.
 | `target` | string | part to drive for wave/nod/spin (default: auto) |
 | `tracks` | Track[] | keyframes (type "keyframes") or layered on top of a procedural clip |
 | `fps` | integer (≥4, ≤60) | sample rate for export (default 30) |
+| `secondary` | boolean | springy follow-through on tails, ears and antennas, driven by how the body moves (default true) |
 
 Clip types: `idle`, `walk`, `run`, `hop`, `fly`, `swim`, `drive`, `spin`, `hover`, `wave`, `nod`, `keyframes`.
 
