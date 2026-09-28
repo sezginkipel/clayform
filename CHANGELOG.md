@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.7.0 — 2026-09-29
+
+- **Baked textures.** `texture: 1024` (CLI `--texture 1024`) unwraps the model into charts that
+  each face one axis, packs them into one atlas, and paints every texel from the parts at that
+  point. Patterns come out sharper than vertex colors, and engines whose default materials
+  ignore vertex colors show the real colors. The GLB gets `TEXCOORD_0` and an embedded PNG. (#16)
+- **Kits.** `export_kit` / `clayform kit a b c -o kit` writes separate GLBs that all point at one
+  shared `atlas.png`, so an engine loads one texture for the whole set. `embed` puts a copy in
+  each file instead. (#17)
+- **Flat and toon shading, outlines.** `shading: "flat"` gives faceted low-poly normals.
+  `shading: "toon"` bakes the light into `bands` steps and marks the materials unlit.
+  `outline: 0.01` adds an inverted-hull rim that follows the skin. (#18)
+- The test suite checks that the atlas color at every vertex's UV matches the vertex color, that
+  gutters are filled, that kit models never share a texel, and that every combination passes the
+  Khronos validator with no errors or warnings. The toon, outlined and textured walk was checked
+  playing in three.js.
+
 ## 0.6.0 — 2026-09-28
 
 - **Style sheets.** A `clayform-style/1` file holds a pack's palette, material defaults, resolution,

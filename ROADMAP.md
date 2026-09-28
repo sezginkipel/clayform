@@ -54,7 +54,7 @@ A consistent set of assets that imports into Godot, Unity or Unreal without hand
 - LOD chains and collision hulls named for each engine (tested import guides moved to v1.0)
 - Faster rebuilds (worker threads, incremental builds)
 
-## v0.7 — Textures
+## ✅ v0.7 — Textures (released 2026-09-29)
 
 - UV unwrapping and baked textures, a shared atlas, toon and flat-shaded export options
 
