@@ -69,7 +69,13 @@ npx -y github:sezginkipel/clayform view .clayform/exports/goblin.glb
 ```
 
 This opens a local page (`http://127.0.0.1:5231/`) that shows the model in three.js and
-plays its clips.
+plays its clips. To watch an agent work, point it at the scene file with `--watch`:
+
+```bash
+npx -y github:sezginkipel/clayform view .clayform/scenes/goblin.clay.json --watch
+```
+
+The page reloads whenever the file changes.
 
 ## 5. Without an agent
 

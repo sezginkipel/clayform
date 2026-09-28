@@ -14,7 +14,7 @@ Wherever a command takes a scene, you can also give a template id.
 | `clayform export <scene> [-o out.glb\|out.obj] [--triangles N]` | export |
 | `clayform motion <scene> [clip] [-o png] [--view left] [--frames 6]` | film strip |
 | `clayform effect <scene> [effect] [-o png]` | flipbook + `.json` + `.preview.png` |
-| `clayform view <scene\|template\|file.glb> [--port 5231]` | local three.js viewer that plays clips |
+| `clayform view <scene\|template\|file.glb> [--port 5231] [--watch]` | local three.js viewer that plays clips. `--watch` reloads when the scene file changes, and when an edit is invalid it keeps the last good version and shows the error |
 | `clayform guide` | print the agent manual |
 
 ## Library

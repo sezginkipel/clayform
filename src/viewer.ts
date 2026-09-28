@@ -60,23 +60,30 @@ scene.add(ground);
 scene.add(new THREE.GridHelper(20, 80, 0xdedbd5, 0xe8e6e1));
 const clock = new THREE.Clock();
 let mixer = null;
-new GLTFLoader().load('/model.glb', (gltf) => {
-  const root = gltf.scene;
-  let tris = 0;
-  root.traverse((o) => { if (o.isMesh) { o.castShadow = true; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
-  scene.add(root);
-  const box = new THREE.Box3().setFromObject(root);
-  const size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
-  const r = Math.max(size.x, size.y, size.z);
-  camera.position.set(c.x + r * 1.3, c.y + r * 0.8, c.z + r * 1.8);
-  controls.target.copy(c);
-  sun.shadow.camera.left = sun.shadow.camera.bottom = -r * 2;
-  sun.shadow.camera.right = sun.shadow.camera.top = r * 2;
-  document.getElementById('stats').textContent = Math.round(tris).toLocaleString() + ' triangles · ' + gltf.animations.length + ' clips';
-  if (gltf.animations.length) {
-    mixer = new THREE.AnimationMixer(root);
+let current = null, root = null, version = null;
+function load(first) {
+  new GLTFLoader().load('/model.glb?v=' + Date.now(), (gltf) => {
+    if (root) { scene.remove(root); if (mixer) mixer.stopAllAction(); }
+    root = gltf.scene;
+    let tris = 0;
+    root.traverse((o) => { if (o.isMesh) { o.castShadow = true; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
+    scene.add(root);
+    if (first) {
+      const box = new THREE.Box3().setFromObject(root);
+      const size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+      const r = Math.max(size.x, size.y, size.z);
+      camera.position.set(c.x + r * 1.3, c.y + r * 0.8, c.z + r * 1.8);
+      controls.target.copy(c);
+      sun.shadow.camera.left = sun.shadow.camera.bottom = -r * 2;
+      sun.shadow.camera.right = sun.shadow.camera.top = r * 2;
+    }
+    document.getElementById('stats').textContent = Math.round(tris).toLocaleString() + ' triangles · ' + gltf.animations.length + ' clips' + (first ? '' : ' · updated ' + new Date().toLocaleTimeString());
+    document.getElementById('error').textContent = '';
     const bar = document.getElementById('clips');
-    let current = null;
+    const playing = current ? current.name : null;
+    bar.replaceChildren();
+    current = null;
+    mixer = gltf.animations.length ? new THREE.AnimationMixer(root) : null;
     gltf.animations.forEach((clip, i) => {
       const b = document.createElement('button');
       b.textContent = 'Play ' + clip.name;
@@ -84,13 +91,23 @@ new GLTFLoader().load('/model.glb', (gltf) => {
       b.onclick = () => {
         if (current) { current.action.stop(); current.button.setAttribute('aria-pressed', 'false'); }
         const action = mixer.clipAction(clip); action.play();
-        current = { action, button: b }; b.setAttribute('aria-pressed', 'true');
+        current = { action, button: b, name: clip.name }; b.setAttribute('aria-pressed', 'true');
       };
       bar.appendChild(b);
-      if (i === 0) b.click();
+      if (playing ? clip.name === playing : i === 0) b.click();
     });
-  }
-}, undefined, (e) => { document.getElementById('error').textContent = 'Could not load the model: ' + (e.message || e) + '. Re-run clayform view and reload.'; });
+  }, undefined, (e) => { document.getElementById('error').textContent = 'Could not load the model: ' + (e.message || e) + '. Check the terminal running clayform view.'; });
+}
+load(true);
+// live reload: the server bumps a version when the scene file changes
+setInterval(async () => {
+  try {
+    const r = await (await fetch('/version', { cache: 'no-store' })).json();
+    if (r.error) document.getElementById('error').textContent = 'The scene has an error, showing the last good version: ' + r.error;
+    if (version !== null && r.version !== version) load(false);
+    version = r.version;
+  } catch {}
+}, 1000);
 document.getElementById('wire').onclick = (ev) => {
   const on = ev.target.getAttribute('aria-pressed') !== 'true';
   ev.target.setAttribute('aria-pressed', String(on));
@@ -104,12 +121,22 @@ window.__clayform = { get mixer() { return mixer; }, scene };
 </body>
 </html>`;
 
-export function serveViewer(glb: Uint8Array, title: string, port: number): Promise<string> {
+/** What the viewer serves. `watch` mode replaces glb, bumps version, or sets error. */
+export interface ViewerModel {
+	glb: Uint8Array;
+	version: number;
+	error: string;
+}
+
+export function serveViewer(model: ViewerModel, title: string, port: number): Promise<string> {
 	const page = PAGE(title.replace(/[<>&"]/g, ''));
 	const server = createServer((req, res) => {
-		if (req.url === '/model.glb') {
+		if (req.url?.startsWith('/model.glb')) {
 			res.writeHead(200, { 'content-type': 'model/gltf-binary', 'cache-control': 'no-store' });
-			res.end(glb);
+			res.end(model.glb);
+		} else if (req.url === '/version') {
+			res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+			res.end(JSON.stringify({ version: model.version, error: model.error }));
 		} else if (req.url === '/' || req.url?.startsWith('/?')) {
 			res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
 			res.end(page);

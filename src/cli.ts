@@ -60,6 +60,15 @@ function die(m: string): never {
 	process.exit(1);
 }
 
+/** Like loadScene but throws instead of exiting (watch mode keeps running). */
+function loadSceneSoft(path: string): Scene {
+	const t = getTemplate(path);
+	if (t) return t.scene;
+	const r = parseScene(JSON.parse(readFileSync(path, 'utf8')));
+	if (!r.ok) throw new Error(r.error);
+	return r.scene;
+}
+
 const stem = (p: string) => basename(p).replace(/\.clay\.json$|\.json$/i, '');
 
 async function main() {
@@ -145,18 +154,37 @@ async function main() {
 		case 'view': {
 			const { serveViewer, readGlb } = await import('./viewer.js');
 			const target = pos[0];
-			if (!target) die('usage: clayform view <scene.clay.json | template | model.glb> [--port 5231]');
-			let glb: Uint8Array;
-			let title = stem(target!);
-			if (target!.toLowerCase().endsWith('.glb')) glb = readGlb(target!);
-			else {
-				const scene = loadScene(target);
-				title = scene.name;
+			if (!target) die('usage: clayform view <scene.clay.json | template | model.glb> [--port 5231] [--watch]');
+			const isGlb = target!.toLowerCase().endsWith('.glb');
+			const make = async () => {
+				if (isGlb) return readGlb(target!);
+				const scene = loadSceneSoft(target!);
 				const b = await simplifyBuild(buildScene(scene), flags.get('triangles') ? { triangles: Number(flags.get('triangles')) } : {});
-				glb = exportGlb(b).glb;
+				return exportGlb(b).glb;
+			};
+			const model = { glb: await make(), version: 1, error: '' };
+			const title = isGlb ? stem(target!) : loadSceneSoft(target!).name;
+			const url = await serveViewer(model, title, Number(flags.get('port') ?? 5231));
+			console.log(`viewing ${title} at ${url}${flags.has('watch') ? ' — watching for changes' : ''} (Ctrl+C to stop)`);
+			if (flags.has('watch') && !getTemplate(target!)) {
+				const { watchFile } = await import('node:fs');
+				let busy = false;
+				watchFile(target!, { interval: 400 }, async () => {
+					if (busy) return;
+					busy = true;
+					try {
+						model.glb = await make();
+						model.error = '';
+						model.version++;
+						console.log(`reloaded (${new Date().toLocaleTimeString()})`);
+					} catch (e) {
+						model.error = e instanceof Error ? e.message.split(/\n/).slice(0, 3).join(' ') : String(e);
+						console.log(`kept the last good version: ${model.error}`);
+					} finally {
+						busy = false;
+					}
+				});
 			}
-			const url = await serveViewer(glb, title, Number(flags.get('port') ?? 5231));
-			console.log(`viewing ${title} at ${url} (Ctrl+C to stop)`);
 			return;
 		}
 		case 'guide':
@@ -178,7 +206,7 @@ async function main() {
   clayform export <scene|template> [-o out.glb|.obj] [--triangles N]
   clayform motion <scene> [clip] [-o out.png] [--view left]
   clayform effect <scene> [effect] [-o out.png]
-  clayform view <scene|template|file.glb> [--port 5231]   open a three.js viewer
+  clayform view <scene|template|file.glb> [--port 5231] [--watch]   three.js viewer, live reload
   clayform guide                        the manual agents read`);
 	}
 }
