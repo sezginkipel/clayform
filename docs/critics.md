@@ -24,6 +24,9 @@ the defect on purpose and checks that it is caught.
 
 Clip checks (in `inspect` and `preview_motion`):
 
+- **pass through each other**: during the clip, two parts that are not joined (a hand and the
+  body, an arm and a leg) overlap more than 1.5 cells, when they did not overlap at rest. The message
+  gives the time and the depth. Lower the amplitude, move the pivot, or angle the part away.
 - **sinks below the ground**: a clip pushes the mesh under y = 0. Lower `amplitude` or shorten the limbs.
 - **never touches the ground**: a walk-like clip that never makes contact.
 - **no parts move**: give parts roles (`leg`, `arm`, `tail`, `wing`, `wheel`, `rotor`, `head`, `ear`) or add keyframe tracks.

@@ -65,9 +65,9 @@ Mirror twins are addressed as `<id>.m`.
 ## Checking motion
 
 `preview_motion` renders frames from one camera framed on the whole clip, so movement reads as
-movement. `inspect` samples every clip and reports sinking below the ground, never touching it,
-or not moving at all. The `fused-unrelated` critic warns *before* you animate when two moving
-parts are fused.
+movement. `inspect` samples every clip and reports parts passing through each other, sinking
+below the ground, never touching it, or not moving at all. The `fused-unrelated` critic warns
+*before* you animate when two moving parts are fused.
 
 ## Limits
 

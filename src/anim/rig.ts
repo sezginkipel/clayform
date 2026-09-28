@@ -13,6 +13,7 @@
  */
 
 import type { Build, MeshData } from '../core/build.js';
+import { primDist } from '../core/compile.js';
 import type { Prim } from '../core/compile.js';
 import {
 	DEG, add, m4Compose, m4Invert, m4Mul, norm, qAxisAngle, qEuler, qFromTo, qIdentity, qMul, qSlerp, sub,
@@ -392,6 +393,7 @@ export function critiqueClip(b: Build, rig: Rig, clip: SampledClip, standing: bo
 		if (fm < lowest.y) lowest = { t: clip.times[f], y: fm };
 		minY = Math.min(minY, fm);
 	}
+	issues.push(...intersections(b, rig, clip));
 	const tol = b.cell * 2;
 	if (standing && minY < -tol)
 		issues.push(`${clip.id}: sinks ${(-minY * 100).toFixed(1)} cm below the ground at t=${lowest.t.toFixed(2)}s — lower amplitude or shorten the swinging parts`);
@@ -399,4 +401,59 @@ export function critiqueClip(b: Build, rig: Rig, clip: SampledClip, standing: bo
 		issues.push(`${clip.id}: never touches the ground during the clip`);
 	if (!clip.channels.length) issues.push(`${clip.id}: no parts move — give parts roles (leg, arm, tail, wing, wheel, rotor, head) or add keyframe tracks`);
 	return { minY, maxY, lowest, issues };
+}
+
+/**
+ * Parts passing through each other during a clip. Each posed vertex is taken
+ * back into the rest space of every unrelated part and tested against that
+ * part's own distance field. Pairs that already overlap at rest are ignored
+ * (that is modeling, not motion).
+ */
+function intersections(b: Build, rig: Rig, clip: SampledClip): string[] {
+	const c = b.compiled;
+	const prims = c.prims.filter((p) => p.op === 'add' && !p.hidden);
+	const related = (a: number, q: number) => a === q || c.prims[a].parent === q || c.prims[q].parent === a;
+	const depthLimit = -b.cell * 1.5;
+	const test = (f: number | null) => {
+		const skin = skinMatrices(rig, jointMatrices(rig, f === null ? null : clip, f ?? 0));
+		const inv = new Map<number, M4>();
+		for (const p of prims) inv.set(p.index, m4Invert(skin[rig.byPrim.get(p.index) ?? 0]));
+		const meshes = f === null ? b.meshes : poseMeshes(b, rig, clip, f);
+		const hits = new Map<string, number>();
+		for (const m of meshes) {
+			const step = Math.max(1, Math.floor(m.positions.length / 3 / 2500));
+			for (let v = 0; v < m.positions.length / 3; v += step) {
+				const dom = m.vertPrim[v];
+				const x = m.positions[v * 3], y = m.positions[v * 3 + 1], z = m.positions[v * 3 + 2];
+				for (const q of prims) {
+					if (related(dom, q.index)) continue;
+					const M = inv.get(q.index)!;
+					const rx = M[0] * x + M[4] * y + M[8] * z + M[12];
+					const ry = M[1] * x + M[5] * y + M[9] * z + M[13] - b.offset[1];
+					const rz = M[2] * x + M[6] * y + M[10] * z + M[14];
+					const d = primDist(q, rx, ry, rz);
+					if (d < depthLimit) {
+						const key = [c.prims[dom].id, q.id].sort().join('|');
+						hits.set(key, Math.min(hits.get(key) ?? 0, d));
+					}
+				}
+			}
+		}
+		return hits;
+	};
+	const rest = test(null);
+	const worst = new Map<string, { depth: number; t: number }>();
+	const frames = Math.min(clip.times.length, 10);
+	for (let s = 0; s < frames; s++) {
+		const f = Math.round((s / Math.max(1, frames - 1)) * (clip.times.length - 1));
+		for (const [k, d] of test(f)) {
+			if (rest.has(k)) continue;
+			const w = worst.get(k);
+			if (!w || d < w.depth) worst.set(k, { depth: d, t: clip.times[f] });
+		}
+	}
+	return [...worst.entries()]
+		.sort((a, z) => a[1].depth - z[1].depth)
+		.slice(0, 4)
+		.map(([k, w]) => `${clip.id}: ${k.replace('|', ' and ')} pass through each other at t=${w.t.toFixed(2)}s (${(-w.depth * 100).toFixed(1)} cm deep) — lower the amplitude, move the pivot, or angle the part away`);
 }
