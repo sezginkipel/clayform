@@ -1,0 +1,8 @@
+# The sadelabs.site zone keeps HTML at the edge for hours; pages must revalidate so a deploy shows at once.
+# Hashed assets under /_app/immutable get their long cache from the adapter.
+/
+  Cache-Control: no-cache
+/docs
+  Cache-Control: no-cache
+/docs/*
+  Cache-Control: no-cache

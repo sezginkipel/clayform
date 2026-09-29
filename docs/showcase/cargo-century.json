@@ -1,0 +1,12 @@
+{
+	"name": "Cargo Century",
+	"url": "https://cargocentury.sadelabs.site",
+	"by": "SadeLabs",
+	"byUrl": "https://sadelabs.site",
+	"summary": "A transport tycoon in the browser, in the spirit of Transport Giant: real maps of European regions, rail, road and sea lines, goods chains and towns that grow, played alone or with up to eight people.",
+	"clayform": "All 118 buildings, industries, stations, trees and vehicles are Clayform scenes. The game's build meshes each one, stops on any critic error, reduces it to a triangle budget and packs them all into one compressed file.",
+	"image": "cargo-century.png",
+	"imageAlt": "24 of Cargo Century's Clayform models: factories, a church, a town hall, houses, trees, a crane, trains, a lorry and a plane. The company colour is shown in blue; in the game it is each player's colour.",
+	"tags": ["game", "browser", "three.js"],
+	"added": "2026-09-29"
+}

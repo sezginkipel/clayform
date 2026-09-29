@@ -129,7 +129,7 @@ export const pageBySlug = new Map(pages.map((p) => [p.slug, p]));
 const GROUPS: { name: string; slugs: string[] }[] = [
 	{ name: 'Start', slugs: ['', 'getting-started', 'concepts', 'mcp-tools'] },
 	{ name: 'Build', slugs: ['critics', 'matching-a-reference', 'layouts', 'animation', 'effects', 'export'] },
-	{ name: 'Reference', slugs: ['reference', 'templates', 'parts', 'cli-and-library', 'format'] },
+	{ name: 'Reference', slugs: ['reference', 'templates', 'parts', 'cli-and-library', 'format', 'showcase'] },
 	{ name: 'Inside', slugs: ['architecture', 'faq'] }
 ];
 

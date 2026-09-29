@@ -113,6 +113,21 @@
 		<img src={data.shots.actions} alt="Film strips of the biped attacking, jumping, sitting, turning and falling over" loading="lazy" />
 	</section>
 
+	{#if data.showcase.length}
+		<section class="made" aria-labelledby="made-title">
+			<h2 id="made-title">Made with it</h2>
+			{#each data.showcase as e (e.slug)}
+				<a class="made-shot" href="/showcase">
+					<img src={e.image} alt={e.imageAlt} loading="lazy" />
+				</a>
+				<p>
+					<strong>{e.name}</strong>: {e.clayform}
+					<a href="/showcase">See the showcase</a>
+				</p>
+			{/each}
+		</section>
+	{/if}
+
 	<section class="more" aria-labelledby="more-title">
 		<h2 id="more-title">What else is in the box</h2>
 		<dl>
@@ -346,8 +361,33 @@
 		display: block;
 	}
 	.actions,
+	.made,
 	.more {
 		padding-top: var(--s9);
+	}
+	.made-shot {
+		display: block;
+		border-radius: var(--radius);
+	}
+	.made-shot:hover {
+		background: none;
+	}
+	.made img {
+		display: block;
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+	}
+	.made p {
+		color: var(--ink-2);
+		max-width: 70ch;
+		margin: var(--s4) 0 0;
+	}
+	.made strong {
+		color: var(--ink);
+	}
+	.made p a {
+		margin-left: var(--s2);
+		font-weight: 600;
 	}
 	.actions p {
 		color: var(--ink-2);

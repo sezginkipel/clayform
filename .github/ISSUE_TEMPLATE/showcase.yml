@@ -1,0 +1,62 @@
+name: Add a project to the showcase
+description: Something you made with Clayform, for clayform.sadelabs.site/showcase
+title: "Showcase: "
+labels: [showcase]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing it. We read every submission and add the ones that fit, usually within a few days.
+        You can also open a pull request instead: add `docs/showcase/<your-project>.json` and a picture next to it
+        (see [the rules](https://clayform.sadelabs.site/docs/showcase)).
+  - type: input
+    id: name
+    attributes:
+      label: Project name
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Where people can see it
+      description: A public https link, the thing itself (a game, a site, a video, a store page).
+      placeholder: https://
+    validations:
+      required: true
+  - type: input
+    id: by
+    attributes:
+      label: Made by
+      description: Your name, studio or handle, and a link if you want one.
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What it is
+      description: One or two sentences for someone who has never heard of it.
+    validations:
+      required: true
+  - type: textarea
+    id: clayform
+    attributes:
+      label: What Clayform made in it
+      description: Which models, animations or effects came from Clayform, and roughly how many.
+    validations:
+      required: true
+  - type: textarea
+    id: image
+    attributes:
+      label: A picture
+      description: Drag in a PNG (a screenshot, or renders of the models). Wide pictures look best.
+    validations:
+      required: true
+  - type: checkboxes
+    id: ok
+    attributes:
+      label: Before you send
+      options:
+        - label: I made this project, or I have permission to share it.
+          required: true
+        - label: The link is public and works without signing in.
+          required: true

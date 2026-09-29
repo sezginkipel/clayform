@@ -1,7 +1,9 @@
 import { image, templates } from '$lib/docs';
+import { entries } from '$lib/showcase';
 
 export const load = () => ({
 	templates,
+	showcase: entries.slice(0, 1),
 	shots: {
 		goblin: image('goblin.png'),
 		parts: image('goblin-parts.png'),

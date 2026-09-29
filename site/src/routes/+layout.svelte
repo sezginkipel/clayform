@@ -21,7 +21,8 @@
 	</a>
 	<nav aria-label="Site">
 		<a href="/docs/getting-started" aria-current={inDocs ? 'page' : undefined}>Docs</a>
-		<a href="/docs/templates">Templates</a>
+		<a class="wide" href="/docs/templates">Templates</a>
+		<a href="/showcase" aria-current={page.url.pathname.startsWith('/showcase') ? 'page' : undefined}>Showcase</a>
 		<a class="wide" href={`${REPO}/blob/main/CHANGELOG.md`} rel="noopener">v{VERSION}</a>
 		<a href={REPO} rel="noopener">GitHub</a>
 		<a class="wide" href={NPM} rel="noopener">npm</a>

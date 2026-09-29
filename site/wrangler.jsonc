@@ -4,6 +4,7 @@
 	"main": ".svelte-kit/cloudflare/_worker.js",
 	"compatibility_date": "2026-09-01",
 	"assets": { "binding": "ASSETS", "directory": ".svelte-kit/cloudflare" },
+	"routes": [{ "pattern": "clayform.sadelabs.site", "custom_domain": true }],
 	// a bare `wrangler deploy` rebuilds first, so it never ships a stale build
 	"build": { "command": "npm run build" }
 }
