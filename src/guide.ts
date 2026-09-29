@@ -60,6 +60,9 @@ Rotations are Euler degrees [x, y, z]. Ground is y=0; with \`settings.ground: "a
 - \`blend\`: smooth-merge radius (m) with everything before it. 0 = hard seam.
 - \`mirror: true\` adds a twin across X named \`id.m\`. Parts attached to a mirrored part are
   mirrored too (set \`mirror: false\` to stop that).
+- \`repeat: { count, step?, turn?, axis?, around?, rows? }\` copies a part and everything on it
+  (window grids, posts, columns around a tower); \`scatter: { on, count, where?, minGap?, scale?,
+  seed? }\` spreads copies over another part (spikes, rivets, rocks and trees on terrain).
 - \`separate: true\` meshes it on its own (wheels, rotors, held props). Otherwise all parts fuse.
 - \`material\`: color (#hex or palette key), roughness, metalness, emissive, emissiveStrength.
 - \`pattern\`: { kind: spots|stripes|noise|gradient, color, scale, amount, axis: x|y|z|around }.

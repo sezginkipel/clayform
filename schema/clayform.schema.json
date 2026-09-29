@@ -1054,6 +1054,163 @@
             "description": "add a mirrored twin across X (id + \".m\")",
             "type": "boolean"
           },
+          "repeat": {
+            "description": "copies of this part and everything on it: window grids, fence posts, stairs, spokes, columns around a tower (ids id.2, id.3 …)",
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 256,
+                "description": "how many in all, the part itself included"
+              },
+              "step": {
+                "description": "world offset from one to the next (meters)",
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "turn": {
+                "description": "degrees each one turns from the last, around `axis` through the centre of `around`",
+                "type": "number",
+                "minimum": -360,
+                "maximum": 360
+              },
+              "axis": {
+                "description": "axis of the turn (default y)",
+                "type": "string",
+                "enum": [
+                  "x",
+                  "y",
+                  "z"
+                ]
+              },
+              "around": {
+                "description": "part whose centre the turn goes around (default the part this one attaches to, else the world origin)",
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,47}$"
+              },
+              "rows": {
+                "description": "a second direction: the whole row repeated this many times (a grid of windows)",
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 2,
+                    "maximum": 64
+                  },
+                  "step": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 3,
+                    "maxItems": 3
+                  }
+                },
+                "required": [
+                  "count",
+                  "step"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "count"
+            ],
+            "additionalProperties": false
+          },
+          "scatter": {
+            "description": "spread copies of this part over another part's surface: spikes on a back, rivets, flowers and rocks on terrain, moss on a roof",
+            "type": "object",
+            "properties": {
+              "on": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                "description": "the part whose surface the copies are spread over"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 256
+              },
+              "where": {
+                "description": "up (default): surfaces facing up, like ground or a roof; all: every side",
+                "type": "string",
+                "enum": [
+                  "up",
+                  "all"
+                ]
+              },
+              "align": {
+                "description": "stand each copy along the surface normal (default true); false keeps them upright",
+                "type": "boolean"
+              },
+              "embed": {
+                "description": "how deep each copy sinks in (default 0.35, as in attach)",
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1.5
+              },
+              "minGap": {
+                "description": "keep copies at least this far apart (meters)",
+                "type": "number",
+                "minimum": 0
+              },
+              "scale": {
+                "description": "random size range, e.g. [0.7, 1.3]",
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "spin": {
+                "description": "random turn around each copy's own up axis (default true)",
+                "type": "boolean"
+              },
+              "seed": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "on",
+              "count"
+            ],
+            "additionalProperties": false
+          },
           "separate": {
             "description": "mesh on its own instead of fusing into the body (wheels, props that spin, held items)",
             "type": "boolean"

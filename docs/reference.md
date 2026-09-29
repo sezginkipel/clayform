@@ -54,6 +54,8 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `pattern` | object | see Pattern |
 | `detail` | object | see Detail |
 | `mirror` | boolean | add a mirrored twin across X (id + ".m") |
+| `repeat` | object | copies of this part and everything on it: window grids, fence posts, stairs, spokes, columns around a tower (ids id.2, id.3 …) |
+| `scatter` | object | spread copies of this part over another part's surface: spikes on a back, rivets, flowers and rocks on terrain, moss on a roof |
 | `separate` | boolean | mesh on its own instead of fusing into the body (wheels, props that spin, held items) |
 | `pivot` | `center` · `top` · `bottom` · `front` · `back` · `left` · `right` · `attach` or [number, number, number] | joint location for animation; default: attach point, else top for legs/arms, else center |
 | `hidden` | boolean | not meshed; still usable as an anchor or joint |

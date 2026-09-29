@@ -189,6 +189,31 @@ export const Part = z.strictObject({
 	pattern: Pattern.optional().describe('see Pattern'),
 	detail: Detail.optional().describe('see Detail'),
 	mirror: z.boolean().optional().describe('add a mirrored twin across X (id + ".m")'),
+	repeat: z
+		.strictObject({
+			count: z.number().int().min(2).max(256).describe('how many in all, the part itself included'),
+			step: Vec3.optional().describe('world offset from one to the next (meters)'),
+			turn: num.min(-360).max(360).optional().describe('degrees each one turns from the last, around `axis` through the centre of `around`'),
+			axis: z.enum(['x', 'y', 'z']).optional().describe('axis of the turn (default y)'),
+			around: Id.optional().describe('part whose centre the turn goes around (default the part this one attaches to, else the world origin)'),
+			rows: z.strictObject({ count: z.number().int().min(2).max(64), step: Vec3 }).optional().describe('a second direction: the whole row repeated this many times (a grid of windows)')
+		})
+		.optional()
+		.describe('copies of this part and everything on it: window grids, fence posts, stairs, spokes, columns around a tower (ids id.2, id.3 …)'),
+	scatter: z
+		.strictObject({
+			on: Id.describe('the part whose surface the copies are spread over'),
+			count: z.number().int().min(1).max(256),
+			where: z.enum(['up', 'all']).optional().describe('up (default): surfaces facing up, like ground or a roof; all: every side'),
+			align: z.boolean().optional().describe('stand each copy along the surface normal (default true); false keeps them upright'),
+			embed: num.min(-1).max(1.5).optional().describe('how deep each copy sinks in (default 0.35, as in attach)'),
+			minGap: num.min(0).optional().describe('keep copies at least this far apart (meters)'),
+			scale: z.tuple([pos, pos]).optional().describe('random size range, e.g. [0.7, 1.3]'),
+			spin: z.boolean().optional().describe('random turn around each copy\'s own up axis (default true)'),
+			seed: z.number().int().optional()
+		})
+		.optional()
+		.describe('spread copies of this part over another part\'s surface: spikes on a back, rivets, flowers and rocks on terrain, moss on a roof'),
 	separate: z.boolean().optional().describe('mesh on its own instead of fusing into the body (wheels, props that spin, held items)'),
 	pivot: z.union([z.enum(PIVOTS), Vec3]).optional().describe('joint location for animation; default: attach point, else top for legs/arms, else center'),
 	hidden: z.boolean().optional().describe('not meshed; still usable as an anchor or joint')
@@ -334,6 +359,13 @@ export function integrity(s: Scene): Problem[] {
 			if (!colorOk(c)) out.push({ path: `parts[${i}].material`, message: `palette has no color "${c}" — add it to palette or use #rrggbb` });
 		if (p.shape.type === 'tube' && Array.isArray(p.shape.radius) && p.shape.radius.length !== p.shape.points.length)
 			out.push({ path: `parts[${i}].shape.radius`, message: `tube has ${p.shape.points.length} points but ${p.shape.radius.length} radii` });
+		if (p.repeat?.around && !ids.has(p.repeat.around)) out.push({ path: `parts[${i}].repeat.around`, message: `"${p.id}" turns around unknown part "${p.repeat.around}"` });
+		if (p.scatter) {
+			if (!ids.has(p.scatter.on)) out.push({ path: `parts[${i}].scatter.on`, message: `"${p.id}" is scattered on unknown part "${p.scatter.on}"` });
+			else if (p.scatter.on === p.id) out.push({ path: `parts[${i}].scatter.on`, message: `"${p.id}" cannot be scattered on itself` });
+			if (p.repeat) out.push({ path: `parts[${i}]`, message: `"${p.id}" has both repeat and scatter — pick one` });
+			if (p.scatter.scale && p.scatter.scale[0] > p.scatter.scale[1]) out.push({ path: `parts[${i}].scatter.scale`, message: 'scale is [smallest, largest]' });
+		}
 		if (p.only) {
 			if (!p.op || p.op === 'add') out.push({ path: `parts[${i}].only`, message: `"only" limits a carve or an intersect — give "${p.id}" op "carve" or "intersect", or remove "only"` });
 			for (const t of Array.isArray(p.only) ? p.only : [p.only]) {

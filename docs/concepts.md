@@ -81,6 +81,37 @@ eyes listed later stay whole:
 brings its hand. Set `mirror: false` on the child to stop that. Declare
 `settings.symmetry: "x"` and the critics will measure how symmetric the result is.
 
+## Repeat and scatter
+
+`repeat` makes copies of a part and of everything attached to it. Copies are named `id.2`,
+`id.3` …, each hangs from its own copy of the parent, and mirrored parts repeat on both sides.
+
+<!-- verify: part house -->
+```json
+{ "id": "window_row", "shape": { "type": "box", "size": [0.3, 0.4, 0.1] },
+  "attach": { "to": "walls", "side": "front", "offset": [-0.6, -0.1], "embed": 0.8 },
+  "op": "carve", "only": "walls", "material": { "color": "#2b3a4a" },
+  "repeat": { "count": 3, "step": [0.6, 0, 0], "rows": { "count": 2, "step": [0, 0.5, 0] } } }
+```
+
+- `step` moves each copy on from the last (a row of windows, fence posts, stairs).
+- `turn` turns each one around `axis` (default Y) through the centre of `around`, or of the part
+  it attaches to (spokes, columns around a tower, petals).
+- `rows` repeats the whole row again in a second direction (a grid).
+
+`scatter` spreads copies over another part's surface instead: `on` names it, `count` how many,
+`where: "up"` (the default) keeps them on surfaces facing up and `"all"` uses every side. Copies
+stand along the surface normal unless `align: false`, sink in by `embed` like an attached part,
+stay `minGap` apart, and get a random size from `scale` and a random turn unless `spin: false`.
+The same `seed` gives the same spread every time.
+
+<!-- verify: part rock -->
+```json
+{ "id": "pebble", "shape": { "type": "ellipsoid", "radii": [0.06, 0.04, 0.05] },
+  "scatter": { "on": "boulder", "count": 8, "minGap": 0.15, "scale": [0.6, 1.3], "seed": 2 },
+  "material": { "color": "#8f8a84" } }
+```
+
 ## Separate parts
 
 `separate: true` meshes a part on its own instead of fusing it: wheels that spin, rotors, a sword

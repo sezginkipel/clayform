@@ -10,7 +10,7 @@
  */
 
 import {
-	add, clamp, dot, hexToRgb, len, norm, qConj, qEuler, qFromTo, qMul, qRotate, scale, sub,
+	add, clamp, dot, hexToRgb, len, norm, qAxisAngle, qConj, qEuler, qFromTo, qMul, qRotate, scale, sub,
 	type Quat, type RGB, type V3
 } from './math.js';
 import type { Anchor, Part, Scene, Sculpt, Side, Target } from './schema.js';
@@ -406,6 +406,8 @@ export function compile(scene: Scene): Compiled {
 		}
 	}
 
+	expandCopies(parts, prims, byId, warnings, computeAabb);
+
 	// Body order follows the document order (blend semantics), twins right after originals.
 	const docIndex = new Map(parts.map((p, i) => [p.id, i]));
 	const body = prims
@@ -430,6 +432,148 @@ export function compile(scene: Scene): Compiled {
 	compiled.lip = lip;
 	return compiled;
 }
+
+/* ---------------------------------------------------------------- copies */
+
+/** A rigid move: rotate by q, then add t. */
+interface Rigid {
+	q: Quat;
+	t: V3;
+}
+const applyRigid = (g: Rigid, p: V3): V3 => add(qRotate(g.q, p), g.t);
+/** The same move seen in the mirror across X (for twins). */
+const mirrorRigid = (g: Rigid): Rigid => ({ q: [g.q[0], -g.q[1], -g.q[2], g.q[3]], t: [-g.t[0], g.t[1], g.t[2]] });
+
+function seeded(seed: number): () => number {
+	let s = (seed * 2654435761) >>> 0 || 1;
+	return () => {
+		s ^= s << 13;
+		s ^= s >>> 17;
+		s ^= s << 5;
+		return (s >>> 0) / 4294967296;
+	};
+}
+
+/**
+ * repeat and scatter: every copy is a rigid move of the part and of
+ * everything attached to it (and of their mirror twins, mirrored). Parts
+ * deepest in the attach tree go first, so a repeated window on a repeated
+ * floor makes a grid.
+ */
+function expandCopies(parts: Part[], prims: Prim[], byId: Map<string, Prim>, warnings: string[], aabb: (pr: Prim) => void) {
+	const depth = (p: Prim) => {
+		let d = 0;
+		for (let c = p; c.parent >= 0; c = prims[c.parent]) d++;
+		return d;
+	};
+	const sources = parts.filter((p) => p.repeat || p.scatter);
+	const roots = sources.map((p) => byId.get(p.id)!).filter(Boolean).sort((a, z) => depth(z) - depth(a));
+	for (const root of roots) {
+		const part = root.part;
+		// the subtree: this part, its twin, and everything whose parent chain reaches them
+		const inSub = new Set<number>([root.index, ...(root.twinIndex >= 0 ? [root.twinIndex] : [])]);
+		for (const p of prims) {
+			for (let c = p; c.parent >= 0; c = prims[c.parent]) if (inSub.has(c.parent)) { inSub.add(p.index); break; }
+		}
+		const sub = prims.filter((p) => inSub.has(p.index));
+		const moves: { g: Rigid; scale: number; label: number }[] = [];
+		if (part.repeat) {
+			const r = part.repeat;
+			const around = r.around ? byId.get(r.around) : root.parent >= 0 ? prims[root.parent] : undefined;
+			const centre: V3 = around ? [(around.min[0] + around.max[0]) / 2, (around.min[1] + around.max[1]) / 2, (around.min[2] + around.max[2]) / 2] : [0, 0, 0];
+			const axis: V3 = r.axis === 'x' ? [1, 0, 0] : r.axis === 'z' ? [0, 0, 1] : [0, 1, 0];
+			const rows = r.rows ? r.rows.count : 1;
+			let label = 2;
+			for (let j = 0; j < rows; j++)
+				for (let k = 0; k < r.count; k++) {
+					if (j === 0 && k === 0) continue;
+					const q = qAxisAngle(axis, ((r.turn ?? 0) * k * Math.PI) / 180);
+					// turn around the centre, then step
+					const step = add(scale((r.step ?? [0, 0, 0]) as V3, k), r.rows ? scale(r.rows.step as V3, j) : [0, 0, 0]);
+					const t = add(sub3(centre, qRotate(q, centre)), step);
+					moves.push({ g: { q, t }, scale: 1, label: label++ });
+				}
+		} else if (part.scatter) {
+			const s = part.scatter;
+			const on = byId.get(s.on);
+			if (!on) continue;
+			const rnd = seeded(s.seed ?? 1);
+			const c: V3 = [(on.min[0] + on.max[0]) / 2, (on.min[1] + on.max[1]) / 2, (on.min[2] + on.max[2]) / 2];
+			const R = Math.hypot(on.max[0] - on.min[0], on.max[1] - on.min[1], on.max[2] - on.min[2]);
+			const spots: { p: V3; n: V3 }[] = [];
+			const gap = s.minGap ?? 0;
+			const up = (s.where ?? 'up') === 'up';
+			for (let tries = 0; spots.length < s.count && tries < s.count * 60; tries++) {
+				// a random ray from outside toward the part; for "up", rays come down from above
+				let dx: number, dy: number, dz: number;
+				if (up) {
+					const x = on.min[0] + rnd() * (on.max[0] - on.min[0]), z = on.min[2] + rnd() * (on.max[2] - on.min[2]);
+					const hit = traceOnto(on, [x, on.max[1] + R * 0.1 + 0.01, z], [0, -1, 0], (on.max[1] - on.min[1]) + R * 0.2 + 0.02);
+					if (!hit.hit || hit.n[1] < 0.3) continue;
+					if (gap > 0 && spots.some((o) => Math.hypot(o.p[0] - hit.p[0], o.p[1] - hit.p[1], o.p[2] - hit.p[2]) < gap)) continue;
+					spots.push({ p: hit.p, n: hit.n });
+					continue;
+				}
+				const u = rnd() * 2 - 1, a = rnd() * Math.PI * 2, w = Math.sqrt(1 - u * u);
+				dx = w * Math.cos(a); dy = u; dz = w * Math.sin(a);
+				const hit = traceOnto(on, add(c, [dx * R, dy * R, dz * R]), [-dx, -dy, -dz], R * 2);
+				if (!hit.hit) continue;
+				if (gap > 0 && spots.some((o) => Math.hypot(o.p[0] - hit.p[0], o.p[1] - hit.p[1], o.p[2] - hit.p[2]) < gap)) continue;
+				spots.push({ p: hit.p, n: hit.n });
+			}
+			if (spots.length < s.count) warnings.push(`${part.id}: scattered ${spots.length} of ${s.count} on ${s.on} — lower minGap or the count, or use where: "all"`);
+			const local = qEuler((part.rotation ?? [0, 0, 0]) as V3);
+			const [smin, smax] = s.scale ?? [1, 1];
+			const embed = s.embed ?? 0.35;
+			spots.forEach((sp, k) => {
+				const yaw = s.spin === false ? [0, 0, 0, 1] as Quat : qAxisAngle([0, 1, 0], rnd() * Math.PI * 2);
+				const k2 = smin + (smax - smin) * rnd();
+				const lean = s.align === false ? ([0, 0, 0, 1] as Quat) : qFromTo([0, 1, 0], sp.n);
+				const rot = qMul(lean, qMul(yaw, local));
+				// sink the copy's bottom into the surface, like attach does
+				const below = Math.max(0, -root.lmin[1] * root.scl[1]) * k2;
+				const pos = add(sp.p, scale(sp.n, below * (1 - embed)));
+				const q = qMul(rot, root.invRot);
+				moves.push({ g: { q, t: sub3(pos, qRotate(q, root.pos)) }, scale: k2, label: k + 1 });
+			});
+		}
+		if (!moves.length) continue;
+		// every move starts from where the parts stood before any of them (the first scatter spot moves the originals)
+		const home = new Map(sub.map((p) => [p.index, { pos: p.pos, rot: p.rot, pivot: p.pivot, attachPoint: p.attachPoint, attachNormal: p.attachNormal, scl: p.scl }]));
+		for (const mv of moves) {
+			// the first scatter spot moves the part itself; every other move makes a copy
+			const inPlace = !!part.scatter && mv.label === 1;
+			const clone = new Map<number, Prim>();
+			for (const cur of sub) {
+				const src = { ...cur, ...home.get(cur.index)! };
+				const g = cur.twin ? mirrorRigid(mv.g) : mv.g;
+				const pr: Prim = inPlace
+					? cur
+					: { ...src, id: `${cur.id}.${mv.label}`, index: prims.length, twinIndex: -1, cutBy: [], scoped: cur.scoped };
+				pr.pos = applyRigid(g, src.pos);
+				pr.rot = qMul(g.q, src.rot);
+				pr.invRot = qConj(pr.rot);
+				pr.pivot = applyRigid(g, src.pivot);
+				pr.attachPoint = src.attachPoint ? applyRigid(g, src.attachPoint) : null;
+				pr.attachNormal = src.attachNormal ? qRotate(g.q, src.attachNormal) : null;
+				if (mv.scale !== 1 && (cur.index === root.index || cur.index === root.twinIndex)) {
+					pr.scl = scale(src.scl, mv.scale) as V3;
+					pr.lip = Math.min(pr.scl[0], pr.scl[1], pr.scl[2]);
+				}
+				aabb(pr);
+				if (!inPlace) {
+					clone.set(cur.index, pr);
+					prims.push(pr);
+					byId.set(pr.id, pr);
+				}
+			}
+			// copies hang from the copied parent, or from the original's parent outside the subtree
+			if (!inPlace) for (const pr of clone.values()) if (pr.parent >= 0 && clone.has(pr.parent)) pr.parent = clone.get(pr.parent)!.index;
+		}
+	}
+}
+
+const sub3 = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 
 /* ---------------------------------------------------------------- field */
 
