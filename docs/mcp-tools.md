@@ -108,6 +108,31 @@ op 1 (remove_part): no part "ghost"
 Add `compare: "previous"` to see the state before the last edit (top row) and now (bottom row)
 with one camera. The text lists which parts were added, removed or changed.
 
+## `beauty`
+
+`{ scene, light?, background?, size?, yaw?, pitch?, clip?, time?, turntable?, path? }`
+
+A picture to show people: a README, a store page, a [showcase](showcase.md) entry. Use `render`
+to judge shape, because it keeps the grid and the part colors.
+
+- `light`: `studio` (default), `sunset` (a low warm sun with long shadows), `overcast` (soft, low
+  contrast) or `night` (cool and dim, so glowing parts carry the picture).
+- `background`: `preset` (the light's own gradient, with a floor that fades into it),
+  `transparent` (the model and its shadow over nothing, for compositing), or a `#rrggbb` color.
+- Shadows come from a shadow map, so parts shade each other (a roof over a wall, a hat brim over a
+  face) and the ground shadow is soft and follows the real shape. Ambient occlusion is the
+  per-vertex occlusion every build bakes.
+- `yaw` and `pitch` place the camera (default 35° and 18°). The framing fits the model's box.
+- `clip` and `time` pose the model at a moment of a clip.
+- `turntable: { frames?: 36, seconds?: 4 }` writes one full turn as an animated PNG. It plays in
+  every browser, on GitHub and on store pages, and it keeps full color and transparency; anything
+  that does not know APNG shows the first frame. With a `clip`, the model plays it while the camera
+  turns. The framing is fixed for the whole turn.
+
+![The house in sunset light and the knight on a transparent background](beauty.png)
+
+![A turntable of the robot template, an animated PNG](turntable.png)
+
 ## `compare_reference`
 
 `{ scene, image, view? }`. Fits the model to a reference PNG seen from `view` (default

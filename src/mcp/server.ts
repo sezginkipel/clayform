@@ -80,6 +80,23 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 		}
 	}, (a) => t.render(a));
 
+	server.registerTool('beauty', {
+		title: 'Presentation render',
+		description: 'A picture to show people, not to judge shape (use render for that): a lighting preset (studio, sunset, overcast, night), soft shadows from a shadow map, a clean floor or a transparent background. turntable: {frames, seconds} writes a full turn as an animated PNG (plays in browsers, GitHub and store pages). Writes the file and returns the image.',
+		inputSchema: {
+			scene,
+			light: z.enum(['studio', 'sunset', 'overcast', 'night']).optional(),
+			background: z.union([z.enum(['preset', 'transparent']), z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)]).optional().describe('preset (the light gradient, default), transparent (model + shadow only), or a color'),
+			size: z.number().int().min(128).max(1536).optional().describe('px, square (default 1024; 480 for a turntable, at most 768)'),
+			yaw: z.number().optional().describe('camera around the model, degrees (default 35; 0 = front)'),
+			pitch: z.number().min(-10).max(80).optional().describe('camera height, degrees (default 18)'),
+			clip: z.string().optional().describe('pose from this clip (a turntable plays it while turning)'),
+			time: z.number().min(0).optional().describe('seconds into the clip for a still'),
+			turntable: z.object({ frames: z.number().int().min(4).max(120).optional(), seconds: z.number().min(0.5).max(30).optional() }).optional(),
+			path: z.string().optional().describe('where to write the .png (default exports/<scene>-beauty.png)')
+		}
+	}, (a) => t.beauty(a));
+
 	server.registerTool('compare_reference', {
 		title: 'Compare with a reference image',
 		description: 'Fit the model to a reference picture (concept sketch, photo, turnaround). Give a PNG with a transparent or plain background showing the whole object from one side, and the matching view (front, back, left, right, top). Returns an IoU score, an overlay (orange = only in the reference, blue = only in the model) and sentences naming the parts that are too wide or narrow. Edit, compare again, and watch the score go up.',

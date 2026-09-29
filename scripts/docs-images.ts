@@ -36,6 +36,30 @@ const torch = getTemplate('torch')!.scene;
 writeFileSync('docs/fire.png', bakeEffect(resolveEffect(torch, torch.effects![0])).preview);
 console.log('docs/goblin.png goblin-parts.png goblin-walk.png fire.png goblin.clay.json');
 
+// Presentation renders: the house at sunset, the knight on a transparent background (shown on a light card), and a turntable.
+{
+	const { renderBeauty, renderTurntable } = await import('../src/render/beauty.js');
+	const { decodePng } = await import('../src/render/pngdecode.js');
+	const T = 520, W = T * 2 + 8, buf = new Uint8Array(W * T * 4).fill(255);
+	const tiles = [
+		decodePng(renderBeauty(buildScene(getTemplate('house')!.scene), { light: 'sunset', size: T }).png),
+		decodePng(renderBeauty(buildScene(getTemplate('knight')!.scene), { background: 'transparent', size: T }).png)
+	];
+	tiles.forEach((img, i) => {
+		for (let y = 0; y < T; y++)
+			for (let x = 0; x < T; x++) {
+				const s = (y * T + x) * 4, d = (y * W + i * (T + 8) + x) * 4, a = img.data[s + 3] / 255;
+				// the transparent one over a light card, so the page shows what the alpha does
+				const card = [238, 240, 244];
+				for (let c = 0; c < 3; c++) buf[d + c] = Math.round(img.data[s + c] * a + card[c] * (1 - a));
+				buf[d + 3] = 255;
+			}
+	});
+	writeFileSync('docs/beauty.png', encodePng(buf, W, T));
+	writeFileSync('docs/turntable.png', renderTurntable(buildScene(getTemplate('robot')!.scene), { size: 320, frames: 30, seconds: 4 }).png);
+	console.log('docs/beauty.png, docs/turntable.png');
+}
+
 // Every material preset on a cube or a log.
 {
 	const { PRESETS } = await import('../src/core/materials.js');

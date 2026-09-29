@@ -22,6 +22,8 @@ rigs it and exports it. You never place vertices.
    \`texture: 1024\` bakes colors into a texture for engines that ignore vertex colors;
    \`shading: "toon"\` + \`outline: 0.01\` for a cel look; \`export_kit\` for a set sharing one atlas;
    \`skeleton: "humanoid" | "mixamo" | "unreal"\` names a character's bones for retargeting).
+9. \`beauty\` for a picture to show people (light: studio sunset overcast night; background transparent;
+   \`turntable: {}\` writes an animated PNG). Judge shape with \`render\`, not with this.
 
 ## Conventions
 Meters. +Y up. The model faces **+Z** (front). The model's own **left is +X**.

@@ -54,6 +54,31 @@ export interface RasterOptions {
 	partColors?: (prim: number) => RGB;
 	/** also return the part (prim index) seen at each output pixel, -1 for none */
 	ids?: boolean;
+	/** the lights (default: the studio set every other render uses) */
+	light?: Lighting;
+	/** shadows from a shadow map: the model shades itself, and the ground shadow is soft and exact (default off) */
+	softShadows?: boolean;
+	/** the grid on the ground (default on) */
+	grid?: boolean;
+	/** gradient (default), a flat color, or transparent: the model and its shadow over nothing */
+	background?: 'gradient' | 'transparent' | RGB;
+}
+
+/** A lighting set: directions point toward the lights; colors multiply them. */
+export interface Lighting {
+	key: V3;
+	keyColor: RGB;
+	fill: V3;
+	fillColor: RGB;
+	rim: V3;
+	sky: RGB;
+	groundBounce: RGB;
+	/** overall brightness before tone mapping */
+	exposure: number;
+	/** how soft the key shadow is, in shadow-map texels (with softShadows) */
+	softness: number;
+	bgTop: RGB;
+	bgBottom: RGB;
 }
 
 export interface Image {
@@ -64,9 +89,19 @@ export interface Image {
 	ids?: Int32Array;
 }
 
-const KEY: V3 = norm([0.5, 0.85, 0.6]);
-const FILL: V3 = norm([-0.7, 0.35, 0.3]);
-const RIM: V3 = norm([-0.2, 0.5, -0.9]);
+export const STUDIO: Lighting = {
+	key: norm([0.5, 0.85, 0.6]),
+	keyColor: [1.08, 1.0, 0.92],
+	fill: norm([-0.7, 0.35, 0.3]),
+	fillColor: [0.55, 0.62, 0.75],
+	rim: norm([-0.2, 0.5, -0.9]),
+	sky: [0.62, 0.66, 0.74],
+	groundBounce: [0.3, 0.27, 0.24],
+	exposure: 1.35,
+	softness: 2.5,
+	bgTop: [0.965, 0.961, 0.949],
+	bgBottom: [0.87, 0.86, 0.84]
+};
 
 export function rasterize(draws: Drawable[], shades: Shade[], cam: Camera, o: RasterOptions): Image {
 	const s = Math.max(1, Math.round(o.ssaa));
@@ -153,6 +188,7 @@ export function rasterize(draws: Drawable[], shades: Shade[], cam: Camera, o: Ra
 	/* ------------------------------------------- shadow masks on ground */
 	let keyMask: Float32Array | null = null;
 	let contact: Float32Array | null = null;
+	const shadowMap = o.softShadows && o.mode !== 'normals' && o.mode !== 'depth' ? buildShadowMap(draws, (o.light ?? STUDIO).key, 1024) : null;
 	if (o.ground && o.shadow && o.mode !== 'normals' && o.mode !== 'depth') {
 		keyMask = new Float32Array(N);
 		contact = new Float32Array(N);
@@ -172,8 +208,9 @@ export function rasterize(draws: Drawable[], shades: Shade[], cam: Camera, o: Ra
 				}
 			}
 		};
-		splat(keyMask, KEY);
+		splat(keyMask, (o.light ?? STUDIO).key);
 		splat(contact, [0, 1, 0]);
+		if (shadowMap) keyMask.fill(0);
 		blur(keyMask, W, H, Math.max(1, Math.round(s * 1.5)));
 		blur(contact, W, H, Math.max(2, Math.round(Math.min(W, H) * 0.02)));
 		blur(contact, W, H, Math.max(2, Math.round(Math.min(W, H) * 0.02)));
@@ -181,6 +218,8 @@ export function rasterize(draws: Drawable[], shades: Shade[], cam: Camera, o: Ra
 
 	/* ------------------------------------------------- pass 2: shading */
 	const out = new Float32Array(N * 3);
+	const alpha = o.background === 'transparent' ? new Float32Array(N) : null;
+	const L = o.light ?? STUDIO;
 	let zmin = Infinity, zmax = -Infinity;
 	if (o.mode === 'depth')
 		for (let p = 0; p < N; p++) if (triId[p] >= 0) { zmin = Math.min(zmin, depth[p]); zmax = Math.max(zmax, depth[p]); }
@@ -210,11 +249,19 @@ export function rasterize(draws: Drawable[], shades: Shade[], cam: Camera, o: Ra
 			const meshT = tri >= 0 ? (cam.ortho ? depth[p] : depth[p] / Math.max(1e-6, dot(rd, f))) : Infinity;
 			let col: RGB;
 			if (tri >= 0 && meshT <= gt + 1e-4) {
-				col = shadeMesh(draws[drawId[p]], shades, tri, bary[p * 2], bary[p * 2 + 1], rd, o, depth[p], zmin, zmax);
+				const vis = shadowMap ? shadowMap.visibility(pointOn(draws[drawId[p]], tri, bary[p * 2], bary[p * 2 + 1]), L.softness, normalOn(draws[drawId[p]], tri, bary[p * 2], bary[p * 2 + 1])) : 1;
+				col = shadeMesh(draws[drawId[p]], shades, tri, bary[p * 2], bary[p * 2 + 1], rd, o, depth[p], zmin, zmax, vis);
+				if (alpha) alpha[p] = 1;
 			} else if (gt < Infinity) {
 				const gx = ro[0] + rd[0] * gt, gz = ro[2] + rd[2] * gt;
-				col = shadeGround(gx, gz, o, keyMask ? keyMask[p] : 0, contact ? contact[p] : 0, sy);
-			} else col = background(sy);
+				const key = shadowMap ? 1 - shadowMap.visibility([gx, o.groundY, gz], L.softness * 1.6, [0, 1, 0]) : keyMask ? keyMask[p] : 0;
+				if (alpha) {
+					// a shadow catcher: dark where the shadow falls, see-through elsewhere
+					const a = clamp(0.5 * key + 0.55 * (contact ? contact[p] : 0), 0, 0.85);
+					alpha[p] = a;
+					col = [0, 0, 0];
+				} else col = shadeGround(gx, gz, o, key, contact ? contact[p] : 0, sy);
+			} else col = background(sy, o);
 			out[p * 3] = col[0];
 			out[p * 3 + 1] = col[1];
 			out[p * 3 + 2] = col[2];
@@ -226,19 +273,23 @@ export function rasterize(draws: Drawable[], shades: Shade[], cam: Camera, o: Ra
 	const inv = 1 / (s * s);
 	for (let y = 0; y < o.height; y++)
 		for (let x = 0; x < o.width; x++) {
-			let cr = 0, cg = 0, cb = 0;
+			let cr = 0, cg = 0, cb = 0, ca = 0;
 			for (let j = 0; j < s; j++)
 				for (let i = 0; i < s; i++) {
-					const p = ((y * s + j) * W + x * s + i) * 3;
-					cr += out[p];
-					cg += out[p + 1];
-					cb += out[p + 2];
+					const pi = (y * s + j) * W + x * s + i, p = pi * 3;
+					// with transparency, colors average by coverage so edges do not darken
+					const a = alpha ? alpha[pi] : 1;
+					cr += out[p] * a;
+					cg += out[p + 1] * a;
+					cb += out[p + 2] * a;
+					ca += a;
 				}
 			const q = (y * o.width + x) * 4;
-			img[q] = Math.round(clamp(cr * inv, 0, 1) * 255);
-			img[q + 1] = Math.round(clamp(cg * inv, 0, 1) * 255);
-			img[q + 2] = Math.round(clamp(cb * inv, 0, 1) * 255);
-			img[q + 3] = 255;
+			const k = alpha ? (ca > 0 ? 1 / ca : 0) : inv;
+			img[q] = Math.round(clamp(cr * k, 0, 1) * 255);
+			img[q + 1] = Math.round(clamp(cg * k, 0, 1) * 255);
+			img[q + 2] = Math.round(clamp(cb * k, 0, 1) * 255);
+			img[q + 3] = alpha ? Math.round(clamp(ca * inv, 0, 1) * 255) : 255;
 		}
 	let ids: Int32Array | undefined;
 	if (o.ids) {
@@ -260,33 +311,38 @@ function aces(x: number) {
 	return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0, 1);
 }
 
-const BG_TOP: RGB = [0.965, 0.961, 0.949];
-const BG_BOTTOM: RGB = [0.87, 0.86, 0.84];
-
-function background(sy: number): RGB {
+function background(sy: number, o: RasterOptions): RGB {
+	if (Array.isArray(o.background)) return o.background;
+	const L = o.light ?? STUDIO;
 	const t = sy * 0.5 + 0.5;
-	return [BG_BOTTOM[0] + (BG_TOP[0] - BG_BOTTOM[0]) * t, BG_BOTTOM[1] + (BG_TOP[1] - BG_BOTTOM[1]) * t, BG_BOTTOM[2] + (BG_TOP[2] - BG_BOTTOM[2]) * t];
+	return [L.bgBottom[0] + (L.bgTop[0] - L.bgBottom[0]) * t, L.bgBottom[1] + (L.bgTop[1] - L.bgBottom[1]) * t, L.bgBottom[2] + (L.bgTop[2] - L.bgBottom[2]) * t];
 }
 
 function shadeGround(gx: number, gz: number, o: RasterOptions, key: number, contact: number, sy: number): RGB {
 	const dx = gx - o.groundCenter[0], dz = gz - o.groundCenter[1];
 	const rr = Math.hypot(dx, dz) / o.groundRadius;
 	const fade = clamp(1 - (rr - 0.55) / 0.45, 0, 1);
-	const bg = background(sy);
+	const bg = background(sy, o);
 	let g = 0.9;
-	const step = o.gridStep;
-	const lx = Math.abs(gx / step - Math.round(gx / step)), lz = Math.abs(gz / step - Math.round(gz / step));
-	const line = Math.min(lx, lz) < 0.02 ? 1 : 0;
-	g -= line * 0.06;
-	if (Math.abs(gx) < step * 0.02 || Math.abs(gz) < step * 0.02) g -= 0.05;
+	if (o.grid !== false) {
+		const step = o.gridStep;
+		const lx = Math.abs(gx / step - Math.round(gx / step)), lz = Math.abs(gz / step - Math.round(gz / step));
+		const line = Math.min(lx, lz) < 0.02 ? 1 : 0;
+		g -= line * 0.06;
+		if (Math.abs(gx) < step * 0.02 || Math.abs(gz) < step * 0.02) g -= 0.05;
+	}
 	g *= 1 - 0.22 * clamp(key, 0, 1) - 0.3 * clamp(contact, 0, 1);
-	const col: RGB = [g * 0.99, g * 0.98, g * 0.96];
+	// without a grid the floor takes the background's color, so it melts into it
+	const tint: RGB = o.grid === false ? [bg[0] / 0.9, bg[1] / 0.9, bg[2] / 0.9] : [0.99, 0.98, 0.96];
+	const col: RGB = [g * tint[0], g * tint[1], g * tint[2]];
 	return [bg[0] + (col[0] - bg[0]) * fade, bg[1] + (col[1] - bg[1]) * fade, bg[2] + (col[2] - bg[2]) * fade];
 }
 
 function shadeMesh(
-	d: Drawable, shades: Shade[], tri: number, b1: number, b2: number, rd: V3, o: RasterOptions, z: number, zmin: number, zmax: number
+	d: Drawable, shades: Shade[], tri: number, b1: number, b2: number, rd: V3, o: RasterOptions, z: number, zmin: number, zmax: number, vis = 1
 ): RGB {
+	const L = o.light ?? STUDIO;
+	const KEY = L.key, FILL = L.fill, RIM = L.rim;
 	const i0 = d.indices[tri * 3], i1 = d.indices[tri * 3 + 1], i2 = d.indices[tri * 3 + 2];
 	const b0 = 1 - b1 - b2;
 	const n = norm([
@@ -317,7 +373,7 @@ function shadeMesh(
 	const lin: RGB = [srgbToLinear(base[0]), srgbToLinear(base[1]), srgbToLinear(base[2])];
 	const sh = shades[prim] ?? { roughness: 0.75, metalness: 0, emissive: null, emissiveStrength: 1 };
 	const V: V3 = [-rd[0], -rd[1], -rd[2]];
-	const ndl = Math.max(0, dot(n, KEY));
+	const ndl = Math.max(0, dot(n, KEY)) * vis;
 	const ndf = Math.max(0, dot(n, FILL));
 	const rim = Math.pow(1 - Math.max(0, dot(n, V)), 3) * 0.22 + Math.max(0, dot(n, RIM)) * 0.12;
 	const hemi = 0.5 + 0.5 * n[1];
@@ -333,14 +389,104 @@ function shadeMesh(
 	const env = 0.35 + 0.45 * clamp(ry * 0.5 + 0.5, 0, 1);
 	for (let c = 0; c < 3; c++) {
 		const alb = lin[c];
-		const sky = [0.62, 0.66, 0.74][c] * hemi + [0.3, 0.27, 0.24][c] * (1 - hemi);
-		const diff = alb * (1 - metal) * (ndl * [1.08, 1.0, 0.92][c] * 1.05 + ndf * [0.55, 0.62, 0.75][c] * 0.35 + sky * 0.62 * ao);
+		const sky = L.sky[c] * hemi + L.groundBounce[c] * (1 - hemi);
+		const diff = alb * (1 - metal) * (ndl * L.keyColor[c] * 1.05 + ndf * L.fillColor[c] * 0.35 + sky * 0.62 * ao);
 		const f0 = 0.04 * (1 - metal) + alb * metal;
 		const sp = f0 * spec + metal * alb * env * 0.9 * ao;
 		out[c] = diff * (0.55 + 0.45 * ao) + sp + rim * alb * 0.8;
 		if (sh.emissive && o.mode === 'shaded') out[c] += srgbToLinear(sh.emissive[c]) * sh.emissiveStrength;
 	}
-	return [linearToSrgb(aces(out[0] * 1.35)), linearToSrgb(aces(out[1] * 1.35)), linearToSrgb(aces(out[2] * 1.35))];
+	return [linearToSrgb(aces(out[0] * L.exposure)), linearToSrgb(aces(out[1] * L.exposure)), linearToSrgb(aces(out[2] * L.exposure))];
+}
+
+/* ------------------------------------------------------------ shadow map */
+
+function pointOn(d: Drawable, tri: number, b1: number, b2: number): V3 {
+	const i0 = d.indices[tri * 3] * 3, i1 = d.indices[tri * 3 + 1] * 3, i2 = d.indices[tri * 3 + 2] * 3;
+	const b0 = 1 - b1 - b2, P = d.positions;
+	return [P[i0] * b0 + P[i1] * b1 + P[i2] * b2, P[i0 + 1] * b0 + P[i1 + 1] * b1 + P[i2 + 1] * b2, P[i0 + 2] * b0 + P[i1 + 2] * b1 + P[i2 + 2] * b2];
+}
+
+function normalOn(d: Drawable, tri: number, b1: number, b2: number): V3 {
+	const i0 = d.indices[tri * 3] * 3, i1 = d.indices[tri * 3 + 1] * 3, i2 = d.indices[tri * 3 + 2] * 3;
+	const b0 = 1 - b1 - b2, N = d.normals;
+	return norm([N[i0] * b0 + N[i1] * b1 + N[i2] * b2, N[i0 + 1] * b0 + N[i1 + 1] * b1 + N[i2 + 1] * b2, N[i0 + 2] * b0 + N[i1 + 2] * b1 + N[i2 + 2] * b2]);
+}
+
+/**
+ * Depth of the scene seen from the key light (orthographic, fitted to the
+ * geometry). `visibility` is the share of a disc of samples around a point
+ * that the light reaches: 0 in shadow, 1 lit, soft in between.
+ */
+function buildShadowMap(draws: Drawable[], toLight: V3, size: number) {
+	const f = norm([-toLight[0], -toLight[1], -toLight[2]]);
+	const up: V3 = Math.abs(f[1]) > 0.95 ? [0, 0, 1] : [0, 1, 0];
+	const r = norm(cross(f, up));
+	const u = cross(r, f);
+	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	for (const d of draws)
+		for (let v = 0; v < d.positions.length; v += 3) {
+			const x = d.positions[v] * r[0] + d.positions[v + 1] * r[1] + d.positions[v + 2] * r[2];
+			const y = d.positions[v] * u[0] + d.positions[v + 1] * u[1] + d.positions[v + 2] * u[2];
+			minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+		}
+	const pad = Math.max(maxX - minX, maxY - minY) * 0.05 + 1e-3;
+	minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+	const span = Math.max(maxX - minX, maxY - minY);
+	const texel = span / size;
+	const depth = new Float32Array(size * size).fill(Infinity);
+	const toMap = (p: V3): V3 => {
+		const x = p[0] * r[0] + p[1] * r[1] + p[2] * r[2], y = p[0] * u[0] + p[1] * u[1] + p[2] * u[2], z = p[0] * f[0] + p[1] * f[1] + p[2] * f[2];
+		return [((x - minX) / span) * size, ((maxY - y) / span) * size, z];
+	};
+	const sp: V3[] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+	for (const d of draws) {
+		const P = d.positions, idx = d.indices;
+		for (let t = 0; t < idx.length; t += 3) {
+			for (let k = 0; k < 3; k++) {
+				const v = idx[t + k] * 3;
+				sp[k] = toMap([P[v], P[v + 1], P[v + 2]]);
+			}
+			const [a, b, c] = sp;
+			const area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+			if (Math.abs(area) < 1e-12) continue;
+			const ia = 1 / area;
+			const x0 = Math.max(0, Math.floor(Math.min(a[0], b[0], c[0]))), x1 = Math.min(size - 1, Math.ceil(Math.max(a[0], b[0], c[0])));
+			const y0 = Math.max(0, Math.floor(Math.min(a[1], b[1], c[1]))), y1 = Math.min(size - 1, Math.ceil(Math.max(a[1], b[1], c[1])));
+			for (let py = y0; py <= y1; py++)
+				for (let px = x0; px <= x1; px++) {
+					const cx = px + 0.5, cy = py + 0.5;
+					const w0 = ((b[0] - cx) * (c[1] - cy) - (c[0] - cx) * (b[1] - cy)) * ia;
+					const w1 = ((c[0] - cx) * (a[1] - cy) - (a[0] - cx) * (c[1] - cy)) * ia;
+					const w2 = 1 - w0 - w1;
+					if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+					const z = w0 * a[2] + w1 * b[2] + w2 * c[2];
+					const q = py * size + px;
+					if (z < depth[q]) depth[q] = z;
+				}
+		}
+	}
+	// a fixed disc of samples (a golden-angle spiral), the same for every pixel so the shadow does not shimmer
+	const TAPS = 16;
+	const disc = Array.from({ length: TAPS }, (_, i) => {
+		const rr = Math.sqrt((i + 0.5) / TAPS), a = i * 2.39996323;
+		return [Math.cos(a) * rr, Math.sin(a) * rr];
+	});
+	return {
+		visibility(p: V3, softness: number, n: V3): number {
+			// lean off the surface along its normal and toward the light, by more where the light grazes it
+			const cosT = Math.max(0.05, Math.abs(n[0] * toLight[0] + n[1] * toLight[1] + n[2] * toLight[2]));
+			const bias = texel * (1.5 + 2 / cosT);
+			const q = toMap([p[0] + n[0] * texel * 1.5, p[1] + n[1] * texel * 1.5, p[2] + n[2] * texel * 1.5]);
+			let lit = 0;
+			for (const [dx, dy] of disc) {
+				const x = Math.floor(q[0] + dx * softness), y = Math.floor(q[1] + dy * softness);
+				if (x < 0 || y < 0 || x >= size || y >= size) { lit++; continue; }
+				if (q[2] - bias <= depth[y * size + x]) lit++;
+			}
+			return lit / TAPS;
+		}
+	};
 }
 
 /* ---------------------------------------------------------------- helpers */

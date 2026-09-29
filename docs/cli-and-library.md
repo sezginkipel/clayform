@@ -10,6 +10,7 @@ Wherever a command takes a scene, you can also give a template id.
 | `clayform templates` | list templates |
 | `clayform new <template> [-o file]` | write a template as a `.clay.json` |
 | `clayform render <scene> [-o png] [--views front,left] [--mode parts] [--size 384]` | render a sheet (prints the legend and critics) |
+| `clayform beauty <scene> [-o png] [--light studio\|sunset\|overcast\|night] [--background transparent\|#rrggbb] [--size 1024] [--clip walk] [--turntable 36 --seconds 4]` | a [presentation render](mcp-tools.md#beauty), or a turntable as an animated PNG |
 | `clayform inspect <scene>` | part summary, critics and clip checks. Exit code 2 on errors, so it can gate CI |
 | `clayform export <scene> [-o out.glb\|out.obj] [--triangles N] [--texture 1024] [--shading flat\|toon] [--outline 0.01]` | export |
 | `clayform kit <scene> [more …] [-o dir] [--atlas 2048] [--embed]` | several models sharing one [texture atlas](export.md#kits) |

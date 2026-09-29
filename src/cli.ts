@@ -26,6 +26,7 @@ import { critique, formatReport } from './critic/critics.js';
 import { exportGlb, exportObj } from './export/gltf.js';
 import { GUIDE } from './guide.js';
 import { renderClipStrip } from './render/motion.js';
+import { LIGHTS, renderBeauty, renderTurntable, type LightPreset } from './render/beauty.js';
 import type { RenderMode } from './render/raster.js';
 import { renderSheet, type View } from './render/views.js';
 import { describe } from './session.js';
@@ -132,6 +133,30 @@ async function main() {
 			console.log(`wrote ${out} (${sheet.views.join(', ')})`);
 			if (sheet.legend.length) console.log(sheet.legend.map((l) => `${l.id}=${l.color}`).join(' '));
 			console.log(formatReport(critique(b)));
+			return;
+		}
+		case 'beauty': {
+			const scene = loadScene(pos[0]);
+			const b = await buildSceneAsync(scene);
+			const num = (k: string) => (flags.has(k) ? Number(flags.get(k)) : undefined);
+			const light = flags.get('light') as LightPreset | undefined;
+			if (light && !LIGHTS.includes(light)) die(`--light is ${LIGHTS.join(', ')}`);
+			const turns = flags.has('turntable');
+			const common = { size: num('size'), light, background: flags.get('background'), yaw: num('yaw'), pitch: num('pitch'), clip: flags.get('clip') };
+			const out = flags.get('out') ?? `${stem(pos[0]!)}-${turns ? 'turntable' : 'beauty'}.png`;
+			try {
+				if (turns) {
+					const r = renderTurntable(b, { ...common, frames: num('turntable') || undefined, seconds: num('seconds') });
+					writeFileSync(out, r.png);
+					console.log(`wrote ${out} · animated PNG, ${r.frames} frames of ${r.width}px, ${(r.png.length / 1024).toFixed(0)} KB`);
+				} else {
+					const r = renderBeauty(b, { ...common, time: num('time') });
+					writeFileSync(out, r.png);
+					console.log(`wrote ${out} · ${r.width}px`);
+				}
+			} catch (e) {
+				die((e as Error).message);
+			}
 			return;
 		}
 		case 'inspect': {
@@ -326,6 +351,8 @@ async function main() {
   clayform templates                    list templates
   clayform new <template> [-o file]     write a template as a .clay.json
   clayform render <scene|template> [-o out.png] [--views front,left] [--mode parts] [--size 384]
+  clayform beauty <scene|template> [-o out.png] [--light studio|sunset|overcast|night] [--background transparent|#rrggbb]
+                 [--size 1024] [--yaw 35] [--pitch 18] [--clip walk] [--turntable 36 --seconds 4]   presentation render
   clayform inspect <scene|template>     part summary + critics (exit 2 on errors)
   clayform export <scene|template> [-o out.glb|.obj] [--triangles N] [--lods 0.5,0.2] [--collision parts|hull] [--engine godot|unreal|unity]
                  [--texture 1024] [--shading flat|toon] [--bands 3] [--outline 0.01] [--skeleton humanoid|mixamo|unreal]

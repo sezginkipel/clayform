@@ -15,6 +15,9 @@ import { exportKit } from '../export/kit.js';
 import type { Shading } from '../export/texture.js';
 import { GUIDE } from '../guide.js';
 import { renderClipStrip } from '../render/motion.js';
+import { renderBeauty, renderTurntable, type LightPreset } from '../render/beauty.js';
+
+type BeautyArgs = { scene: string; light?: LightPreset; background?: string; size?: number; yaw?: number; pitch?: number; clip?: string; time?: number; path?: string; turntable?: { frames?: number; seconds?: number } };
 import { renderSheet, VIEWS, type View } from '../render/views.js';
 import type { RenderMode } from '../render/raster.js';
 import { describe, Workspace } from '../session.js';
@@ -148,6 +151,27 @@ export class Tools {
 			if (sheet.legend.length) lines.push(`parts: ${sheet.legend.map((l) => `${l.id}=${l.color}`).join(' ')}`);
 			lines.push(formatReport(rep));
 			return { content: [png(sheet.png), text(lines.join('\n'))] };
+		});
+	}
+
+	beauty(args: BeautyArgs): Promise<Result> {
+		return wrap(async () => {
+			const b = await this.ws.buildAsync(args.scene);
+			const turn = args.turntable;
+			const size = Math.max(128, Math.min(turn ? 768 : 1536, Math.round(args.size ?? (turn ? 480 : 1024))));
+			const out = args.path ? userPath(args.path) : resolve(`${this.ws.exportsDir()}/${args.scene}-${turn ? 'turntable' : 'beauty'}.png`);
+			mkdirSync(dirname(out), { recursive: true });
+			const common = { size, light: args.light, background: args.background, yaw: args.yaw, pitch: args.pitch, clip: args.clip };
+			if (turn) {
+				const r = renderTurntable(b, { ...common, frames: turn.frames, seconds: turn.seconds });
+				writeFileSync(out, r.png);
+				// the file is the animation; show its first frame here
+				const still = renderBeauty(b, { ...common, size: Math.min(size, 512) });
+				return { content: [png(still.png), text(`wrote ${out} · animated PNG, ${r.frames} frames of ${size}px, ${(r.delay / 1000).toFixed(3)} s each, ${(r.png.length / 1024).toFixed(0)} KB (shown: the first frame)`)] };
+			}
+			const r = renderBeauty(b, { ...common, time: args.time });
+			writeFileSync(out, r.png);
+			return { content: [png(r.png), text(`wrote ${out} · ${size}px, ${args.light ?? 'studio'} light${args.background === 'transparent' ? ', transparent background' : ''}`)] };
 		});
 	}
 

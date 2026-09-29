@@ -101,6 +101,7 @@ WARN [asymmetric] declared X symmetry is off by 1.3 cm on average; worst: orb (4
 | `measure` | Exact distances, overlaps, sizes, proportions, and which part is at a pixel |
 | `compare_reference` | Fit the model to a sketch or photo: a score, an overlay, and which parts are too wide or narrow |
 | `preview_motion` | A clip as a labelled film strip |
+| `beauty` | A presentation render: lighting presets, soft shadows, a transparent background, or a turntable as an animated PNG |
 | `preview_effect` | An effect's frames |
 | `export` | `glb` · `obj` · `json` · `flipbook` (sprite sheet PNG + JSON), with an optional triangle budget |
 | `set_layout` · `render_layout` · `export_layout` | Place many scenes or templates together (rows, grids, circles, scatters), check that they do not pass through each other, export one GLB |
@@ -195,7 +196,8 @@ or open a pull request with a small JSON file ([the rules](docs/showcase.md)).
   can export humanoid bone names for retargeting, faces are morph targets and cloth ripples as a
   baked wave. Limbs bend only where parts meet, and there is no physics or cloth simulation.
   Motion critics check ground contact, sliding feet and parts passing through each other.
-- The renderer is for judging shape and color. It is not a final-quality renderer.
+- The renderer is software rasterization with a shadow map. `beauty` makes clean pictures for a
+  README or a store page, but there is no global illumination, glass or subsurface light.
 - Nobody has run the bench yet ([`bench/`](bench/README.md)), so this README makes no
   quality comparison.
 
