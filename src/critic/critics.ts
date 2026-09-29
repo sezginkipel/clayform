@@ -47,6 +47,9 @@ export function critique(b: Build): Report {
 	for (const w of c.warnings) issues.push({ severity: 'warn', code: 'placement', message: w });
 	for (const m of expressionProblems(b)) issues.push({ severity: 'error', code: 'expression', message: m });
 	for (const m of expressionNotes(b)) issues.push({ severity: 'warn', code: 'expression', message: m });
+	for (const pr of c.prims)
+		if (pr.part.cloth && !pr.separate && !pr.twin)
+			issues.push({ severity: 'warn', code: 'cloth', message: `${pr.partId} has cloth but is blended into the body, so it cannot flutter; set "separate": true (sheets always are)`, parts: [pr.partId] });
 
 	const body = b.meshes.find((m) => m.prim < 0);
 	const idOf = (i: number) => c.prims[i]?.id ?? String(i);

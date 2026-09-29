@@ -13,7 +13,7 @@
  * an inverted-hull rim.
  */
 
-import { expressionProblems, meshMorphs } from '../anim/morph.js';
+import { clothTargets, meshMorphs, morphIds } from '../anim/morph.js';
 import { boneName, exportLocals, humanoidSkeleton, partsSkeleton, type ExportSkeleton, type SkeletonNaming } from '../anim/humanoid.js';
 import type { Build, MeshData } from '../core/build.js';
 import { m4Compose, m4Invert, qIdentity, srgbToLinear, type V3 } from '../core/math.js';
@@ -200,8 +200,9 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 
 	let outlineMaterial = -1;
 	// expressions: every mesh an expression moves carries all of them as morph targets, in the scene's order
-	const exprIds = (b.source.expressions ?? []).map((e) => e.id).filter((id) => !expressionProblems(b).some((p) => p.startsWith(`expression "${id}"`)));
+	const exprIds = morphIds(b);
 	const morphMeshes = new Map<number, number>(); // mesh index -> target count
+	const clothIds = new Set(clothTargets(b).flatMap((c) => c.ids));
 	const morphStats = new Map<string, { vertices: number; max: number }>();
 	const writeMesh = (src: MeshData, am?: { remap: Uint32Array; uv: Float32Array; indices: Uint32Array; tangents: Float32Array }, forceMaterial?: number, owner?: Build) => {
 		// with an atlas, vertices are split along chart seams
@@ -488,7 +489,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			outlines
 		},
 		atlas: opts.atlas ? undefined : atlas,
-		...(exprIds.length ? { expressions: exprIds.map((id) => ({ id, vertices: morphStats.get(id)?.vertices ?? 0, max: morphStats.get(id)?.max ?? 0 })) } : {})
+		...(exprIds.length ? { expressions: exprIds.filter((id) => !clothIds.has(id)).map((id) => ({ id, vertices: morphStats.get(id)?.vertices ?? 0, max: morphStats.get(id)?.max ?? 0 })) } : {})
 	};
 }
 

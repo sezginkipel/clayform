@@ -99,6 +99,8 @@ Faces: \`expressions: [{ id, preset?: blink|smile|frown|open_mouth|surprise, par
 sculpts? }]\` become morph targets; clips \`blink\`, \`talk\`, \`expression\` (\`expression: id\`) play them and
 \`face: { smile: 1 }\` holds one on any clip. Presets need role "eye" / a "mouth" part; eyes blended
 into the face streak when they close (make their whites and pupils \`separate\`). \`curve\` bends a part.
+\`cloth: { pin?, wind?, amplitude?, wavelength? }\` on a sheet (or separate part) ripples it in every clip
+(flags pin left, capes top); the \`wind\` clip plays only that.
 
 ## Effects
 \`{ "id": "flame", "preset": "fire" }\` — presets: fire smoke sparks magic explosion dust snow

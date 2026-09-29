@@ -51,6 +51,7 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `op` | `add` · `carve` · `intersect` | add (default) merges, carve cuts away, intersect keeps only the overlap |
 | `only` | string or string[] | carve/intersect: cut only these parts (and their mirror twins) instead of everything listed before — a window through one wall, a roof clipped to its own box |
 | `blend` | number (≥0, ≤1) | smooth merge radius in meters with everything before it; 0 = hard seam |
+| `cloth` | object | flutter: a separate part (a sheet: flag, cape, sail, banner) ripples in every clip, baked as four morph targets |
 | `curve` | number (≥-2, ≤2) | bend the part along its local X: both ends rise this many meters above the middle (a smiling mouth, an arched brow, a banana); negative drops them |
 | `material` | object | see Material |
 | `pattern` | object | see Pattern |
@@ -153,7 +154,7 @@ A target can also be `{ "point": [x, y, z] }` in world space.
 | field | type | meaning |
 |---|---|---|
 | `id` **required** | string | clip id, becomes the glTF animation name |
-| `type` **required** | `idle` · `walk` · `run` · `hop` · `fly` · `swim` · `drive` · `spin` · `hover` · `wave` · `nod` · `attack` · `jump` · `sit` · `turn` · `die` · `reach` · `point` · `pickup` · `look` · `blink` · `talk` · `expression` · `blend` · `keyframes` | the motion intent; see Clip types |
+| `type` **required** | `idle` · `walk` · `run` · `hop` · `fly` · `swim` · `drive` · `spin` · `hover` · `wave` · `nod` · `attack` · `jump` · `sit` · `turn` · `die` · `reach` · `point` · `pickup` · `look` · `blink` · `talk` · `expression` · `wind` · `blend` · `keyframes` | the motion intent; see Clip types |
 | `speed` | number (≥0.05, ≤10) | cycle speed multiplier |
 | `amplitude` | number (≥0, ≤4) | motion size multiplier |
 | `duration` | number (≥0.1, ≤60) | seconds; default one natural cycle |
@@ -168,7 +169,7 @@ A target can also be `{ "point": [x, y, z] }` in world space.
 | `fps` | integer (≥4, ≤60) | sample rate for export (default 30) |
 | `secondary` | boolean | springy follow-through on tails, ears and antennas, driven by how the body moves (default true) |
 
-Clip types: `idle`, `walk`, `run`, `hop`, `fly`, `swim`, `drive`, `spin`, `hover`, `wave`, `nod`, `attack`, `jump`, `sit`, `turn`, `die`, `reach`, `point`, `pickup`, `look`, `blink`, `talk`, `expression`, `blend`, `keyframes`.
+Clip types: `idle`, `walk`, `run`, `hop`, `fly`, `swim`, `drive`, `spin`, `hover`, `wave`, `nod`, `attack`, `jump`, `sit`, `turn`, `die`, `reach`, `point`, `pickup`, `look`, `blink`, `talk`, `expression`, `wind`, `blend`, `keyframes`.
 
 ### Track
 

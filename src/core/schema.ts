@@ -203,6 +203,15 @@ export const Part = z.strictObject({
 	op: z.enum(['add', 'carve', 'intersect']).optional().describe('add (default) merges, carve cuts away, intersect keeps only the overlap'),
 	only: z.union([Id, z.array(Id).min(1).max(32)]).optional().describe('carve/intersect: cut only these parts (and their mirror twins) instead of everything listed before — a window through one wall, a roof clipped to its own box'),
 	blend: num.min(0).max(1).optional().describe('smooth merge radius in meters with everything before it; 0 = hard seam'),
+	cloth: z
+		.strictObject({
+			pin: z.enum(['left', 'right', 'top', 'bottom']).optional().describe('the edge held still, in the part\'s own frame: a flag at its pole (left, the default for role "flag"), a cape at the shoulders (top, the default otherwise)'),
+			wind: num.min(0).max(30).optional().describe('m/s (default 4): how fast the waves run and how big they get; 0 keeps it still'),
+			amplitude: num.min(0).max(2).optional().describe('meters the free edge swings at most (default a tenth of its length at wind 4)'),
+			wavelength: pos.optional().describe('meters from one crest to the next (default seven tenths of its length)')
+		})
+		.optional()
+		.describe('flutter: a separate part (a sheet: flag, cape, sail, banner) ripples in every clip, baked as four morph targets'),
 	curve: num.min(-2).max(2).optional().describe('bend the part along its local X: both ends rise this many meters above the middle (a smiling mouth, an arched brow, a banana); negative drops them'),
 	material: Material.optional().describe('see Material'),
 	pattern: Pattern.optional().describe('see Pattern'),
@@ -279,7 +288,7 @@ export type Expression = z.infer<typeof Expression>;
 
 /* ----------------------------------------------------------------- animation */
 
-export const CLIP_TYPES = ['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'attack', 'jump', 'sit', 'turn', 'die', 'reach', 'point', 'pickup', 'look', 'blink', 'talk', 'expression', 'blend', 'keyframes'] as const;
+export const CLIP_TYPES = ['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'attack', 'jump', 'sit', 'turn', 'die', 'reach', 'point', 'pickup', 'look', 'blink', 'talk', 'expression', 'wind', 'blend', 'keyframes'] as const;
 
 export const Key = z.strictObject({
 	t: num.min(0).describe('seconds'),

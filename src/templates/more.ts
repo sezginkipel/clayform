@@ -453,15 +453,16 @@ export const signpost = S('Sign post', {
 });
 
 export const flagpole = S('Flag pole', {
-	notes: 'A flag ~2.2 m on a pole: the flag is a thin sheet with a wave; stripes via the pattern. Swap colours in the palette.',
+	notes: 'A flag ~2.2 m on a pole: the flag is a thin sheet with a wave that flutters in the wind clip (cloth); stripes via the pattern. Swap colours in the palette.',
 	palette: { metal: '#8a8f99', cloth: '#c8403a', stripe: '#f3efe6', stone: '#9a948c' },
 	settings: { resolution: 110 },
 	parts: [
 		{ id: 'base', role: 'body', shape: { type: 'cylinder', height: 0.12, radius: 0.22, rounding: 0.02 }, position: [0, 0.06, 0], material: { color: 'stone', roughness: 0.9 } },
 		{ id: 'pole', shape: { type: 'cylinder', height: 2.1, radius: 0.035 }, attach: { to: 'base', side: 'top', embed: 0.05 }, material: { color: 'metal', metalness: 0.8, roughness: 0.35 } },
 		{ id: 'finial', shape: { type: 'sphere', radius: 0.05 }, attach: { to: 'pole', side: 'top', embed: 0.4 }, material: { color: 'metal', metalness: 0.9, roughness: 0.3 } },
-		{ id: 'flag', shape: { type: 'sheet', size: [0.9, 0.55], wave: { amplitude: 0.05, length: 0.45 } }, attach: { to: 'pole', side: 'left', offset: [0, 0.78], embed: 1 }, position: [0.47, 0, 0], material: { color: 'cloth', roughness: 0.9 }, pattern: { kind: 'stripes', color: 'stripe', scale: 0.09, axis: 'y' } }
-	]
+		{ id: 'flag', role: 'flag', shape: { type: 'sheet', size: [0.9, 0.55], wave: { amplitude: 0.05, length: 0.45 } }, attach: { to: 'pole', side: 'left', offset: [0, 0.78], embed: 1 }, position: [0.47, 0, 0], cloth: {}, material: { color: 'cloth', roughness: 0.9 }, pattern: { kind: 'stripes', color: 'stripe', scale: 0.09, axis: 'y' } }
+	],
+	clips: [{ id: 'wind', type: 'wind' }]
 });
 
 export const meadow = S('Meadow tile', {

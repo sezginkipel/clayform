@@ -21,7 +21,7 @@ import {
 } from '../core/math.js';
 import type { Clip } from '../core/schema.js';
 import { footPath, rigidLeg, twoBoneArm, twoBoneLeg } from './ik.js';
-import { expressionProblems, meshMorphs } from './morph.js';
+import { clothTargets, expressionProblems, meshMorphs } from './morph.js';
 
 export interface Joint {
 	name: string;
@@ -151,13 +151,13 @@ type Driver = (t: number) => Motion;
 
 const PERIOD: Record<string, number> = {
 	idle: 2.4, walk: 1.0, run: 0.62, hop: 0.8, fly: 0.5, swim: 1.4, drive: 1.0, spin: 4, hover: 2, wave: 1.2, nod: 1.2,
-	attack: 0.9, jump: 1.2, sit: 1.6, turn: 1.2, die: 1.8, reach: 2, point: 1.8, pickup: 2.6, look: 2.4, blink: 3.2, talk: 1.6, expression: 1.6, blend: 0.4, keyframes: 1
+	attack: 0.9, jump: 1.2, sit: 1.6, turn: 1.2, die: 1.8, reach: 2, point: 1.8, pickup: 2.6, look: 2.4, blink: 3.2, talk: 1.6, expression: 1.6, wind: 2, blend: 0.4, keyframes: 1
 };
 
 const TAU = Math.PI * 2;
 const sub3 = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 /** Clips that cycle; the rest play once. */
-const LOOPS = new Set(['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'blink', 'talk']);
+const LOOPS = new Set(['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'blink', 'talk', 'wind']);
 const isQuat = (r: V3 | Quat): r is Quat => r.length === 4;
 
 function sideOf(p: Prim, cx: number) {
@@ -337,7 +337,7 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 	 * one kept, so the clip still loops.
 	 */
 	const followThrough = (D: number, loop: boolean) => {
-		const springs: Record<string, number> = { tail: 2.2, ear: 3.5, antenna: 3, hair: 2.5 };
+		const springs: Record<string, number> = { tail: 2.2, ear: 3.5, antenna: 3, hair: 2.5, cape: 1.6, cloth: 1.8 };
 		const followers = prims.filter((p) => springs[p.role] && !p.hidden && p.op === 'add');
 		const dt = 1 / 120;
 		for (const p of followers) {
@@ -988,8 +988,18 @@ function faceWeights(b: Build, clip: Clip, times: number[], period: number): Rec
 		curves[id] = prev ? (t) => Math.min(1, prev(t) + wgt) : () => wgt;
 	}
 	const ids = Object.keys(curves).filter((id) => made.has(id));
-	if (!ids.length) return undefined;
-	return Object.fromEntries(ids.map((id) => [id, times.map((t) => Math.max(0, Math.min(1, curves[id](t))))]));
+	const out: Record<string, number[]> = Object.fromEntries(ids.map((id) => [id, times.map((t) => Math.max(0, Math.min(1, curves[id](t))))]));
+	// cloth ripples in every clip; a loop fits a whole number of waves so it has no seam
+	const D = times[times.length - 1] || period;
+	for (const c of clothTargets(b)) {
+		const cycles = LOOPS.has(clip.type) ? Math.max(1, Math.round(c.frequency * D)) : c.frequency * D;
+		const th = (t: number) => (TAU * cycles * t) / D;
+		out[c.ids[0]] = times.map((t) => Math.max(0, Math.cos(th(t))));
+		out[c.ids[1]] = times.map((t) => Math.max(0, Math.sin(th(t))));
+		out[c.ids[2]] = times.map((t) => Math.max(0, -Math.cos(th(t))));
+		out[c.ids[3]] = times.map((t) => Math.max(0, -Math.sin(th(t))));
+	}
+	return Object.keys(out).length ? out : undefined;
 }
 
 /**
@@ -1039,7 +1049,23 @@ function sampleBlend(b: Build, rig: Rig, clip: Clip): SampledClip {
 		}
 		return { joint, rot, off, scl: hasScl ? scl : null };
 	});
-	return { id: clip.id, type: 'blend', duration, fps, times, channels, speed: (A.speed + B.speed) / 2, loop: false };
+	// the face crossfades too; cloth keeps rippling
+	const morph = faceWeights(b, clip, times, duration) ?? {};
+	for (const id of new Set([...Object.keys(A.morph ?? {}), ...Object.keys(B.morph ?? {})])) {
+		if (morph?.[id] && /_flutter\d$/.test(id)) continue;
+		const at = (c: SampledClip, t: number) => {
+			const w = c.morph?.[id];
+			if (!w) return 0;
+			const u = (((t % c.duration) + c.duration) % c.duration) / c.duration * (w.length - 1);
+			const i = Math.min(w.length - 2, Math.floor(u)), f = u - i;
+			return w[i] + (w[i + 1] - w[i]) * f;
+		};
+		morph[id] = times.map((t) => {
+			const e = t / duration, k = e * e * (3 - 2 * e);
+			return at(A, t) * (1 - k) + at(B, t - duration + B.duration) * k;
+		});
+	}
+	return { id: clip.id, type: 'blend', duration, fps, times, channels, speed: (A.speed + B.speed) / 2, loop: false, ...(Object.keys(morph).length ? { morph } : {}) };
 }
 
 /* ------------------------------------------------------------------ pose */
@@ -1194,7 +1220,9 @@ export function critiqueClip(b: Build, rig: Rig, clip: SampledClip, standing: bo
 		issues.push(`${clip.id}: sinks ${(-minY * 100).toFixed(1)} cm below the ground at t=${lowest.t.toFixed(2)}s — lower amplitude or shorten the swinging parts`);
 	if (standing && ['walk', 'run', 'idle', 'wave', 'nod'].includes(clip.type) && Math.min(...perFrameMin) > tol * 2)
 		issues.push(`${clip.id}: never touches the ground during the clip`);
-	if (!clip.channels.length) issues.push(`${clip.id}: no parts move — give parts roles (leg, arm, tail, wing, wheel, rotor, head) or add keyframe tracks`);
+	// a face or cloth that changes counts as motion
+	const morphs = Object.values(clip.morph ?? {}).some((w) => Math.max(...w) - Math.min(...w) > 1e-3);
+	if (!clip.channels.length && !morphs) issues.push(`${clip.id}: no parts move — give parts roles (leg, arm, tail, wing, wheel, rotor, head), add keyframe tracks, or give a sheet cloth`);
 
 	const feet = chains.map((c, i) => ({ leg: rig.joints[c.top].name, slide: slip[i].worst, contacts: slip[i].contacts }));
 	const slipTol = Math.max(b.cell * 2, 0.01);

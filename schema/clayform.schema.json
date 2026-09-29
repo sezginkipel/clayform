@@ -1011,6 +1011,40 @@
             "minimum": 0,
             "maximum": 1
           },
+          "cloth": {
+            "description": "flutter: a separate part (a sheet: flag, cape, sail, banner) ripples in every clip, baked as four morph targets",
+            "type": "object",
+            "properties": {
+              "pin": {
+                "description": "the edge held still, in the part's own frame: a flag at its pole (left, the default for role \"flag\"), a cape at the shoulders (top, the default otherwise)",
+                "type": "string",
+                "enum": [
+                  "left",
+                  "right",
+                  "top",
+                  "bottom"
+                ]
+              },
+              "wind": {
+                "description": "m/s (default 4): how fast the waves run and how big they get; 0 keeps it still",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 30
+              },
+              "amplitude": {
+                "description": "meters the free edge swings at most (default a tenth of its length at wind 4)",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 2
+              },
+              "wavelength": {
+                "description": "meters from one crest to the next (default seven tenths of its length)",
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
           "curve": {
             "description": "bend the part along its local X: both ends rise this many meters above the middle (a smiling mouth, an arched brow, a banana); negative drops them",
             "type": "number",
@@ -2705,6 +2739,7 @@
               "blink",
               "talk",
               "expression",
+              "wind",
               "blend",
               "keyframes"
             ],

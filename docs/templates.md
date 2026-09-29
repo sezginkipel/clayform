@@ -539,12 +539,13 @@ A tavern sign ~1.6 m: turned post (lathe), an extruded board with a chamfer, and
 
 <img src="templates/flagpole.png" width="192" alt="Flag pole template, three-quarter view">
 
-A flag ~2.2 m on a pole: the flag is a thin sheet with a wave; stripes via the pattern. Swap colours in the palette.
+A flag ~2.2 m on a pole: the flag is a thin sheet with a wave that flutters in the wind clip (cloth); stripes via the pattern. Swap colours in the palette.
 
 - tags: prop, cloth, environment
 - parts: `base`, `pole`, `finial`, `flag`
-- roles: body
+- roles: body, flag
 - palette: `metal` #8a8f99, `cloth` #c8403a, `stripe` #f3efe6, `stone` #9a948c
+- clips: `wind` (wind)
 
 ## Meadow tile — `meadow`
 

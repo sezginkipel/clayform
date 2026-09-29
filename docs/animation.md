@@ -173,6 +173,32 @@ The test suite checks that moved vertices land on the expression's surface, that
 expression does not change do not move, that the mouth's own vertices follow a smile to its
 corners, and that the export has no validator errors or warnings.
 
+## Cloth
+
+`cloth` on a separate part (a sheet is always separate) makes it ripple in every clip: a flag on
+its pole, a cape, a sail, a banner. The `wind` clip plays nothing else, for props.
+
+<!-- verify: part flagpole -->
+```json
+{ "id": "banner", "role": "flag", "shape": { "type": "sheet", "size": [0.5, 0.3] },
+  "attach": { "to": "pole", "side": "left", "offset": [0, 0.3], "embed": 1 }, "position": [0.27, 0, 0],
+  "cloth": { "wind": 6 } }
+```
+
+`pin` is the edge held still, in the part's own frame: `left` by default for role `flag`, `top`
+otherwise (a cape at the shoulders). `wind` (m/s, default 4) sets how fast the waves run, a third
+of the wind, and how big they get. `amplitude` (default a tenth of the length at wind 4) and
+`wavelength` (default seven tenths of the length) set the waves directly. Parts with role `cape`
+or `cloth` also swing behind the body on a spring, like tails.
+
+The ripple is a travelling wave that grows from the pinned edge, exported as four morph targets
+per part (named `<part>_flutter0` to `3`). Their weights are the positive and negative halves of
+the wave's cosine and sine, so every weight stays between 0 and 1 and engines that refuse
+negative morph weights play it too. Loops fit a whole number of waves, so they have no seam. The
+test suite checks that the four targets add up to the wave at any phase, that the pinned edge
+does not move, and that loops start and end on the same weights. It is a wave, not a cloth
+simulation: nothing collides, and a flag does not wrap around its pole.
+
 ## Blending clips
 
 A `blend` clip crossfades from one clip into another:

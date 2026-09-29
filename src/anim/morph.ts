@@ -150,6 +150,91 @@ function expressionsOf(b: Build) {
 	return hit;
 }
 
+/** A part that flutters: its four morph targets (a travelling wave as cos⁺, sin⁺, cos⁻, sin⁻ of its phase) and how often a wave passes. */
+export interface ClothTargets {
+	prim: number;
+	ids: [string, string, string, string];
+	/** waves per second */
+	frequency: number;
+	amplitude: number;
+	wavelength: number;
+	pin: 'left' | 'right' | 'top' | 'bottom';
+}
+
+const clothCache = new WeakMap<Build, ClothTargets[]>();
+
+/** The fluttering parts of a build (separate, visible, with wind). */
+export function clothTargets(b: Build): ClothTargets[] {
+	const hit = clothCache.get(b);
+	if (hit) return hit;
+	const out: ClothTargets[] = [];
+	for (const pr of b.compiled.prims) {
+		const cl = pr.part.cloth;
+		if (!cl || pr.hidden || !pr.separate) continue;
+		const wind = cl.wind ?? 4;
+		if (wind <= 0) continue;
+		const pin = cl.pin ?? (pr.role === 'flag' ? 'left' : 'top');
+		const across = pin === 'left' || pin === 'right' ? 0 : 1;
+		const length = (pr.lmax[across] - pr.lmin[across]) * pr.scl[across];
+		const amplitude = cl.amplitude ?? length * 0.1 * Math.min(2, wind / 4);
+		const wavelength = cl.wavelength ?? length * 0.7;
+		// waves run downwind at about a third of the wind
+		const frequency = (wind * 0.35) / wavelength;
+		const base = pr.id.replace(/\.m$/, '_mirror');
+		out.push({ prim: pr.index, ids: [0, 1, 2, 3].map((i) => `${base}_flutter${i}`) as ClothTargets['ids'], frequency, amplitude, wavelength, pin });
+	}
+	clothCache.set(b, out);
+	return out;
+}
+
+/** Every morph target id a build exports: expressions it could make, then fluttering parts. */
+export function morphIds(b: Build): string[] {
+	const bad = expressionProblems(b);
+	return [...(b.source.expressions ?? []).map((e) => e.id).filter((id) => !bad.some((p) => p.startsWith(`expression "${id}"`))), ...clothTargets(b).flatMap((c) => c.ids)];
+}
+
+/** The four flutter targets of a cloth part's mesh: sin(k·s − φ) along the part, for φ = 0°, 90°, 180°, 270°, growing from the pinned edge. */
+function flutterTargets(b: Build, m: MeshData, c: ClothTargets): MorphTarget[] {
+	const pr = b.compiled.prims[c.prim];
+	const n = m.positions.length / 3;
+	const along = c.pin === 'left' || c.pin === 'right' ? 0 : 1;
+	const lo = pr.lmin[along], hi = pr.lmax[along];
+	const span = hi - lo || 1;
+	const len = span * pr.scl[along];
+	const k = (Math.PI * 2) / c.wavelength;
+	const rot = (v: V3): V3 => {
+		const o = toWorld(pr, [0, 0, 0]), t = toWorld(pr, v);
+		const d: V3 = [t[0] - o[0], t[1] - o[1], t[2] - o[2]];
+		const l = Math.hypot(...d) || 1;
+		return [d[0] / l, d[1] / l, d[2] / l];
+	};
+	const N = rot([0, 0, 1]);
+	const T = rot(along === 0 ? [c.pin === 'left' ? 1 : -1, 0, 0] : [0, c.pin === 'bottom' ? 1 : -1, 0]);
+	const phases = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+	return c.ids.map((id, i) => {
+		const dp = new Float32Array(n * 3), dn = new Float32Array(n * 3);
+		let moved = 0, max = 0;
+		for (let v = 0; v < n; v++) {
+			const l = toLocal(pr, m.positions[v * 3] - b.offset[0], m.positions[v * 3 + 1] - b.offset[1], m.positions[v * 3 + 2] - b.offset[2]);
+			const u = Math.max(0, Math.min(1, c.pin === 'left' || c.pin === 'bottom' ? (l[along] - lo) / span : (hi - l[along]) / span));
+			const s = u * len;
+			// the pinned edge holds; the swing grows toward the free edge
+			const A = c.amplitude * u ** 1.3;
+			const dA = u > 0 ? (c.amplitude * 1.3 * u ** 0.3) / len : 0;
+			const h = A * Math.sin(k * s - phases[i]);
+			const slope = dA * Math.sin(k * s - phases[i]) + A * k * Math.cos(k * s - phases[i]);
+			dp.set([N[0] * h, N[1] * h, N[2] * h], v * 3);
+			// the surface tilts with the slope; the back face tilts the other way, the rim barely
+			const side = m.normals[v * 3] * N[0] + m.normals[v * 3 + 1] * N[1] + m.normals[v * 3 + 2] * N[2];
+			const g = -slope * side;
+			dn.set([T[0] * g, T[1] * g, T[2] * g], v * 3);
+			if (Math.abs(h) > 1e-4) moved++;
+			max = Math.max(max, Math.abs(h));
+		}
+		return { id, dp, dn, moved, max };
+	});
+}
+
 /** Why an expression could not be made (a preset without the parts it needs). */
 export function expressionProblems(b: Build): string[] {
 	return expressionsOf(b).problems;
@@ -204,6 +289,10 @@ export function meshMorphs(b: Build, m: MeshData): MorphTarget[] {
 			max = Math.max(max, l);
 		}
 		out.push({ id, dp, dn, moved, max });
+	}
+	for (const c of clothTargets(b)) {
+		if (m.prim === c.prim) out.push(...flutterTargets(b, m, c));
+		else for (const id of c.ids) out.push({ id, dp: new Float32Array(n * 3), dn: new Float32Array(n * 3), moved: 0, max: 0 });
 	}
 	ex.meshes.set(m, out);
 	return out;
