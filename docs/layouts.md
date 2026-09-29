@@ -27,7 +27,7 @@ This is [`examples/camp.layout.json`](examples/camp.layout.json):
 
 ## Items
 
-`{ id, scene, position, rotation?, scale? }`. `position` is `[x, z]` on the ground or `[x, y, z]`.
+`{ id, scene, position, rotation?, scale?, fixed? }`. `position` is `[x, z]` on the ground or `[x, y, z]`.
 `rotation` turns the object around Y, in degrees. Objects already stand on the ground (their scenes
 are grounded), so `[x, z]` is usually all you need.
 
@@ -45,6 +45,41 @@ are grounded), so `[x, z]` is usually all you need.
 `rotate` is `none`, `random`, `face_center`, `face_out` or a number of degrees. `scaleJitter: 0.2`
 varies sizes by ±20%. The same `seed` always gives the same layout.
 
+## Settling
+
+`"settle": true` on the layout drops every item straight down until it rests on the ground or on
+another item. A cup placed anywhere above a table lands on its top, crates placed in one spot stack,
+and nothing floats or passes through anything else.
+
+![A cup dropped onto a table, three chests placed in one spot, a barrel at the table's edge](settle.png)
+
+```json
+{
+  "format": "clayform-layout/1",
+  "name": "Tavern corner",
+  "settle": true,
+  "items": [
+    { "id": "table", "scene": "table", "position": [0, 0] },
+    { "id": "cup", "scene": "cup", "position": [0.1, 2, 0.05] },
+    { "id": "crate_1", "scene": "chest", "position": [1.2, 0] },
+    { "id": "crate_2", "scene": "chest", "position": [1.25, 0, 0.02], "rotation": 20 },
+    { "id": "shelf", "scene": "table", "position": [3, 1.2, 0], "fixed": true }
+  ]
+}
+```
+
+- Each item falls onto the **first surface below where it starts**, measured on its triangles, not
+  its bounding box. A mug placed under a table lands on the floor, and one placed above lands on
+  the top. An item that starts inside another is lifted out on top of it.
+- Items fall from the lowest up, so a stack resolves from the bottom.
+- `"fixed": true` keeps an item where it is placed (a shelf on a wall, a lamp hanging from a
+  beam), and things still land on it.
+- **Nothing rotates or slides.** When an item lands with its center of mass outside what holds it
+  up, the check `item-tips` says so rather than tipping it over. Move it further onto its support.
+
+The report says what moved and what rests on what:
+`settled: 3 of 5 items moved; cup on table, crate_2 on crate_1`.
+
 ## Tools
 
 - `set_layout { name, layout }` saves it and reports overlaps.
@@ -59,4 +94,6 @@ From the command line: `clayform layout camp.layout.json --render camp.png --exp
 - `items-overlap`: two items pass through each other. It is measured against each object's own
   shape, not its bounding box, so a mushroom tucked under a chest's lid counts but two neighbours
   that only share a bounding box do not.
-- `item-lifted`: an item placed above the ground on purpose (a note, not a problem).
+- `item-lifted`: an item placed above the ground on purpose (a note, not a problem). With
+  `settle` it is only reported for `fixed` items.
+- `item-tips`: with `settle`, an item whose weight is over the edge of what holds it up.

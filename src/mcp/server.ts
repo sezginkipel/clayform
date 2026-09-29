@@ -170,7 +170,7 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 
 	server.registerTool('set_layout', {
 		title: 'Place many objects',
-		description: 'Create or replace a layout: many scenes or templates placed together (a street, a dungeon corner, a forest patch). layout = { format: "clayform-layout/1", name, items: [{ id, scene, position: [x, z] or [x, y, z], rotation (yaw deg), scale }], patterns: [{ id, scene, type: row|grid|circle|scatter, count, spacing, columns, radius, area: [w, d], origin: [x, z], direction, rotate: none|random|face_center|face_out|deg, scaleJitter, minGap, seed }] }. scene is a workspace scene id, a template id or a .clay.json path.',
+		description: 'Create or replace a layout: many scenes or templates placed together (a street, a dungeon corner, a forest patch). layout = { format: "clayform-layout/1", name, settle: true (drop items onto the ground and each other), items: [{ id, scene, position: [x, z] or [x, y, z], rotation (yaw deg), scale, fixed (stays put with settle) }], patterns: [{ id, scene, type: row|grid|circle|scatter, count, spacing, columns, radius, area: [w, d], origin: [x, z], direction, rotate: none|random|face_center|face_out|deg, scaleJitter, minGap, seed }] }. scene is a workspace scene id, a template id or a .clay.json path.',
 		inputSchema: { name: z.string().min(1).max(80), layout: z.record(z.string(), z.unknown()) }
 	}, (a) => t.setLayout(a));
 

@@ -36,6 +36,23 @@ const torch = getTemplate('torch')!.scene;
 writeFileSync('docs/fire.png', bakeEffect(resolveEffect(torch, torch.effects![0])).preview);
 console.log('docs/goblin.png goblin-parts.png goblin-walk.png fire.png goblin.clay.json');
 
+// A settled layout: a cup dropped onto a table, three chests placed in one spot, a barrel at the edge.
+{
+	const { buildLayout, parseLayout } = await import('../src/layout.js');
+	const r = parseLayout({ format: 'clayform-layout/1', name: 'settle', settle: true, items: [
+		{ id: 'table', scene: 'table', position: [0, 0] },
+		{ id: 'cup', scene: 'cup', position: [0.1, 3, 0.05] },
+		{ id: 'chest1', scene: 'chest', position: [1.2, 0] },
+		{ id: 'chest2', scene: 'chest', position: [1.25, 0, 0.02], rotation: 20 },
+		{ id: 'chest3', scene: 'chest', position: [1.2, 0, 0] },
+		{ id: 'barrel', scene: 'barrel', position: [-0.62, 2, 0] }
+	] });
+	if (!r.ok) throw new Error(r.error);
+	const lb = buildLayout(r.layout, (id: string) => getTemplate(id)!.scene);
+	writeFileSync('docs/settle.png', renderSheet(lb.merged, { views: ['front', 'three_quarter'], size: 400 }).png);
+	console.log('docs/settle.png');
+}
+
 // Presentation renders: the house at sunset, the knight on a transparent background (shown on a light card), and a turntable.
 {
 	const { renderBeauty, renderTurntable } = await import('../src/render/beauty.js');

@@ -5,6 +5,7 @@
  * built once; instances reuse it with a transform.
  */
 
+import { settleItems, type Settled } from './settle.js';
 import { z } from 'zod';
 import { buildScene, type Build, type MeshData } from './core/build.js';
 import { bodyField, type Compiled, type Prim } from './core/compile.js';
@@ -19,7 +20,8 @@ export const Placement = z.strictObject({
 	scene: z.string().min(1).describe('a workspace scene id, a template id, or a path to a .clay.json'),
 	position: z.union([z.tuple([num, num]), z.tuple([num, num, num])]).describe('[x, z] on the ground, or [x, y, z]'),
 	rotation: num.optional().describe('turn around Y, in degrees'),
-	scale: num.positive().optional()
+	scale: num.positive().optional(),
+	fixed: z.boolean().optional().describe('with settle: stays where it is placed (a shelf on a wall) and still holds up what lands on it')
 });
 
 export const Pattern = z.strictObject({
@@ -43,7 +45,8 @@ export const Layout = z.strictObject({
 	format: z.literal('clayform-layout/1'),
 	name: z.string().min(1).max(80),
 	items: z.array(Placement).max(1000).optional(),
-	patterns: z.array(Pattern).max(64).optional()
+	patterns: z.array(Pattern).max(64).optional(),
+	settle: z.boolean().optional().describe('drop every item straight down until it rests on the ground or on another item, so nothing floats or passes through (items do not tip or slide)')
 });
 export type Layout = z.infer<typeof Layout>;
 
@@ -53,6 +56,7 @@ export interface Placed {
 	position: V3;
 	rotation: number;
 	scale: number;
+	fixed?: boolean;
 }
 
 export function parseLayout(input: unknown): { ok: true; layout: Layout } | { ok: false; error: string } {
@@ -71,7 +75,7 @@ export function parseLayout(input: unknown): { ok: true; layout: Layout } | { ok
 export function expandLayout(l: Layout): Placed[] {
 	const out: Placed[] = [];
 	for (const it of l.items ?? [])
-		out.push({ id: it.id, scene: it.scene, position: it.position.length === 2 ? [it.position[0], 0, it.position[1]] : [...it.position] as V3, rotation: it.rotation ?? 0, scale: it.scale ?? 1 });
+		out.push({ id: it.id, scene: it.scene, position: it.position.length === 2 ? [it.position[0], 0, it.position[1]] : [...it.position] as V3, rotation: it.rotation ?? 0, scale: it.scale ?? 1, ...(it.fixed ? { fixed: true } : {}) });
 	for (const p of l.patterns ?? []) {
 		const r = rng(p.seed ?? 1);
 		const [ox, oz] = p.origin ?? [0, 0];
@@ -122,6 +126,8 @@ export interface LayoutBuild {
 	matrices: M4[];
 	/** everything merged into one Build-shaped object (for rendering and export) */
 	merged: Build;
+	/** with settle: where each item came to rest */
+	settled?: Settled[];
 }
 
 const matrixOf = (p: Placed): M4 => m4Compose(p.position, qEuler([0, p.rotation, 0]), [p.scale, p.scale, p.scale]);
@@ -130,7 +136,8 @@ export function buildLayout(l: Layout, resolve: (ref: string) => Scene): LayoutB
 	const placed = expandLayout(l);
 	const builds = new Map<string, Build>();
 	for (const p of placed) if (!builds.has(p.scene)) builds.set(p.scene, buildScene(resolve(p.scene)));
-	return { layout: l, placed, builds, matrices: placed.map(matrixOf), merged: mergeBuilds({ layout: l, placed }, builds) };
+	const settled = l.settle ? settleItems(placed, builds) : undefined;
+	return { layout: l, placed, builds, matrices: placed.map(matrixOf), merged: mergeBuilds({ layout: l, placed }, builds), ...(settled ? { settled } : {}) };
 }
 
 /** One Build-shaped object with every item's meshes moved into place (for rendering and export). */
@@ -239,8 +246,12 @@ export function critiqueLayout(lb: LayoutBuild): Issue[] {
 			if (hits >= 4)
 				issues.push({ severity: 'warn', code: 'items-overlap', message: `${lb.placed[i].id} and ${lb.placed[j].id} pass through each other (up to ${(-deepest * 100).toFixed(1)} cm) — move them apart or lower minGap/spacing`, parts: [lb.placed[i].id, lb.placed[j].id] });
 		}
+	const rests = new Map((lb.settled ?? []).map((s) => [s.id, s]));
+	for (const s of lb.settled ?? [])
+		if (s.tips) issues.push({ severity: 'warn', code: 'item-tips', message: `${s.id} rests on ${s.on} with its weight over the edge, so it would tip over; move it further onto what holds it`, parts: [s.id] });
 	for (const p of lb.placed)
-		if (p.position[1] > 0.01) issues.push({ severity: 'info', code: 'item-lifted', message: `${p.id} is placed ${(p.position[1] * 100).toFixed(0)} cm above the ground` });
+		if (p.position[1] > 0.01 && (!rests.has(p.id) || rests.get(p.id)!.on === 'fixed'))
+			issues.push({ severity: 'info', code: 'item-lifted', message: `${p.id} is placed ${(p.position[1] * 100).toFixed(0)} cm above the ground` });
 	return issues.slice(0, 20);
 }
 
@@ -250,6 +261,14 @@ export function describeLayout(lb: LayoutBuild): string {
 	const size = lb.merged.max.map((v, i) => (v - lb.merged.min[i]).toFixed(2)).join(' × ');
 	return [
 		`layout "${lb.layout.name}" — ${lb.placed.length} items from ${counts.size} scenes, ${size} m, ${lb.merged.stats.triangles.toLocaleString('en')} triangles`,
-		...[...counts.entries()].map(([s, n]) => `  ${s} × ${n}`)
+		...[...counts.entries()].map(([s, n]) => `  ${s} × ${n}`),
+		...(lb.settled ? [settleLine(lb.settled)] : [])
 	].join('\n');
+}
+
+function settleLine(st: Settled[]): string {
+	const onItems = st.filter((s) => s.on !== 'ground' && s.on !== 'fixed');
+	const moved = st.filter((s) => Math.abs(s.to - s.from) > 0.005);
+	const tips = st.filter((s) => s.tips);
+	return `settled: ${moved.length} of ${st.length} items moved; ${onItems.length ? onItems.map((s) => `${s.id} on ${s.on}`).join(', ') : 'all on the ground'}${tips.length ? `; would tip: ${tips.map((s) => s.id).join(', ')}` : ''}`;
 }
