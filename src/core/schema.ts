@@ -147,6 +147,7 @@ export const Part = z.strictObject({
 	parent: Id.optional().describe('position/rotation are relative to this part and follow its rotation (ignored when attach is set)'),
 	attach: Anchor.optional().describe('place on another part\'s surface; the part keeps its own rotation (use align to point it along the surface normal)'),
 	op: z.enum(['add', 'carve', 'intersect']).optional().describe('add (default) merges, carve cuts away, intersect keeps only the overlap'),
+	only: z.union([Id, z.array(Id).min(1).max(32)]).optional().describe('carve/intersect: cut only these parts (and their mirror twins) instead of everything listed before — a window through one wall, a roof clipped to its own box'),
 	blend: num.min(0).max(1).optional().describe('smooth merge radius in meters with everything before it; 0 = hard seam'),
 	material: Material.optional().describe('see Material'),
 	pattern: Pattern.optional().describe('see Pattern'),
@@ -297,6 +298,13 @@ export function integrity(s: Scene): Problem[] {
 			if (!colorOk(c)) out.push({ path: `parts[${i}].material`, message: `palette has no color "${c}" — add it to palette or use #rrggbb` });
 		if (p.shape.type === 'tube' && Array.isArray(p.shape.radius) && p.shape.radius.length !== p.shape.points.length)
 			out.push({ path: `parts[${i}].shape.radius`, message: `tube has ${p.shape.points.length} points but ${p.shape.radius.length} radii` });
+		if (p.only) {
+			if (!p.op || p.op === 'add') out.push({ path: `parts[${i}].only`, message: `"only" limits a carve or an intersect — give "${p.id}" op "carve" or "intersect", or remove "only"` });
+			for (const t of Array.isArray(p.only) ? p.only : [p.only]) {
+				if (!ids.has(t)) out.push({ path: `parts[${i}].only`, message: `"${p.id}" cuts unknown part "${t}"` });
+				else if (t === p.id) out.push({ path: `parts[${i}].only`, message: `"${p.id}" cannot cut itself` });
+			}
+		}
 		if (p.shape.type === 'capsule' && p.shape.length < p.shape.radius * 2)
 			out.push({ path: `parts[${i}].shape.length`, message: `capsule length must be at least 2 × radius (${(p.shape.radius * 2).toFixed(3)})` });
 	});

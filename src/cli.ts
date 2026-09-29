@@ -163,6 +163,7 @@ async function main() {
 				if (r.atlas) console.log(`texture ${r.atlas.size}px · ${r.atlas.charts} charts · ${Math.round(r.atlas.coverage * 100)}% used · ${Math.round(r.atlas.texelsPerMeter)} texels per meter`);
 			}
 			console.log(`wrote ${out} · ${b.stats.triangles} triangles (from ${full.stats.triangles})`);
+			if ((b as { simplified?: { overBudget: boolean } }).simplified?.overBudget) console.log(`over the ${tri}-triangle budget: ${b.meshes.length} meshes cannot go lower without losing parts (each keeps at least 12)`);
 			return;
 		}
 		case 'kit': {

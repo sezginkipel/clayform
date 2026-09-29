@@ -61,6 +61,10 @@ export interface Prim {
 	attachNormal: V3 | null;
 	/** Mirror twin index, or -1. */
 	twinIndex: number;
+	/** a carve/intersect with `only`: it cuts its targets instead of the running body */
+	scoped: boolean;
+	/** the scoped carves/intersects that cut this part */
+	cutBy: Prim[];
 }
 
 export interface SculptFn {
@@ -284,7 +288,9 @@ export function compile(scene: Scene): Compiled {
 			parent: -1,
 			attachPoint: null,
 			attachNormal: null,
-			twinIndex: -1
+			twinIndex: -1,
+			scoped: false,
+			cutBy: []
 		};
 	};
 
@@ -385,7 +391,8 @@ export function compile(scene: Scene): Compiled {
 				attachPoint: pr.attachPoint ? [-pr.attachPoint[0], pr.attachPoint[1], pr.attachPoint[2]] : null,
 				attachNormal: pr.attachNormal ? [-pr.attachNormal[0], pr.attachNormal[1], pr.attachNormal[2]] : null,
 				index: prims.length,
-				twinIndex: pr.index
+				twinIndex: pr.index,
+				cutBy: []
 			};
 			setRot(tw, [pr.rot[0], -pr.rot[1], -pr.rot[2], pr.rot[3]]);
 			if (pr.parent >= 0) {
@@ -404,6 +411,14 @@ export function compile(scene: Scene): Compiled {
 	const body = prims
 		.filter((p) => p.inBody)
 		.sort((a, b) => (docIndex.get(a.partId)! - docIndex.get(b.partId)!) || (a.twin ? 1 : 0) - (b.twin ? 1 : 0));
+	// scoped cuts: each target carries the carves/intersects that name it (both twins of each)
+	for (const op of prims) {
+		const only = op.part.only;
+		if (!only || op.op === 'add') continue;
+		op.scoped = true;
+		const ids = new Set(Array.isArray(only) ? only : [only]);
+		for (const t of prims) if (t !== op && ids.has(t.partId) && t.op === 'add') t.cutBy.push(op);
+	}
 	if (body.length && body[0].op !== 'add') warnings.push(`first body part "${body[0].id}" is a ${body[0].op} — there is nothing before it to ${body[0].op}`);
 
 	const compiled: Compiled = { scene, prims, body, sculpts: [], byId, grow: 0, lip: 1, warnings };
@@ -418,6 +433,16 @@ export function compile(scene: Scene): Compiled {
 
 /* ---------------------------------------------------------------- field */
 
+/** A part's own distance after the scoped carves and intersects that name it. */
+export function partDist(pr: Prim, x: number, y: number, z: number): number {
+	let d = primDist(pr, x, y, z);
+	for (const op of pr.cutBy) {
+		const dop = primDist(op, x, y, z);
+		d = op.op === 'carve' ? ssub(dop, d, op.k) : smax(d, dop, op.k);
+	}
+	return d;
+}
+
 /** Combined body distance using only `list` prims (indices into compiled.body), before sculpts. */
 export function bodyBase(c: Compiled, x: number, y: number, z: number, list?: ArrayLike<number>): number {
 	const body = c.body;
@@ -426,7 +451,8 @@ export function bodyBase(c: Compiled, x: number, y: number, z: number, list?: Ar
 	let started = false;
 	for (let j = 0; j < n; j++) {
 		const pr = body[list ? list[j] : j];
-		const di = primDist(pr, x, y, z);
+		if (pr.scoped) continue;
+		const di = pr.cutBy.length ? partDist(pr, x, y, z) : primDist(pr, x, y, z);
 		if (pr.op === 'add') {
 			d = started ? smin(d, di, pr.k) : di;
 			started = true;

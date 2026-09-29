@@ -716,6 +716,24 @@
               "intersect"
             ]
           },
+          "only": {
+            "description": "carve/intersect: cut only these parts (and their mirror twins) instead of everything listed before — a window through one wall, a roof clipped to its own box",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,47}$"
+              },
+              {
+                "minItems": 1,
+                "maxItems": 32,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]{0,47}$"
+                }
+              }
+            ]
+          },
           "blend": {
             "description": "smooth merge radius in meters with everything before it; 0 = hard seam",
             "type": "number",

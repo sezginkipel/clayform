@@ -5,7 +5,7 @@
  */
 
 import { add, clamp, type V3 } from './math.js';
-import { bodyBase, bodyField, compile, primColor, primDist, worldAabb, type Compiled, type Prim } from './compile.js';
+import { bodyBase, bodyField, compile, partDist, primColor, primDist, worldAabb, type Compiled, type Prim } from './compile.js';
 import { surfaceNets, type Eval, type MeshField } from './mesher.js';
 import { applyStyle } from './style.js';
 import type { Scene } from './schema.js';
@@ -200,7 +200,7 @@ export function finishBuild(ctx: BuildContext, body: MeshData | null, samples: n
 		const e = Math.max(pr.max[0] - pr.min[0], pr.max[1] - pr.min[1], pr.max[2] - pr.min[2]);
 		const sc = Math.min(cell, e / Math.max(20, res * 0.4));
 		const pad = sc * 3;
-		const f: Eval = (x, y, z) => primDist(pr, x, y, z);
+		const f: Eval = (x, y, z) => partDist(pr, x, y, z);
 		const field: MeshField = {
 			min: [pr.min[0] - pad, pr.min[1] - pad, pr.min[2] - pad],
 			max: [pr.max[0] + pad, pr.max[1] + pad, pr.max[2] + pad],

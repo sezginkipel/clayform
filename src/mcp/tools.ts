@@ -62,6 +62,12 @@ function parseViews(v: unknown): View[] | undefined {
 	});
 }
 
+/** An honest line when a triangle budget could not be met without dropping parts. */
+function overBudget(b: { simplified?: { overBudget: boolean }; meshes: unknown[]; stats: { triangles: number } }, budget?: number): string {
+	if (!budget || !b.simplified?.overBudget) return '';
+	return `\nover the ${budget.toLocaleString('en')}-triangle budget: ${b.meshes.length} meshes cannot go lower without losing parts (each keeps at least 12 triangles) — merge small separate parts into the body, or raise the budget`;
+}
+
 export class Tools {
 	constructor(readonly ws: Workspace) {}
 
@@ -337,7 +343,7 @@ export class Tools {
 			const tex = r.atlas ? ` · ${r.atlas.size}px texture (${r.atlas.charts} charts, ${Math.round(r.atlas.coverage * 100)}% used, ${Math.round(r.atlas.texelsPerMeter)} texels/m)` : '';
 			const look = `${args.shading && args.shading !== 'smooth' ? ` · ${args.shading} shading` : ''}${s.outlines ? ` · outline` : ''}`;
 			return {
-				content: [text(`wrote ${out} · ${(s.bytes / 1024).toFixed(0)} KB · ${s.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')}) · ${s.meshes} meshes · ${s.materials} materials${s.joints ? ` · ${s.joints} joints` : ''}${s.animations ? ` · ${s.animations} animations` : ''}${s.lods > 1 ? ` · ${s.lods} levels of detail (${[b, ...lods].map((x) => x.stats.triangles).join(' / ')} triangles)` : ''}${s.colliders ? ` · ${s.colliders} convex colliders` : ''}${tex}${look}`)]
+				content: [text(`wrote ${out} · ${(s.bytes / 1024).toFixed(0)} KB · ${s.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')}) · ${s.meshes} meshes · ${s.materials} materials${s.joints ? ` · ${s.joints} joints` : ''}${s.animations ? ` · ${s.animations} animations` : ''}${s.lods > 1 ? ` · ${s.lods} levels of detail (${[b, ...lods].map((x) => x.stats.triangles).join(' / ')} triangles)` : ''}${s.colliders ? ` · ${s.colliders} convex colliders` : ''}${tex}${look}${overBudget(b, args.triangles)}`)]
 			};
 		});
 	}

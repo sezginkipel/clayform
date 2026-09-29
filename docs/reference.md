@@ -48,6 +48,7 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `parent` | string | position/rotation are relative to this part and follow its rotation (ignored when attach is set) |
 | `attach` | Anchor | place on another part's surface; the part keeps its own rotation (use align to point it along the surface normal) |
 | `op` | `add` · `carve` · `intersect` | add (default) merges, carve cuts away, intersect keeps only the overlap |
+| `only` | string or string[] | carve/intersect: cut only these parts (and their mirror twins) instead of everything listed before — a window through one wall, a roof clipped to its own box |
 | `blend` | number (≥0, ≤1) | smooth merge radius in meters with everything before it; 0 = hard seam |
 | `material` | object | see Material |
 | `pattern` | object | see Pattern |

@@ -52,6 +52,9 @@ All non-separate parts fuse into one smooth body (a signed distance field). **Th
 - `op: "carve"` cuts itself out of the parts listed before it. Parts listed after it are not cut.
   To hollow a mushroom cap without cutting its stem, list the stem after the carve.
 - `op: "intersect"` keeps only the overlap. The barrel template trims an ellipsoid flat this way.
+- `only` limits a carve or an intersect to the parts it names (and their mirror twins), wherever
+  they are in the list: a window through one wall of two, or a roof clipped to its own box
+  without cutting the chimney next to it.
 
 A carve with a `material.color` paints the cavity it makes (windows, mouths, doors). This
 gives the slime template an open mouth, and `after` puts the carve right after the body so the

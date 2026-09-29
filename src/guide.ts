@@ -52,6 +52,7 @@ Rotations are Euler degrees [x, y, z]. Ground is y=0; with \`settings.ground: "a
   - \`parent\`: position/rotation relative to that part, and it follows its rotation.
   - neither: \`position\` is world.
 - \`op\`: add (default) · carve (cuts every part listed BEFORE it — order matters) · intersect.
+  \`only: "wall"\` (or a list) limits a carve/intersect to those parts, wherever they are listed.
 - \`blend\`: smooth-merge radius (m) with everything before it. 0 = hard seam.
 - \`mirror: true\` adds a twin across X named \`id.m\`. Parts attached to a mirrored part are
   mirrored too (set \`mirror: false\` to stop that).
