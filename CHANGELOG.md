@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.14.0 — 2026-09-29
+
+Presentation and physics: pictures to show people, and layouts that settle.
+
+- **Beauty renders** (#50): the `beauty` tool and `clayform beauty` render a presentation picture.
+  It has four lighting presets (studio, sunset, overcast, night), soft shadows from a shadow map
+  (parts shade each other, and the ground shadow follows the real shape), a clean floor that fades
+  into the background or a transparent background, and a framing fitted to the model.
+  `turntable` writes a full turn as an animated PNG, optionally playing a clip. Ordinary `render`
+  output is unchanged, pixel for pixel.
+- **Settling layouts** (#51): `"settle": true` drops every item straight down onto the ground or
+  onto the first surface below it, measured on its triangles. A cup lands on a table's top, crates
+  placed in one spot stack, and nothing floats or passes through. `fixed` items stay put and still
+  hold things up. Items do not rotate or slide: one whose weight is over an edge is reported
+  (`item-tips`) instead. The report lists what rests on what.
+
 ## 0.13.0 — 2026-09-29
 
 Characters that act: standard bones for retargeting, reach and look, faces that blink and talk, cloth that moves.

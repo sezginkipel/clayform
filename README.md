@@ -194,7 +194,8 @@ or open a pull request with a small JSON file ([the rules](docs/showcase.md)).
   an image-to-3D model is on the roadmap.
 - Animation is procedural plus keyframes on **rigid parts**: feet and arms use IK, characters
   can export humanoid bone names for retargeting, faces are morph targets and cloth ripples as a
-  baked wave. Limbs bend only where parts meet, and there is no physics or cloth simulation.
+  baked wave. Limbs bend only where parts meet. Layouts settle items straight down, but there is
+  no rigid-body or cloth simulation: nothing tips, slides or collides while it moves.
   Motion critics check ground contact, sliding feet and parts passing through each other.
 - The renderer is software rasterization with a shadow map. `beauty` makes clean pictures for a
   README or a store page, but there is no global illumination, glass or subsurface light.
@@ -203,8 +204,7 @@ or open a pull request with a small JSON file ([the rules](docs/showcase.md)).
 
 ## Roadmap
 
-Next up: beauty renders, turntables and physics settling for layouts (v0.14), image-to-3D
-hand-off (v0.4), and a published bench (v0.9). See
+Next up: image-to-3D hand-off (v0.4) and a published bench (v0.9). See
 [ROADMAP.md](ROADMAP.md), [milestones](https://github.com/sezginkipel/clayform/milestones) and the
 [changelog](CHANGELOG.md).
 
