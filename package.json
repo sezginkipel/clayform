@@ -1,6 +1,6 @@
 {
   "name": "@s1444/clayform",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "An agent-native 3D workshop: AI agents model, sculpt, rig, animate and bake effects through a semantic scene document, a headless renderer they can look through, and critics that measure what they cannot see. No Blender required.",
   "license": "Apache-2.0",
   "author": "Sezgin Kipel <sezginkipel@gmail.com>",

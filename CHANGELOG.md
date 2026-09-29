@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.12.0 — 2026-09-29
+
+Materials and detail: surfaces an agent names instead of paints, and relief that costs no triangles.
+
+- **Material presets** (#44): `material.preset: { kind, scale?, accent?, relief? }` with fourteen
+  kinds: wood, planks, brick, stone, cobbles, tiles, metal, rust, fabric, leather, grass, bark,
+  marble, sand. The colour becomes that material, with grooves shaded, per-brick and per-stone
+  tone, and patterns that follow each face and move with the part. They show in the renders an
+  agent looks at.
+- **Normal and ORM maps** (#45): textured exports of parts with presets carry a tangent-space
+  normal map baked from the relief, a metallic-roughness map (rust is rough and not metallic,
+  tiles glossy and grout matte), and explicit `TANGENT`s built from each chart, so no engine has
+  to guess the frame. The validator reports no errors or warnings. The test suite rebuilds the
+  normal the way glTF defines it and checks it leans down the relief on faces pointing every way;
+  flipping the encoding makes that test fail.
+- Kits write `atlas_normal.png` and `atlas_orm.png` next to `atlas.png`.
+
 ## 0.11.0 — 2026-09-29
 
 Shapes an agent can describe: the things Blender users model by hand, as a few numbers.
