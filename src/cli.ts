@@ -17,6 +17,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { buildRig, critiqueClip, sampleClip } from './anim/rig.js';
+import { expressionReport } from './anim/morph.js';
 import { buildScene } from './core/build.js';
 import { buildSceneAsync } from './core/parallel.js';
 import { parseScene, type Scene } from './core/schema.js';
@@ -167,6 +168,8 @@ async function main() {
 					die((e as Error).message);
 				}
 				writeFileSync(out, r.glb);
+				const face = expressionReport(b, r.expressions);
+				if (face) console.log(face.slice(3).split(' · ').join('\n'));
 				if (r.atlas) console.log(`texture ${r.atlas.size}px · ${r.atlas.charts} charts · ${Math.round(r.atlas.coverage * 100)}% used · ${Math.round(r.atlas.texelsPerMeter)} texels per meter`);
 			}
 			console.log(`wrote ${out} · ${b.stats.triangles} triangles (from ${full.stats.triangles})`);

@@ -120,6 +120,59 @@ edge it rests on instead of sinking or floating. `amplitude` scales every action
 `speed` multiplies the cycle rate, `amplitude` the motion size, `duration` sets the length (the
 default is one natural cycle, so loops loop), and `fps` the export sample rate.
 
+## Faces
+
+`expressions` are faces a model can make. Each one is written as what changes: parts moved,
+rescaled, reshaped or bent (merged like `update_part`), and sculpts added. A `preset` starts from
+a built-in face:
+
+| preset | what it does | needs |
+|---|---|---|
+| `blink` | squashes the eyes shut: the eyes' own whites and pupils when they have them, otherwise the eyes | parts with role `eye` |
+| `smile`, `frown` | bends the mouth so its corners rise (or drop) by about a third of its width | a part with role or id `mouth` |
+| `open_mouth` | opens the mouth three times as tall and a little deeper | a mouth part |
+| `surprise` | a round open mouth and wider eyes | a mouth part |
+
+```json
+"expressions": [
+  { "id": "blink", "preset": "blink" },
+  { "id": "smile", "preset": "smile" },
+  { "id": "open_mouth", "preset": "open_mouth" },
+  { "id": "wink", "parts": { "eye": { "scale": [1, 0.1, 1] } } }
+]
+```
+
+Clips show them: `blink` loops a blink every 3.2 s, `talk` opens and closes the mouth in six
+syllables and a pause (and bobs the head a little), `expression` fades one in, holds it and fades
+it out. `face` on any clip holds expressions at a weight for the whole clip:
+
+```json
+{ "id": "hop_happy", "type": "hop", "face": { "smile": 1 } }
+```
+
+Export writes every expression as a glTF morph target (named in the mesh's `extras.targetNames`,
+the convention three.js, Godot and Blender read) on each mesh an expression moves, and each clip
+with a face as a `weights` animation. Motion strips (`preview_motion`) show the face too.
+
+How it works, and what follows from it: an expression never changes the triangles. Each vertex of
+the model as exported (after its triangle budget) rides with the part it belongs to, then settles
+onto the expression's surface. The target is the difference from the same settle onto the
+unchanged surface, so the parts an expression does not touch do not move. Three consequences:
+
+- **Colors ride with their vertices.** A mouth's dark vertices move with the mouth as it bends or
+  opens. But an eye blended into the face cannot hide its white when it closes: those vertices
+  stay white, as a streak. The critic warns about this. Give the eye's inner parts `separate: true`
+  and the blink is clean.
+- **The budget limits the face.** A tight triangle budget leaves few vertices around the mouth, and
+  the expression is only as fine as they are. The export reports how many vertices each expression
+  moves, and one that moves none is named.
+- **Big changes stretch.** A mouth opened far pulls the triangles around it. Presets stay within
+  what reads well at the default resolution.
+
+The test suite checks that moved vertices land on the expression's surface, that parts an
+expression does not change do not move, that the mouth's own vertices follow a smile to its
+corners, and that the export has no validator errors or warnings.
+
 ## Blending clips
 
 A `blend` clip crossfades from one clip into another:

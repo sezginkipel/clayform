@@ -1011,6 +1011,12 @@
             "minimum": 0,
             "maximum": 1
           },
+          "curve": {
+            "description": "bend the part along its local X: both ends rise this many meters above the middle (a smiling mouth, an arched brow, a banana); negative drops them",
+            "type": "number",
+            "minimum": -2,
+            "maximum": 2
+          },
           "material": {
             "description": "see Material",
             "type": "object",
@@ -1623,6 +1629,1044 @@
         "additionalProperties": false
       }
     },
+    "expressions": {
+      "description": "faces the model can make, exported as morph targets; clips blink, talk and show them",
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$",
+            "description": "expression id, becomes the morph target name"
+          },
+          "preset": {
+            "description": "start from a built-in face: blink (needs eye parts), smile, frown, open_mouth, surprise (need a mouth part: role or id \"mouth\")",
+            "type": "string",
+            "enum": [
+              "blink",
+              "smile",
+              "frown",
+              "open_mouth",
+              "surprise"
+            ]
+          },
+          "parts": {
+            "description": "how parts change with this expression, merged like update_part (shape, position, rotation, scale, attach, blend, curve)",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "shape": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "sphere"
+                        },
+                        "radius": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "radius"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "ellipsoid"
+                        },
+                        "radii": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 3,
+                          "maxItems": 3
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "radii"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "box"
+                        },
+                        "size": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "description": "full width, height, depth"
+                        },
+                        "rounding": {
+                          "description": "edge radius in meters",
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "size"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "capsule"
+                        },
+                        "length": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "total length along local Y including both caps"
+                        },
+                        "radius": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "length",
+                        "radius"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "cylinder"
+                        },
+                        "height": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "along local Y"
+                        },
+                        "radius": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "rounding": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "sides": {
+                          "description": "faceted: 6 = hexagonal prism (crystals, pencils, tiles); default round",
+                          "type": "integer",
+                          "minimum": 3,
+                          "maximum": 16
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "height",
+                        "radius"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "cone"
+                        },
+                        "height": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "along local Y, base at the bottom"
+                        },
+                        "radius": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "base radius"
+                        },
+                        "topRadius": {
+                          "description": "0 = pointed (default)",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "rounding": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "sides": {
+                          "description": "faceted: 4 = pyramid, 6 = crystal point; default round",
+                          "type": "integer",
+                          "minimum": 3,
+                          "maximum": 16
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "height",
+                        "radius"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "torus"
+                        },
+                        "radius": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "ring radius, ring lies in the local XZ plane"
+                        },
+                        "tube": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "radius",
+                        "tube"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "prism"
+                        },
+                        "size": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "description": "triangular cross-section in XY (peak on top), extruded along Z — roofs, blades"
+                        },
+                        "rounding": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "size"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "mesh"
+                        },
+                        "src": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500,
+                          "description": "path to a .glb or .obj (absolute, or relative to where the server runs / the workspace)"
+                        },
+                        "size": {
+                          "description": "scale so the longest axis is this many meters; default keeps the file's units",
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "resolution": {
+                          "description": "distance grid cells on the longest axis (default 64)",
+                          "type": "integer",
+                          "minimum": 16,
+                          "maximum": 160
+                        },
+                        "keep": {
+                          "description": "keep the file's own triangles (fine and sharp detail survives) instead of rebuilding it from the distance grid; it is then always a separate mesh",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "src"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "sheet"
+                        },
+                        "size": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "description": "width (local X) and height (local Y); the sheet faces +Z"
+                        },
+                        "thickness": {
+                          "description": "meters (default 0.004): leaves, paper, cloth, flags, sails, cards",
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "bend": {
+                          "description": "total curl in degrees along its height, toward +Z (negative: toward -Z)",
+                          "type": "number",
+                          "minimum": -340,
+                          "maximum": 340
+                        },
+                        "wave": {
+                          "description": "ripples across its width, like a flag or a curtain",
+                          "type": "object",
+                          "properties": {
+                            "amplitude": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "length": {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": [
+                            "amplitude",
+                            "length"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "size"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "lathe"
+                        },
+                        "profile": {
+                          "minItems": 2,
+                          "maxItems": 64,
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "prefixItems": [
+                              {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ],
+                            "items": false,
+                            "minItems": 2,
+                            "maxItems": 2
+                          },
+                          "description": "[radius, height] points from bottom to top, spun around local Y — vases, bottles, columns, lamp shades, chess pieces"
+                        },
+                        "sides": {
+                          "description": "faceted around Y (6 = hexagonal); default round",
+                          "type": "integer",
+                          "minimum": 3,
+                          "maximum": 16
+                        },
+                        "smooth": {
+                          "description": "run a smooth curve through the points instead of straight segments",
+                          "type": "boolean"
+                        },
+                        "shell": {
+                          "description": "wall thickness: an open-topped wall along the profile instead of a solid — cups, bowls, vases, lamp shades, bells",
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "profile"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "extrude"
+                        },
+                        "outline": {
+                          "minItems": 3,
+                          "maxItems": 128,
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "prefixItems": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ],
+                            "items": false,
+                            "minItems": 2,
+                            "maxItems": 2
+                          },
+                          "description": "closed [x, y] outline in local XY (no crossings), pushed out along local Z — signs, gears, keys, shields, panels"
+                        },
+                        "depth": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "thickness along Z"
+                        },
+                        "rounding": {
+                          "description": "round every edge by this radius",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "bevel": {
+                          "description": "45° chamfer on the front and back rims",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "taper": {
+                          "description": "the front face is this many times the back face (1 = straight)",
+                          "type": "number",
+                          "minimum": 0.05,
+                          "maximum": 4
+                        },
+                        "smooth": {
+                          "description": "run a smooth closed curve through the points instead of straight segments",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "outline",
+                        "depth"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40,
+                          "pattern": "^[A-Za-z0-9 .,:;!?'\"()+\\-/#&%*=<>_]+$"
+                        },
+                        "height": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "letter height in meters"
+                        },
+                        "depth": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "extrusion along Z"
+                        },
+                        "rounding": {
+                          "description": "soften the block letters (default a sixth of a stroke)",
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "text",
+                        "height",
+                        "depth"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "terrain"
+                        },
+                        "size": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "description": "width (X) and depth (Z)"
+                        },
+                        "height": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "highest hills above the base"
+                        },
+                        "base": {
+                          "description": "solid thickness under the lowest point (default 0.3 × height)",
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "scale": {
+                          "description": "feature size of the hills in meters (default a third of the width)",
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "roughness": {
+                          "description": "0 = smooth rolling hills, 1 = broken rocky ground (default 0.4)",
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "seed": {
+                          "description": "another seed, another landscape",
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "size",
+                        "height"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "tube"
+                        },
+                        "points": {
+                          "minItems": 2,
+                          "maxItems": 64,
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "prefixItems": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ],
+                            "items": false,
+                            "minItems": 3,
+                            "maxItems": 3
+                          },
+                          "description": "local points of a smooth swept tube — tails, limbs, horns, tentacles"
+                        },
+                        "radius": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            {
+                              "minItems": 2,
+                              "maxItems": 64,
+                              "type": "array",
+                              "items": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              }
+                            }
+                          ],
+                          "description": "one radius, or one per point for tapering"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "points",
+                        "radius"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "description": "see Shapes"
+                },
+                "position": {
+                  "description": "relative to parent; with attach it is an extra world offset",
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "rotation": {
+                  "description": "Euler degrees XYZ",
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "scale": {
+                  "description": "uniform or per local axis; the easy way to stretch a template part",
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 3,
+                      "maxItems": 3
+                    }
+                  ]
+                },
+                "blend": {
+                  "description": "smooth merge radius in meters with everything before it; 0 = hard seam",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "curve": {
+                  "description": "bend the part along its local X: both ends rise this many meters above the middle (a smiling mouth, an arched brow, a banana); negative drops them",
+                  "type": "number",
+                  "minimum": -2,
+                  "maximum": 2
+                },
+                "attach": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                      "description": "id of the part to attach to"
+                    },
+                    "side": {
+                      "type": "string",
+                      "enum": [
+                        "top",
+                        "bottom",
+                        "front",
+                        "back",
+                        "left",
+                        "right",
+                        "center"
+                      ],
+                      "description": "world direction you look at the target from: top=+Y bottom=-Y front=+Z back=-Z left=+X (the model's left) right=-X; center = its center"
+                    },
+                    "offset": {
+                      "description": "slide across that side, -1..1 of the target's half size in world axes (top/bottom: [x, z]; front/back: [x, y]; left/right: [z, y])",
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "number",
+                          "minimum": -1,
+                          "maximum": 1
+                        },
+                        {
+                          "type": "number",
+                          "minimum": -1,
+                          "maximum": 1
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "embed": {
+                      "description": "how deep this part sinks in: 0 = just touching, 1 = its center sits on the surface, default 0.35, negative = gap",
+                      "type": "number",
+                      "minimum": -1,
+                      "maximum": 1.5
+                    },
+                    "align": {
+                      "description": "rotate this part so its local +Y points along the surface normal (horns, legs, spikes)",
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "sculpts": {
+            "description": "sculpts added with this expression (a dent for a dimple, an inflate for a cheek)",
+            "maxItems": 16,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                  "description": "unique sculpt id"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "inflate",
+                    "dent",
+                    "flatten",
+                    "crease",
+                    "noise"
+                  ],
+                  "description": "inflate/dent push out/in, flatten cuts a plane, crease cuts a groove from at to to, noise roughens"
+                },
+                "at": {
+                  "description": "where; required except for a global noise",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                          "description": "id of the part to attach to"
+                        },
+                        "side": {
+                          "type": "string",
+                          "enum": [
+                            "top",
+                            "bottom",
+                            "front",
+                            "back",
+                            "left",
+                            "right",
+                            "center"
+                          ],
+                          "description": "world direction you look at the target from: top=+Y bottom=-Y front=+Z back=-Z left=+X (the model's left) right=-X; center = its center"
+                        },
+                        "offset": {
+                          "description": "slide across that side, -1..1 of the target's half size in world axes (top/bottom: [x, z]; front/back: [x, y]; left/right: [z, y])",
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        },
+                        "embed": {
+                          "description": "how deep this part sinks in: 0 = just touching, 1 = its center sits on the surface, default 0.35, negative = gap",
+                          "type": "number",
+                          "minimum": -1,
+                          "maximum": 1.5
+                        },
+                        "align": {
+                          "description": "rotate this part so its local +Y points along the surface normal (horns, legs, spikes)",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "to",
+                        "side"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "point": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "description": "world position"
+                        }
+                      },
+                      "required": [
+                        "point"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "to": {
+                  "description": "crease end point",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_]{0,47}$",
+                          "description": "id of the part to attach to"
+                        },
+                        "side": {
+                          "type": "string",
+                          "enum": [
+                            "top",
+                            "bottom",
+                            "front",
+                            "back",
+                            "left",
+                            "right",
+                            "center"
+                          ],
+                          "description": "world direction you look at the target from: top=+Y bottom=-Y front=+Z back=-Z left=+X (the model's left) right=-X; center = its center"
+                        },
+                        "offset": {
+                          "description": "slide across that side, -1..1 of the target's half size in world axes (top/bottom: [x, z]; front/back: [x, y]; left/right: [z, y])",
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        },
+                        "embed": {
+                          "description": "how deep this part sinks in: 0 = just touching, 1 = its center sits on the surface, default 0.35, negative = gap",
+                          "type": "number",
+                          "minimum": -1,
+                          "maximum": 1.5
+                        },
+                        "align": {
+                          "description": "rotate this part so its local +Y points along the surface normal (horns, legs, spikes)",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "to",
+                        "side"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "point": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "items": false,
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "description": "world position"
+                        }
+                      },
+                      "required": [
+                        "point"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "radius": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "area of influence in meters"
+                },
+                "amount": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "meters: push for inflate/dent/noise, groove depth for crease, how deep flatten cuts"
+                },
+                "normal": {
+                  "description": "flatten plane normal; default: the surface normal at `at`",
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "scale": {
+                  "description": "noise feature size",
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "mirror": {
+                  "description": "also apply at the mirrored position across X",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "radius",
+                "amount"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
     "clips": {
       "description": "animations; the rig is built automatically",
       "maxItems": 32,
@@ -1658,6 +2702,9 @@
               "point",
               "pickup",
               "look",
+              "blink",
+              "talk",
+              "expression",
               "blend",
               "keyframes"
             ],
@@ -1737,6 +2784,23 @@
                 "pattern": "^[a-z][a-z0-9_]{0,47}$"
               }
             ]
+          },
+          "expression": {
+            "description": "expression: the one to show (fades in, holds, fades out); blink/talk: the one to use (default: the blink / open_mouth expression)",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,47}$"
+          },
+          "face": {
+            "description": "hold expressions at these weights through the whole clip, e.g. { \"smile\": 1 } to walk smiling",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
           },
           "from": {
             "description": "blend: the clip to fade out of",

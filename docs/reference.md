@@ -18,6 +18,7 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `settings` | object | see Settings |
 | `parts` **required** | object[] | in blend order: blend and carve act on the parts listed before them |
 | `sculpts` | object[] | applied in order after all parts |
+| `expressions` | object[] | faces the model can make, exported as morph targets; clips blink, talk and show them |
 | `clips` | object[] | animations; the rig is built automatically |
 | `effects` | object[] | particle effects baked to flipbooks |
 
@@ -50,6 +51,7 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `op` | `add` · `carve` · `intersect` | add (default) merges, carve cuts away, intersect keeps only the overlap |
 | `only` | string or string[] | carve/intersect: cut only these parts (and their mirror twins) instead of everything listed before — a window through one wall, a roof clipped to its own box |
 | `blend` | number (≥0, ≤1) | smooth merge radius in meters with everything before it; 0 = hard seam |
+| `curve` | number (≥-2, ≤2) | bend the part along its local X: both ends rise this many meters above the middle (a smiling mouth, an arched brow, a banana); negative drops them |
 | `material` | object | see Material |
 | `pattern` | object | see Pattern |
 | `detail` | object | see Detail |
@@ -151,20 +153,22 @@ A target can also be `{ "point": [x, y, z] }` in world space.
 | field | type | meaning |
 |---|---|---|
 | `id` **required** | string | clip id, becomes the glTF animation name |
-| `type` **required** | `idle` · `walk` · `run` · `hop` · `fly` · `swim` · `drive` · `spin` · `hover` · `wave` · `nod` · `attack` · `jump` · `sit` · `turn` · `die` · `reach` · `point` · `pickup` · `look` · `blend` · `keyframes` | the motion intent; see Clip types |
+| `type` **required** | `idle` · `walk` · `run` · `hop` · `fly` · `swim` · `drive` · `spin` · `hover` · `wave` · `nod` · `attack` · `jump` · `sit` · `turn` · `die` · `reach` · `point` · `pickup` · `look` · `blink` · `talk` · `expression` · `blend` · `keyframes` | the motion intent; see Clip types |
 | `speed` | number (≥0.05, ≤10) | cycle speed multiplier |
 | `amplitude` | number (≥0, ≤4) | motion size multiplier |
 | `duration` | number (≥0.1, ≤60) | seconds; default one natural cycle |
 | `target` | string | part to drive for wave/nod/spin/attack/reach/point/pickup (default: auto) |
 | `at` | [number, number, number] or string | reach/point/pickup/look: where, as a world point [x, y, z] in meters (the model stands on y=0 and faces +Z) or a part id (its center) |
 | `lookAt` | [number, number, number] or string | keep the head turned to this point or part through the whole clip, on top of its own motion |
+| `expression` | string | expression: the one to show (fades in, holds, fades out); blink/talk: the one to use (default: the blink / open_mouth expression) |
+| `face` | { key: number (≥0, ≤1) } | hold expressions at these weights through the whole clip, e.g. { "smile": 1 } to walk smiling |
 | `from` | string | blend: the clip to fade out of |
 | `to` | string | blend: the clip to fade into; the blend ends where that clip starts, so play it next |
 | `tracks` | Track[] | keyframes (type "keyframes") or layered on top of a procedural clip |
 | `fps` | integer (≥4, ≤60) | sample rate for export (default 30) |
 | `secondary` | boolean | springy follow-through on tails, ears and antennas, driven by how the body moves (default true) |
 
-Clip types: `idle`, `walk`, `run`, `hop`, `fly`, `swim`, `drive`, `spin`, `hover`, `wave`, `nod`, `attack`, `jump`, `sit`, `turn`, `die`, `reach`, `point`, `pickup`, `look`, `blend`, `keyframes`.
+Clip types: `idle`, `walk`, `run`, `hop`, `fly`, `swim`, `drive`, `spin`, `hover`, `wave`, `nod`, `attack`, `jump`, `sit`, `turn`, `die`, `reach`, `point`, `pickup`, `look`, `blink`, `talk`, `expression`, `blend`, `keyframes`.
 
 ### Track
 

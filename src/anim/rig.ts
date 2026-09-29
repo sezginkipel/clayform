@@ -21,6 +21,7 @@ import {
 } from '../core/math.js';
 import type { Clip } from '../core/schema.js';
 import { footPath, rigidLeg, twoBoneArm, twoBoneLeg } from './ik.js';
+import { expressionProblems, meshMorphs } from './morph.js';
 
 export interface Joint {
 	name: string;
@@ -75,6 +76,8 @@ export interface SampledClip {
 	speed: number;
 	/** the clip is a cycle (last frame = first frame) */
 	loop: boolean;
+	/** expression weights per frame, by expression id (morph targets) */
+	morph?: Record<string, number[]>;
 }
 
 /** A leg from the hip down: its top joint, optional knee, and the lowest point of everything it carries. */
@@ -148,13 +151,13 @@ type Driver = (t: number) => Motion;
 
 const PERIOD: Record<string, number> = {
 	idle: 2.4, walk: 1.0, run: 0.62, hop: 0.8, fly: 0.5, swim: 1.4, drive: 1.0, spin: 4, hover: 2, wave: 1.2, nod: 1.2,
-	attack: 0.9, jump: 1.2, sit: 1.6, turn: 1.2, die: 1.8, reach: 2, point: 1.8, pickup: 2.6, look: 2.4, blend: 0.4, keyframes: 1
+	attack: 0.9, jump: 1.2, sit: 1.6, turn: 1.2, die: 1.8, reach: 2, point: 1.8, pickup: 2.6, look: 2.4, blink: 3.2, talk: 1.6, expression: 1.6, blend: 0.4, keyframes: 1
 };
 
 const TAU = Math.PI * 2;
 const sub3 = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 /** Clips that cycle; the rest play once. */
-const LOOPS = new Set(['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod']);
+const LOOPS = new Set(['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'blink', 'talk']);
 const isQuat = (r: V3 | Quat): r is Quat => r.length === 4;
 
 function sideOf(p: Prim, cx: number) {
@@ -865,6 +868,11 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 			if (!clip.lookAt) look(() => goal, weight);
 			break;
 		}
+		case 'talk': {
+			// the head bobs a little with the syllables
+			heads.forEach((p) => set(j(p), (t) => ({ rot: [2.5 * amp * syllables(t / period), 0, 0] })));
+			break;
+		}
 		case 'look': {
 			const goal = pointOf(clip.at);
 			if (!goal) break;
@@ -946,7 +954,42 @@ export function sampleClip(b: Build, rig: Rig, clip: Clip): SampledClip {
 		}
 		channels.push({ joint, rot, off, scl: hasScl ? scl : null });
 	}
-	return { id: clip.id, type: clip.type, duration, fps, times, channels, speed, loop: LOOPS.has(clip.type) };
+	const morph = faceWeights(b, clip, times, period);
+	return { id: clip.id, type: clip.type, duration, fps, times, channels, speed, loop: LOOPS.has(clip.type), ...(morph ? { morph } : {}) };
+}
+
+/** Mouth opening over one talk cycle (0..1 of it): six syllables of different sizes, then a pause. */
+function syllables(u: number): number {
+	const AMP = [0.9, 0.45, 1, 0.3, 0.75, 0.55, 0, 0];
+	const x = (((u % 1) + 1) % 1) * AMP.length;
+	const i = Math.floor(x), f = x - i;
+	return AMP[i] * Math.sin(Math.PI * f) ** 0.8;
+}
+
+/** Expression weights per frame for the face clips and the `face` layer, or nothing when the clip has no face. */
+function faceWeights(b: Build, clip: Clip, times: number[], period: number): Record<string, number[]> | undefined {
+	const exprs = b.source.expressions ?? [];
+	const made = new Set(exprs.filter((e) => !expressionProblems(b).some((p) => p.startsWith(`expression "${e.id}"`))).map((e) => e.id));
+	const pick = (preset: string) => clip.expression ?? exprs.find((e) => e.preset === preset)?.id ?? exprs.find((e) => e.id === preset)?.id;
+	const curves: Record<string, (t: number) => number> = {};
+	const smooth = (u: number) => u * u * (3 - 2 * u);
+	const seg = (t: number, a: number, c: number) => smooth(Math.max(0, Math.min(1, (t / period - a) / (c - a))));
+	const amp = Math.min(1, clip.amplitude ?? 1);
+	if (clip.type === 'blink') {
+		const id = pick('blink');
+		// a quick close, a moment shut, a slower open
+		if (id) curves[id] = (t) => amp * (seg(t, 0.1, 0.14) - seg(t, 0.16, 0.22));
+	} else if (clip.type === 'talk') {
+		const id = pick('open_mouth');
+		if (id) curves[id] = (t) => amp * syllables(t / period);
+	} else if (clip.type === 'expression' && clip.expression) curves[clip.expression] = (t) => amp * (seg(t, 0, 0.25) - seg(t, 0.75, 1));
+	for (const [id, wgt] of Object.entries(clip.face ?? {})) {
+		const prev = curves[id];
+		curves[id] = prev ? (t) => Math.min(1, prev(t) + wgt) : () => wgt;
+	}
+	const ids = Object.keys(curves).filter((id) => made.has(id));
+	if (!ids.length) return undefined;
+	return Object.fromEntries(ids.map((id) => [id, times.map((t) => Math.max(0, Math.min(1, curves[id](t))))]));
 }
 
 /**
@@ -1030,9 +1073,26 @@ export function poseMeshes(b: Build, rig: Rig, clip: SampledClip | null, f: numb
 	return b.meshes.map((m) => {
 		const n = m.positions.length / 3;
 		const P = new Float32Array(n * 3), N = new Float32Array(n * 3);
+		// the face first, then the skeleton carries it
+		let src = m.positions, nrm = m.normals;
+		if (clip?.morph) {
+			const fi = Math.min(f, clip.times.length - 1);
+			const targets = meshMorphs(b, m).filter((t) => (clip.morph![t.id]?.[fi] ?? 0) > 0);
+			if (targets.length) {
+				src = new Float32Array(m.positions);
+				nrm = new Float32Array(m.normals);
+				for (const t of targets) {
+					const wgt = clip.morph[t.id][fi];
+					for (let i = 0; i < src.length; i++) {
+						src[i] += t.dp[i] * wgt;
+						nrm[i] += t.dn[i] * wgt;
+					}
+				}
+			}
+		}
 		for (let v = 0; v < n; v++) {
-			const x = m.positions[v * 3], y = m.positions[v * 3 + 1], z = m.positions[v * 3 + 2];
-			const nx = m.normals[v * 3], ny = m.normals[v * 3 + 1], nz = m.normals[v * 3 + 2];
+			const x = src[v * 3], y = src[v * 3 + 1], z = src[v * 3 + 2];
+			const nx = nrm[v * 3], ny = nrm[v * 3 + 1], nz = nrm[v * 3 + 2];
 			let px = 0, py = 0, pz = 0, qx = 0, qy = 0, qz = 0;
 			for (let k = 0; k < 4; k++) {
 				const wgt = m.weights[v * 4 + k];

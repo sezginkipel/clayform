@@ -203,6 +203,7 @@ export const Part = z.strictObject({
 	op: z.enum(['add', 'carve', 'intersect']).optional().describe('add (default) merges, carve cuts away, intersect keeps only the overlap'),
 	only: z.union([Id, z.array(Id).min(1).max(32)]).optional().describe('carve/intersect: cut only these parts (and their mirror twins) instead of everything listed before — a window through one wall, a roof clipped to its own box'),
 	blend: num.min(0).max(1).optional().describe('smooth merge radius in meters with everything before it; 0 = hard seam'),
+	curve: num.min(-2).max(2).optional().describe('bend the part along its local X: both ends rise this many meters above the middle (a smiling mouth, an arched brow, a banana); negative drops them'),
 	material: Material.optional().describe('see Material'),
 	pattern: Pattern.optional().describe('see Pattern'),
 	detail: Detail.optional().describe('see Detail'),
@@ -253,9 +254,32 @@ export const Sculpt = z.strictObject({
 });
 export type Sculpt = z.infer<typeof Sculpt>;
 
+/* --------------------------------------------------------------- expressions */
+
+export const EXPRESSION_PRESETS = ['blink', 'smile', 'frown', 'open_mouth', 'surprise'] as const;
+
+export const Expression = z.strictObject({
+	id: Id.describe('expression id, becomes the morph target name'),
+	preset: z
+		.enum(EXPRESSION_PRESETS)
+		.optional()
+		.describe('start from a built-in face: blink (needs eye parts), smile, frown, open_mouth, surprise (need a mouth part: role or id "mouth")'),
+	parts: z
+		.record(
+			z.string(),
+			Part.pick({ shape: true, position: true, rotation: true, scale: true, blend: true, curve: true })
+				.extend({ attach: Anchor.partial().optional() })
+				.partial()
+		)
+		.optional()
+		.describe('how parts change with this expression, merged like update_part (shape, position, rotation, scale, attach, blend, curve)'),
+	sculpts: z.array(Sculpt).max(16).optional().describe('sculpts added with this expression (a dent for a dimple, an inflate for a cheek)')
+});
+export type Expression = z.infer<typeof Expression>;
+
 /* ----------------------------------------------------------------- animation */
 
-export const CLIP_TYPES = ['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'attack', 'jump', 'sit', 'turn', 'die', 'reach', 'point', 'pickup', 'look', 'blend', 'keyframes'] as const;
+export const CLIP_TYPES = ['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'attack', 'jump', 'sit', 'turn', 'die', 'reach', 'point', 'pickup', 'look', 'blink', 'talk', 'expression', 'blend', 'keyframes'] as const;
 
 export const Key = z.strictObject({
 	t: num.min(0).describe('seconds'),
@@ -280,6 +304,8 @@ export const Clip = z.strictObject({
 		.union([Vec3, Id])
 		.optional()
 		.describe('keep the head turned to this point or part through the whole clip, on top of its own motion'),
+	expression: Id.optional().describe('expression: the one to show (fades in, holds, fades out); blink/talk: the one to use (default: the blink / open_mouth expression)'),
+	face: z.record(z.string(), num.min(0).max(1)).optional().describe('hold expressions at these weights through the whole clip, e.g. { "smile": 1 } to walk smiling'),
 	from: Id.optional().describe('blend: the clip to fade out of'),
 	to: Id.optional().describe('blend: the clip to fade into; the blend ends where that clip starts, so play it next'),
 	tracks: z.array(Track).max(128).optional().describe('keyframes (type "keyframes") or layered on top of a procedural clip'),
@@ -345,6 +371,7 @@ export const Scene = z.strictObject({
 	settings: Settings.optional().describe('see Settings'),
 	parts: z.array(Part).max(256).describe('in blend order: blend and carve act on the parts listed before them'),
 	sculpts: z.array(Sculpt).max(128).optional().describe('applied in order after all parts'),
+	expressions: z.array(Expression).max(16).optional().describe('faces the model can make, exported as morph targets; clips blink, talk and show them'),
 	clips: z.array(Clip).max(32).optional().describe('animations; the rig is built automatically'),
 	effects: z.array(Effect).max(16).optional().describe('particle effects baked to flipbooks')
 });
@@ -429,6 +456,17 @@ export function integrity(s: Scene): Problem[] {
 		if (!sc.at && sc.kind !== 'noise') out.push({ path: `sculpts[${i}].at`, message: `${sc.kind} needs "at"` });
 		if (sc.kind === 'crease' && !sc.to) out.push({ path: `sculpts[${i}].to`, message: 'crease needs "to" (end point)' });
 	});
+	const xids = new Set<string>();
+	(s.expressions ?? []).forEach((e, i) => {
+		if (xids.has(e.id)) out.push({ path: `expressions[${i}].id`, message: `duplicate expression id "${e.id}"` });
+		xids.add(e.id);
+		for (const id of Object.keys(e.parts ?? {})) if (!ids.has(id)) out.push({ path: `expressions[${i}].parts.${id}`, message: `unknown part "${id}"` });
+		e.sculpts?.forEach((sc, j) => {
+			refTarget(sc.at, `expressions[${i}].sculpts[${j}].at`);
+			refTarget(sc.to, `expressions[${i}].sculpts[${j}].to`);
+		});
+		if (!e.preset && !e.sculpts?.length && !Object.keys(e.parts ?? {}).length) out.push({ path: `expressions[${i}]`, message: 'an expression needs a preset, parts or sculpts' });
+	});
 	const cids = new Set<string>();
 	(s.clips ?? []).forEach((c, i) => {
 		if (cids.has(c.id)) out.push({ path: `clips[${i}].id`, message: `duplicate clip id "${c.id}"` });
@@ -442,6 +480,14 @@ export function integrity(s: Scene): Problem[] {
 			if (!ids.has(t.part.replace(/\.m$/, ''))) out.push({ path: `clips[${i}].tracks[${j}]`, message: `unknown part "${t.part}"` });
 		});
 		if (c.type === 'keyframes' && !c.tracks?.length) out.push({ path: `clips[${i}]`, message: 'keyframes clip needs tracks' });
+		const exprIds = new Set((s.expressions ?? []).map((e) => e.id));
+		if (c.expression && !exprIds.has(c.expression)) out.push({ path: `clips[${i}].expression`, message: `unknown expression "${c.expression}"` });
+		if (c.type === 'expression' && !c.expression) out.push({ path: `clips[${i}]`, message: 'expression clip needs "expression"' });
+		for (const k of Object.keys(c.face ?? {})) if (!exprIds.has(k)) out.push({ path: `clips[${i}].face.${k}`, message: `unknown expression "${k}"` });
+		if (c.type === 'blink' && !c.expression && !(s.expressions ?? []).some((e) => e.preset === 'blink' || e.id === 'blink'))
+			out.push({ path: `clips[${i}]`, message: 'blink needs an expression to use: add { "id": "blink", "preset": "blink" } to expressions' });
+		if (c.type === 'talk' && !c.expression && !(s.expressions ?? []).some((e) => e.preset === 'open_mouth' || e.id === 'open_mouth'))
+			out.push({ path: `clips[${i}]`, message: 'talk needs an expression to use: add { "id": "open_mouth", "preset": "open_mouth" } to expressions' });
 		if (c.type === 'blend') {
 			for (const k of ['from', 'to'] as const) {
 				const ref = c[k];

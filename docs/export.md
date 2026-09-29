@@ -13,6 +13,9 @@
   at the clip's fps with linear interpolation.
 - **Names**: nodes use part ids. Mirror twins are `<id>_mirror` (engines treat `.` specially in
   animation paths), and skinned mesh nodes end in `_mesh` so they never collide with a joint name.
+- **Expressions**: each one is a morph target (`targets`, named in `extras.targetNames`) on the
+  meshes it moves, and clips with a face animate their `weights`. See
+  [Faces](animation.md#faces). Outlines do not follow expressions.
 - **Humanoid bone names**: `skeleton: "humanoid"` (or `"mixamo"`, `"unreal"`; `--skeleton` on the
   command line) names the joints the way retargeters look for them, so clips made for other
   characters can play on this one. See [below](#humanoid-skeletons).

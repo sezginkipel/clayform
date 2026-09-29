@@ -6,6 +6,7 @@
  * what to change.
  */
 
+import { expressionNotes, expressionProblems } from '../anim/morph.js';
 import { bodyField, primDist } from '../core/compile.js';
 import { colorBlend, sameSilhouette, tinyDetail } from './readability.js';
 import { styleDrift } from '../core/style.js';
@@ -44,6 +45,8 @@ export function critique(b: Build): Report {
 	const c = b.compiled;
 	const issues: Issue[] = [];
 	for (const w of c.warnings) issues.push({ severity: 'warn', code: 'placement', message: w });
+	for (const m of expressionProblems(b)) issues.push({ severity: 'error', code: 'expression', message: m });
+	for (const m of expressionNotes(b)) issues.push({ severity: 'warn', code: 'expression', message: m });
 
 	const body = b.meshes.find((m) => m.prim < 0);
 	const idOf = (i: number) => c.prims[i]?.id ?? String(i);

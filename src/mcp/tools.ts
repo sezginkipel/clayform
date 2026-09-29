@@ -4,6 +4,7 @@
  */
 
 import type { SkeletonNaming } from '../anim/humanoid.js';
+import { expressionReport } from '../anim/morph.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { buildRig, critiqueClip, sampleClip } from '../anim/rig.js';
@@ -349,7 +350,7 @@ export class Tools {
 			const tex = r.atlas ? ` · ${r.atlas.size}px texture (${r.atlas.charts} charts, ${Math.round(r.atlas.coverage * 100)}% used, ${Math.round(r.atlas.texelsPerMeter)} texels/m)` : '';
 			const look = `${args.shading && args.shading !== 'smooth' ? ` · ${args.shading} shading` : ''}${s.outlines ? ` · outline` : ''}`;
 			return {
-				content: [text(`wrote ${out} · ${(s.bytes / 1024).toFixed(0)} KB · ${s.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')}) · ${s.meshes} meshes · ${s.materials} materials${s.joints ? ` · ${s.joints} joints` : ''}${s.animations ? ` · ${s.animations} animations` : ''}${s.lods > 1 ? ` · ${s.lods} levels of detail (${[b, ...lods].map((x) => x.stats.triangles).join(' / ')} triangles)` : ''}${s.colliders ? ` · ${s.colliders} convex colliders` : ''}${tex}${look}${overBudget(b, args.triangles)}`)]
+				content: [text(`wrote ${out} · ${(s.bytes / 1024).toFixed(0)} KB · ${s.triangles.toLocaleString('en')} triangles (from ${full.stats.triangles.toLocaleString('en')}) · ${s.meshes} meshes · ${s.materials} materials${s.joints ? ` · ${s.joints} joints` : ''}${s.animations ? ` · ${s.animations} animations` : ''}${s.lods > 1 ? ` · ${s.lods} levels of detail (${[b, ...lods].map((x) => x.stats.triangles).join(' / ')} triangles)` : ''}${s.colliders ? ` · ${s.colliders} convex colliders` : ''}${tex}${look}${overBudget(b, args.triangles)}${expressionReport(b, r.expressions)}`)]
 			};
 		});
 	}

@@ -36,6 +36,9 @@ export interface Prim {
 	flipX: boolean;
 	local: LocalSdf;
 	lip: number;
+	/** bend along local X: the ends rise this many meters (0 = none), and the local-space factor it becomes */
+	curve: number;
+	curveK: number;
 	/** Local bounds (before scale). */
 	lmin: V3;
 	lmax: V3;
@@ -132,10 +135,16 @@ export function primDist(pr: Prim, x: number, y: number, z: number): number {
 	const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
 	const tx = 2 * (qy * vz - qz * vy), ty = 2 * (qz * vx - qx * vz), tz = 2 * (qx * vy - qy * vx);
 	let lx = vx + qw * tx + (qy * tz - qz * ty);
-	const ly = (vy + qw * ty + (qz * tx - qx * tz)) / pr.scl[1];
+	let ly = (vy + qw * ty + (qz * tx - qx * tz)) / pr.scl[1];
 	const lz = (vz + qw * tz + (qx * ty - qy * tx)) / pr.scl[2];
 	lx = (pr.flipX ? -lx : lx) / pr.scl[0];
-	let d = pr.local(lx, ly, lz) * pr.lip;
+	let d: number;
+	if (pr.curveK) {
+		// bent along X: straighten the point, and shrink the distance by the slope so it stays a safe bound
+		ly -= pr.curveK * lx * lx;
+		const slope = 2 * pr.curveK * lx;
+		d = (pr.local(lx, ly, lz) * pr.lip) / Math.sqrt(1 + slope * slope);
+	} else d = pr.local(lx, ly, lz) * pr.lip;
 	if (pr.detail) {
 		const s = 1 / pr.detail.scale;
 		d += pr.detail.amount * (fbm3(lx * s, ly * s, lz * s) * 2 - 1);
@@ -152,8 +161,12 @@ function primGrad(pr: Prim, p: V3, h: number): V3 {
 
 function computeAabb(pr: Prim) {
 	const min: V3 = [Infinity, Infinity, Infinity], max: V3 = [-Infinity, -Infinity, -Infinity];
+	const hx = Math.max(Math.abs(pr.lmin[0]), Math.abs(pr.lmax[0]), 1e-6);
+	const rise = pr.curve / pr.scl[1];
+	pr.curveK = rise / (hx * hx);
+	const ylo = pr.lmin[1] + Math.min(0, rise), yhi = pr.lmax[1] + Math.max(0, rise);
 	for (let i = 0; i < 8; i++) {
-		const l: V3 = [i & 1 ? pr.lmax[0] : pr.lmin[0], i & 2 ? pr.lmax[1] : pr.lmin[1], i & 4 ? pr.lmax[2] : pr.lmin[2]];
+		const l: V3 = [i & 1 ? pr.lmax[0] : pr.lmin[0], i & 2 ? yhi : ylo, i & 4 ? pr.lmax[2] : pr.lmin[2]];
 		const w = toWorld(pr, l);
 		for (let a = 0; a < 3; a++) {
 			min[a] = Math.min(min[a], w[a]);
@@ -284,6 +297,8 @@ export function compile(scene: Scene): Compiled {
 				? { kind: p.pattern.kind, color: resolveColor(scene, p.pattern.color), scale: p.pattern.scale ?? 0.08, amount: p.pattern.amount ?? 1, axis: p.pattern.axis }
 				: null,
 			detail: p.detail ? { amount: p.detail.amount, scale: p.detail.scale } : null,
+			curve: p.curve ?? 0,
+			curveK: 0,
 			preset: m.preset
 				? (() => {
 						const base = resolveColor(scene, m.color);

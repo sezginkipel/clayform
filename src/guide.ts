@@ -95,6 +95,10 @@ character at it). Arms counter-swing, wheels roll, rotors spin; tails, ears and 
 follow through on a spring (\`secondary: false\` turns that off).
 \`tracks: [{ part, keys: [{ t, rotation: [deg], offset: [m] }] }]\` layers keyframes on top
 (or alone with type "keyframes"). Rotations turn a part about its pivot in world axes.
+Faces: \`expressions: [{ id, preset?: blink|smile|frown|open_mouth|surprise, parts?: { id: changes },
+sculpts? }]\` become morph targets; clips \`blink\`, \`talk\`, \`expression\` (\`expression: id\`) play them and
+\`face: { smile: 1 }\` holds one on any clip. Presets need role "eye" / a "mouth" part; eyes blended
+into the face streak when they close (make their whites and pupils \`separate\`). \`curve\` bends a part.
 
 ## Effects
 \`{ "id": "flame", "preset": "fire" }\` — presets: fire smoke sparks magic explosion dust snow

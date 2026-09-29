@@ -142,6 +142,17 @@ things attach to it, it blends and carves, it mirrors, and the critics check it.
   attaches, anchors, colors and animates like a part, and it is always its own mesh: it does not
   blend or carve into the body.
 
+## Bending a part
+
+`curve` bends any part along its local X: both ends rise that many meters above the middle, and
+a negative value drops them. It is how a mouth smiles, a brow arches or a banana curves.
+
+<!-- verify: part biped -->
+```json
+{ "id": "brow", "shape": { "type": "capsule", "length": 0.08, "radius": 0.008 }, "rotation": [0, 0, 90],
+  "attach": { "to": "head", "side": "front", "offset": [0.35, 0.35], "embed": 0.3 }, "curve": 0.012, "mirror": true }
+```
+
 ## Sheets
 
 Leaves, flags, sails, paper, cloth and playing cards are thinner than any grid can hold, so a

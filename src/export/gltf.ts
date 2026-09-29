@@ -13,6 +13,7 @@
  * an inverted-hull rim.
  */
 
+import { expressionProblems, meshMorphs } from '../anim/morph.js';
 import { boneName, exportLocals, humanoidSkeleton, partsSkeleton, type ExportSkeleton, type SkeletonNaming } from '../anim/humanoid.js';
 import type { Build, MeshData } from '../core/build.js';
 import { m4Compose, m4Invert, qIdentity, srgbToLinear, type V3 } from '../core/math.js';
@@ -68,6 +69,8 @@ export interface GlbResult {
 	stats: { meshes: number; primitives: number; materials: number; triangles: number; joints: number; animations: number; bytes: number; lods: number; colliders: number; texture: number; charts: number; outlines: number };
 	/** the baked atlas when `texture` was set */
 	atlas?: Atlas;
+	/** each expression exported as a morph target: how many vertices it moves (base level) and how far at most, in meters */
+	expressions?: { id: string; vertices: number; max: number }[];
 }
 
 const FLOAT = 5126, USHORT = 5123, UINT = 5125;
@@ -196,7 +199,11 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	let triangles = 0, primitiveCount = 0;
 
 	let outlineMaterial = -1;
-	const writeMesh = (src: MeshData, am?: { remap: Uint32Array; uv: Float32Array; indices: Uint32Array; tangents: Float32Array }, forceMaterial?: number) => {
+	// expressions: every mesh an expression moves carries all of them as morph targets, in the scene's order
+	const exprIds = (b.source.expressions ?? []).map((e) => e.id).filter((id) => !expressionProblems(b).some((p) => p.startsWith(`expression "${id}"`)));
+	const morphMeshes = new Map<number, number>(); // mesh index -> target count
+	const morphStats = new Map<string, { vertices: number; max: number }>();
+	const writeMesh = (src: MeshData, am?: { remap: Uint32Array; uv: Float32Array; indices: Uint32Array; tangents: Float32Array }, forceMaterial?: number, owner?: Build) => {
 		// with an atlas, vertices are split along chart seams
 		const m: MeshData = am ? remapMesh(src, am.remap, am.indices) : src;
 		const n = m.positions.length / 3;
@@ -240,13 +247,31 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			if (!g) groups.set(mi, (g = []));
 			g.push(m.indices[t * 3], m.indices[t * 3 + 1], m.indices[t * 3 + 2]);
 		}
+		let targets: Record<string, number>[] | undefined;
+		if (owner && exprIds.length) {
+			const found = meshMorphs(owner, src);
+			if (found.some((t) => t.moved > 0)) {
+				targets = exprIds.map((id) => {
+					const t = found.find((x) => x.id === id)!;
+					const st = morphStats.get(id) ?? { vertices: 0, max: 0 };
+					if (owner === b) morphStats.set(id, { vertices: st.vertices + t.moved, max: Math.max(st.max, t.max) });
+					// seams split vertices for the atlas: each copy moves like the vertex it came from
+					const pick = (a: Float32Array) => (am ? Float32Array.from({ length: n * 3 }, (_, i) => a[am.remap[Math.floor(i / 3)] * 3 + (i % 3)]) : a);
+					return {
+						POSITION: w.accessor(pick(t.dp), 'VEC3', FLOAT, { target: ARRAY_BUFFER, minmax: true }),
+						NORMAL: w.accessor(pick(t.dn), 'VEC3', FLOAT, { target: ARRAY_BUFFER })
+					};
+				});
+			}
+		}
 		const primitives = [...groups.entries()].map(([mi, idx]) => {
 			primitiveCount++;
 			const arr = n > 65535 ? new Uint32Array(idx) : new Uint16Array(idx);
-			return { attributes: attrs, indices: w.accessor(arr, 'SCALAR', n > 65535 ? UINT : USHORT, { target: ELEMENT_ARRAY_BUFFER }), material: mi, mode: 4 };
+			return { attributes: attrs, indices: w.accessor(arr, 'SCALAR', n > 65535 ? UINT : USHORT, { target: ELEMENT_ARRAY_BUFFER }), material: mi, mode: 4, ...(targets ? { targets } : {}) };
 		});
 		triangles += m.indices.length / 3;
-		meshes.push({ name: exportName(m.name), primitives });
+		meshes.push({ name: exportName(m.name), primitives, ...(targets ? { weights: exprIds.map(() => 0), extras: { targetNames: exprIds } } : {}) });
+		if (targets) morphMeshes.set(meshes.length - 1, exprIds.length);
 		return meshes.length - 1;
 	};
 
@@ -301,7 +326,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	levels.forEach((lb, li) => {
 		for (let mi = 0; mi < lb.meshes.length; mi++, k++) {
 			const m = prepared[k].mesh;
-			const mesh = writeMesh(m, atlas?.meshes[first + k]);
+			const mesh = writeMesh(m, atlas?.meshes[first + k], undefined, prepared[k].build);
 			const base = exportName(m.name) + (rig ? '_mesh' : '');
 			const node: Record<string, unknown> = { name: levels.length > 1 ? `${base}_LOD${li}` : base, mesh };
 			if (rig) node.skin = skinIndex;
@@ -391,6 +416,19 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 					channels.push({ sampler: samplers.length - 1, target: { node, path: 'scale' } });
 				}
 			}
+			// the face: one weights channel per mesh node that has morph targets
+			if (clip.morph && morphMeshes.size) {
+				const f = clip.times.length;
+				const out = new Float32Array(f * exprIds.length);
+				exprIds.forEach((id, ti) => {
+					const wts = clip.morph![id];
+					if (wts) for (let i = 0; i < f; i++) out[i * exprIds.length + ti] = wts[i];
+				});
+				const sampler = samplers.push({ input, output: w.accessor(out, 'SCALAR', FLOAT), interpolation: 'LINEAR' }) - 1;
+				nodes.forEach((nd, ni) => {
+					if (typeof nd.mesh === 'number' && morphMeshes.has(nd.mesh)) channels.push({ sampler, target: { node: ni, path: 'weights' } });
+				});
+			}
 			// planted gaits walk at a set speed: an engine moving the character at it keeps the feet from sliding
 			if (channels.length) animations.push({ name: clip.id, samplers, channels, ...(clip.speed > 0 ? { extras: { speed: Number(clip.speed.toFixed(4)) } } : {}) });
 		}
@@ -449,7 +487,8 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			charts: atlas && !opts.atlas ? atlas.charts : 0,
 			outlines
 		},
-		atlas: opts.atlas ? undefined : atlas
+		atlas: opts.atlas ? undefined : atlas,
+		...(exprIds.length ? { expressions: exprIds.map((id) => ({ id, vertices: morphStats.get(id)?.vertices ?? 0, max: morphStats.get(id)?.max ?? 0 })) } : {})
 	};
 }
 
