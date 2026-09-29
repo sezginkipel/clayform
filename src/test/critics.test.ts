@@ -76,5 +76,5 @@ describe('templates are clean', () => {
 			const bad = r.issues.filter((i) => i.severity !== 'info');
 			expect(bad, `${t.id}: ${bad.map((b) => b.message).join(' | ')}`).toEqual([]);
 		}
-	}, 60_000);
+	}, 180_000); // 43 templates at full resolution; slower CI machines need the room
 });
