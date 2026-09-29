@@ -1,5 +1,5 @@
 {
- "note": "Every scene, layout and style Clayform shipped at 1.0. Later versions must load all of them. Do not edit: add a new corpus file for a new format instead.",
+ "note": "Every scene, layout and style Clayform shipped when clayform/1 was frozen (release 0.9.0). Later versions must load all of them. Do not edit: a new format gets a corpus file of its own.",
  "scenes": {
   "biped": {
    "format": "clayform/1",

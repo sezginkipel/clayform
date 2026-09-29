@@ -6,15 +6,15 @@ import { FORMAT, parseScene } from '../core/schema.js';
 import { Style } from '../core/style.js';
 import { parseLayout } from '../layout.js';
 
-// Everything Clayform shipped when clayform/1 was frozen. Every later version must still load it.
-const corpus = JSON.parse(readFileSync(new URL('./fixtures/clayform-1.0.json', import.meta.url), 'utf8')) as {
+// Everything Clayform shipped when clayform/1 was frozen (0.9.0). Every later version must still load it.
+const corpus = JSON.parse(readFileSync(new URL('./fixtures/clayform-1.json', import.meta.url), 'utf8')) as {
 	scenes: Record<string, unknown>;
 	layouts: Record<string, unknown>;
 	styles: Record<string, unknown>;
 };
 
 describe('the frozen clayform/1 corpus', () => {
-	it('has every 1.0 template, the README goblin, the example layout and style', () => {
+	it('has every template, the README goblin, the example layout and style from the freeze', () => {
 		expect(Object.keys(corpus.scenes).length).toBeGreaterThanOrEqual(44);
 		expect(corpus.scenes.goblin).toBeDefined();
 		expect(corpus.layouts.camp).toBeDefined();

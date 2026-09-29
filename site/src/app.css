@@ -1,0 +1,104 @@
+@import '@fontsource/hanken-grotesk/400';
+@import '@fontsource/hanken-grotesk/600';
+@import '@fontsource/hanken-grotesk/700';
+@import '@fontsource/ibm-plex-mono/400';
+@import '@fontsource/ibm-plex-mono/500';
+
+:root {
+	/* surfaces */
+	--paper: #ffffff;
+	--wash: #f4f6f8;
+	--line: #e2e6ea;
+	--line-strong: #c9d0d7;
+	/* text */
+	--ink: #111418;
+	--ink-2: #3b424a;
+	--ink-3: #5c646d;
+	/* the one colour: deep ink blue, for marks and grounds, not for body text */
+	--blue: #1c3f94;
+	--blue-wash: #edf1fa;
+	--blue-line: #b8c6ea;
+	/* meaning */
+	--ok-wash: #e8f3ec;
+	--ok-ink: #17532f;
+
+	--sans: 'Hanken Grotesk', system-ui, sans-serif;
+	--mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+	/* 4-based spacing */
+	--s1: 4px;
+	--s2: 8px;
+	--s3: 12px;
+	--s4: 16px;
+	--s5: 24px;
+	--s6: 32px;
+	--s7: 48px;
+	--s8: 64px;
+	--s9: 96px;
+
+	--radius: 6px;
+	--header: 56px;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--sans);
+	font-size: 16px;
+	line-height: 1.6;
+	-webkit-text-size-adjust: 100%;
+	scroll-padding-top: calc(var(--header) + var(--s4));
+}
+
+body {
+	margin: 0;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+a {
+	color: inherit;
+	text-decoration: underline;
+	text-decoration-color: var(--blue-line);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 3px;
+	border-radius: 2px;
+}
+
+a:hover {
+	background: var(--blue-wash);
+	text-decoration-color: var(--blue);
+}
+
+:focus-visible {
+	outline: 2px solid var(--blue);
+	outline-offset: 2px;
+}
+
+code,
+pre,
+kbd {
+	font-family: var(--mono);
+	font-size: 0.875em;
+}
+
+::selection {
+	background: var(--blue-wash);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		animation: none !important;
+		scroll-behavior: auto !important;
+	}
+}

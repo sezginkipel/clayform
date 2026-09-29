@@ -1,7 +1,7 @@
 # Format stability
 
-Scene files say which format they are written in: `"format": "clayform/1"`. From 1.0 on, that
-format is frozen.
+Scene files say which format they are written in: `"format": "clayform/1"`. From release 0.9.0
+on, that format is frozen.
 
 ## The promise
 
@@ -14,13 +14,15 @@ format is frozen.
   what a value means makes `clayform/2`. That release ships a migration, and older files are
   upgraded on the way in. The upgrade is reported, and `clayform migrate` writes it to disk.
 
-Layout files (`clayform-layout/1`) and style sheets (`clayform-style/1`) follow the same rules.
+Layout files (`clayform-layout/1`) and style sheets (`clayform-style/1`) make the same promise, and
+the frozen corpus below includes one of each. Only scenes run through a migration chain today;
+layouts and styles get one the first time either format has to change.
 
 ## How it is enforced
 
-The test suite keeps a frozen copy of everything Clayform shipped at 1.0: all 43 templates, the
-README's goblin, the example layout and the example style sheet
-([`src/test/fixtures/clayform-1.0.json`](../src/test/fixtures/clayform-1.0.json)). Every release
+The test suite keeps a frozen copy of everything Clayform shipped when the format was frozen:
+all 43 templates, the README's goblin, the example layout and the example style sheet
+([`src/test/fixtures/clayform-1.json`](../src/test/fixtures/clayform-1.json)). Every release
 must parse and build each of them. The fixture file is never edited. A new format gets a corpus
 file of its own next to it.
 
