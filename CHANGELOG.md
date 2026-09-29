@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.11.0 — 2026-09-29
+
+Shapes an agent can describe: the things Blender users model by hand, as a few numbers.
+
+- **Lathe** (#37): a `[radius, height]` profile spun around Y, optionally `smooth`, faceted with
+  `sides`, or as an open-topped wall with `shell` (cups, bowls, lamp shades, bells).
+- **Extrude** (#38): a 2D outline pushed along Z with `rounding`, a `bevel` chamfer and a `taper`
+  (signs, gears, keys, shields, panels).
+- **Sheets** (#39): leaves, flags, sails, paper and cloth meshed directly, as thin as asked, with
+  `bend` and `wave`. Closed (front, back, rim) and mirrored correctly.
+- **Repeat and scatter** (#40): copies of a part and everything on it along a step, around a
+  centre or in rows (window grids, columns, spokes), or spread over another part's surface with a
+  gap, a size range and a seed (rocks and trees on terrain, spikes, leaves on a crown). Copies join
+  the rig, so repeated legs walk.
+- **Text** (#41): block letters for signs and labels.
+- **Terrain** (#42): a heightfield ground tile of hills with height, roughness, scale and seed.
+- **Kept meshes** (#43): `mesh { keep: true }` places a file's own triangles like a part (the
+  example crate: 12 triangles instead of about 110,000 rebuilt from the grid).
+- Four new templates use them: cup, sign post, flag pole and meadow tile (47 in all).
+- Smooth profiles use centripetal Catmull-Rom, which never folds back on unevenly spaced points.
+
 ## 0.10.0 — 2026-09-29
 
 Budgets that hold. Everything here came from building the 146 models of Cargo Century with Clayform.
