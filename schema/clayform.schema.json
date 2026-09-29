@@ -1042,6 +1042,52 @@
                 "type": "number",
                 "minimum": 0,
                 "maximum": 20
+              },
+              "preset": {
+                "description": "a named surface: the colour becomes that material, with its grooves and, in textured exports, its relief and shine",
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "wood",
+                      "planks",
+                      "brick",
+                      "stone",
+                      "cobbles",
+                      "tiles",
+                      "metal",
+                      "rust",
+                      "fabric",
+                      "leather",
+                      "grass",
+                      "bark",
+                      "marble",
+                      "sand"
+                    ],
+                    "description": "wood, planks, brick, stone, cobbles, tiles, metal, rust, fabric, leather, grass, bark, marble, sand"
+                  },
+                  "scale": {
+                    "description": "feature size in meters (a brick, a board, a stone); each kind has a sensible default",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "accent": {
+                    "description": "the second colour (mortar, grout, rust, grain); default derived from the base colour",
+                    "type": "string",
+                    "pattern": "^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|[a-z][a-z0-9_]{0,31})$"
+                  },
+                  "relief": {
+                    "description": "how deep the grooves read: crevice shading, and the normal map in textured exports (default 0.6)",
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
               }
             },
             "additionalProperties": false

@@ -279,13 +279,13 @@ export interface VertexAttrs {
  * keeps a crisp line, so paint does not bleed from a door onto the wall and
  * parts need not be separate just to keep their colors apart.
  */
-export function mixColors(prims: Prim[], ids: ArrayLike<number>, w: ArrayLike<number>, dominant: number, p: V3): [number, number, number] {
+export function mixColors(prims: Prim[], ids: ArrayLike<number>, w: ArrayLike<number>, dominant: number, p: V3, n?: V3): [number, number, number] {
 	const dom = prims[ids[dominant]];
 	let tw = 0, r = 0, g = 0, b = 0;
 	for (let j = 0; j < ids.length; j++) {
 		const pr = prims[ids[j]];
 		if (j !== dominant && Math.max(pr.k, dom.k) <= 0) continue;
-		const col = primColor(pr, p);
+		const col = primColor(pr, p, n);
 		r += col[0] * w[j]; g += col[1] * w[j]; b += col[2] * w[j];
 		tw += w[j];
 	}
@@ -379,7 +379,7 @@ function computeAttributes(
 		// color: the dominant part's, mixed only with parts it blends with; dominant prim: max weight
 		let bi = 0;
 		for (let j = 0; j < ids.length; j++) if (w[j] > w[bi]) bi = j;
-		const col = mixColors(c.prims, ids, w, bi, [x, y, z]);
+		const col = mixColors(c.prims, ids, w, bi, [x, y, z], [nx, ny, nz]);
 		colors[v * 3] = col[0]; colors[v * 3 + 1] = col[1]; colors[v * 3 + 2] = col[2];
 		vertPrim[v] = ids[bi];
 

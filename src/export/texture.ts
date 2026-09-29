@@ -15,7 +15,7 @@
 
 import type { Build, MeshData } from '../core/build.js';
 import { colorWeight, mixColors } from '../core/build.js';
-import type { Prim } from '../core/compile.js';
+import { presetAt, type Prim } from '../core/compile.js';
 import type { V3 } from '../core/math.js';
 import { encodePng } from '../render/png.js';
 
@@ -133,6 +133,12 @@ export interface AtlasMesh {
 	remap: Uint32Array;
 	uv: Float32Array;
 	indices: Uint32Array;
+	/**
+	 * glTF tangents (xyz, w) for the normal map: x along the chart's u axis,
+	 * and w chosen so cross(normal, tangent) × w points up the image (-v),
+	 * which is where the map's green channel was measured.
+	 */
+	tangents: Float32Array;
 }
 
 export interface Atlas {
@@ -145,6 +151,9 @@ export interface Atlas {
 	texelsPerMeter: number;
 	/** share of the atlas covered by charts */
 	coverage: number;
+	/** tangent-space normal map (relief of material presets) and ORM map (R 1, G roughness, B metalness), when any part has a preset */
+	normalPng?: Uint8Array;
+	ormPng?: Uint8Array;
 }
 
 export interface AtlasOptions {
@@ -155,6 +164,8 @@ export interface AtlasOptions {
 	bakeAo?: boolean;
 	/** toon bands baked into the texels (0 = off) */
 	toonBands?: number;
+	/** bake normal and ORM maps: default when any part has a material preset */
+	maps?: boolean;
 }
 
 interface Chart {
@@ -284,12 +295,12 @@ export function bakeAtlas(sources: AtlasSource[], opts: AtlasOptions = {}): Atla
 	pack(charts, s, size, pad);
 
 	/* ------------------------------------------------ vertices and uvs */
-	const meshes: AtlasMesh[] = sources.map((src) => ({ remap: new Uint32Array(0), uv: new Float32Array(0), indices: new Uint32Array(src.mesh.indices.length) }));
+	const meshes: AtlasMesh[] = sources.map((src) => ({ remap: new Uint32Array(0), uv: new Float32Array(0), indices: new Uint32Array(src.mesh.indices.length), tangents: new Float32Array(0) }));
 	const bySrc = sources.map(() => [] as Chart[]);
 	for (const c of charts) bySrc[c.src].push(c);
 	bySrc.forEach((list, si) => {
 		const m = sources[si].mesh;
-		const remap: number[] = [], uv: number[] = [];
+		const remap: number[] = [], uv: number[] = [], tan: number[] = [];
 		for (const c of list) {
 			const local = new Map<number, number>();
 			for (const t of c.tris)
@@ -301,17 +312,23 @@ export function bakeAtlas(sources: AtlasSource[], opts: AtlasOptions = {}): Atla
 						local.set(old, nv);
 						remap.push(old);
 						uv.push((c.x + pad + 0.5 + (m.positions[old * 3 + c.u] - c.umin) / s) / size, (c.y + pad + 0.5 + (m.positions[old * 3 + c.v] - c.vmin) / s) / size);
+						tan.push(...chartTangent([m.normals[old * 3], m.normals[old * 3 + 1], m.normals[old * 3 + 2]], c.u, c.v));
 					}
 					meshes[si].indices[t * 3 + k] = nv;
 				}
 		}
 		meshes[si].remap = Uint32Array.from(remap);
 		meshes[si].uv = Float32Array.from(uv);
+		meshes[si].tangents = Float32Array.from(tan);
 	});
 
 	/* ---------------------------------------------------------- texels */
 	const rgb = new Float32Array(size * size * 3);
 	const covered = new Uint8Array(size * size);
+	const maps = opts.maps ?? sources.some((src) => src.build?.compiled.prims.some((p) => p.preset));
+	// tangent-space normals (x, y, z) and occlusion/roughness/metalness per texel
+	const nrm = maps ? new Float32Array(size * size * 3) : null;
+	const orm = maps ? new Float32Array(size * size * 3) : null;
 	const cand: Prim[] = [];
 	for (const c of charts) {
 		const src = sources[c.src], m = src.mesh, am = meshes[c.src];
@@ -354,7 +371,18 @@ export function bakeAtlas(sources: AtlasSource[], opts: AtlasOptions = {}): Atla
 						ws.push(wt);
 						if (dom < 0 || wt > ws[dom]) dom = ws.length - 1;
 					}
-					if (ids.length) [r, g, bl] = mixColors(b.compiled.prims, ids, ws, dom, p);
+					const nx = at(m.normals, 0, 3), ny = at(m.normals, 1, 3), nz = at(m.normals, 2, 3);
+					const nl = Math.hypot(nx, ny, nz) || 1;
+					const N: V3 = [nx / nl, ny / nl, nz / nl];
+					if (ids.length) [r, g, bl] = mixColors(b.compiled.prims, ids, ws, dom, p, N);
+					if (nrm && orm && ids.length) {
+						const D = b.compiled.prims[ids[dom]];
+						writeMaps(y * size + x, D, p, N, c.u, c.v, s, nrm, orm);
+					}
+				} else if (nrm && orm) {
+					const o = y * size + x;
+					nrm.set([0, 0, 1], o * 3);
+					orm.set([1, 0.75, 0], o * 3);
 				}
 				const ao = at(m.ao, 0, 1);
 				let k = bakeAo ? ao : 1;
@@ -390,6 +418,7 @@ export function bakeAtlas(sources: AtlasSource[], opts: AtlasOptions = {}): Atla
 
 	// gutters: grow every chart outward so filtering and mipmaps sample its own color
 	let frontier = covered;
+	const acc = new Float32Array(6);
 	for (let pass = 0; pass < pad + 2; pass++) {
 		const next = new Uint8Array(frontier);
 		for (let y = 0; y < size; y++)
@@ -397,6 +426,7 @@ export function bakeAtlas(sources: AtlasSource[], opts: AtlasOptions = {}): Atla
 				const o = y * size + x;
 				if (frontier[o]) continue;
 				let n = 0, r = 0, g = 0, bl = 0;
+				acc.fill(0);
 				for (let dy = -1; dy <= 1; dy++)
 					for (let dx = -1; dx <= 1; dx++) {
 						const xx = x + dx, yy = y + dy;
@@ -404,10 +434,15 @@ export function bakeAtlas(sources: AtlasSource[], opts: AtlasOptions = {}): Atla
 						const q = yy * size + xx;
 						if (!frontier[q]) continue;
 						r += rgb[q * 3]; g += rgb[q * 3 + 1]; bl += rgb[q * 3 + 2];
+						if (nrm && orm) for (let c = 0; c < 3; c++) { acc[c] += nrm[q * 3 + c]; acc[3 + c] += orm[q * 3 + c]; }
 						n++;
 					}
 				if (!n) continue;
 				rgb[o * 3] = r / n; rgb[o * 3 + 1] = g / n; rgb[o * 3 + 2] = bl / n;
+				if (nrm && orm) {
+					for (let c = 0; c < 3; c++) { nrm[o * 3 + c] = acc[c] / n; orm[o * 3 + c] = acc[3 + c] / n; }
+					acc.fill(0);
+				}
 				next[o] = 1;
 			}
 		frontier = next;
@@ -419,5 +454,88 @@ export function bakeAtlas(sources: AtlasSource[], opts: AtlasOptions = {}): Atla
 		for (let c = 0; c < 3; c++) rgba[i * 4 + c] = on ? Math.round(Math.max(0, Math.min(1, rgb[i * 3 + c])) * 255) : 128;
 		rgba[i * 4 + 3] = 255;
 	}
-	return { size, rgba, png: encodePng(rgba, size, size), meshes, charts: charts.length, texelsPerMeter: 1 / s, coverage: inside / (size * size) };
+	const out: Atlas = { size, rgba, png: encodePng(rgba, size, size), meshes, charts: charts.length, texelsPerMeter: 1 / s, coverage: inside / (size * size) };
+	if (nrm && orm) {
+		const nb = new Uint8Array(size * size * 4), ob = new Uint8Array(size * size * 4);
+		for (let i = 0; i < size * size; i++) {
+			const on = frontier[i];
+			let x = on ? nrm[i * 3] : 0, y = on ? nrm[i * 3 + 1] : 0, z = on ? nrm[i * 3 + 2] : 1;
+			const l = Math.hypot(x, y, z) || 1;
+			x /= l; y /= l; z /= l;
+			nb[i * 4] = Math.round((x * 0.5 + 0.5) * 255);
+			nb[i * 4 + 1] = Math.round((y * 0.5 + 0.5) * 255);
+			nb[i * 4 + 2] = Math.round((z * 0.5 + 0.5) * 255);
+			nb[i * 4 + 3] = 255;
+			for (let c = 0; c < 3; c++) ob[i * 4 + c] = Math.round(Math.max(0, Math.min(1, on ? orm[i * 3 + c] : [1, 0.75, 0][c])) * 255);
+			ob[i * 4 + 3] = 255;
+		}
+		out.normalPng = encodePng(nb, size, size);
+		out.ormPng = encodePng(ob, size, size);
+	}
+	return out;
+}
+
+/** The tangent of a vertex in a chart: the u axis pressed onto the surface, handed so the bitangent is -v. */
+export function chartTangent(n: V3, ua: number, va: number): [number, number, number, number] {
+	const nl = Math.hypot(...n) || 1;
+	const N: V3 = [n[0] / nl, n[1] / nl, n[2] / nl];
+	const press = (k: number): V3 | null => {
+		const a: V3 = [k === 0 ? 1 : 0, k === 1 ? 1 : 0, k === 2 ? 1 : 0];
+		const d = a[0] * N[0] + a[1] * N[1] + a[2] * N[2];
+		const v: V3 = [a[0] - N[0] * d, a[1] - N[1] * d, a[2] - N[2] * d];
+		const l = Math.hypot(...v);
+		return l < 1e-4 ? null : [v[0] / l, v[1] / l, v[2] / l];
+	};
+	const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+	const unit = (v: V3): V3 => {
+		const l = Math.hypot(...v) || 1;
+		return [v[0] / l, v[1] / l, v[2] / l];
+	};
+	// a smooth normal near a chart's edge can lie along the u (or v) axis: build the frame from the other one
+	let T = press(ua), B = press(va);
+	if (!T && B) T = unit(cross(B, N));
+	if (!T) T = unit(Math.abs(N[0]) < 0.9 ? cross(N, [1, 0, 0]) : cross(N, [0, 1, 0]));
+	if (!B) B = unit(cross(N, T));
+	const c: V3 = [N[1] * T[2] - N[2] * T[1], N[2] * T[0] - N[0] * T[2], N[0] * T[1] - N[1] * T[0]];
+	const w = c[0] * -B[0] + c[1] * -B[1] + c[2] * -B[2] >= 0 ? 1 : -1;
+	return [T[0], T[1], T[2], w];
+}
+
+/**
+ * One texel of the normal and ORM maps. The relief comes from the part's
+ * preset: its height is differentiated along the chart's own axes (the
+ * world axes its UVs were projected on), which is the tangent frame an
+ * engine rebuilds from those UVs. glTF's texture v runs down the image
+ * while its normal map's green points up, so green is measured against -v.
+ */
+export function writeMaps(o: number, D: Prim, p: V3, N: V3, ua: number, va: number, texel: number, nrm: Float32Array, orm: Float32Array) {
+	const here = presetAt(D, p, N);
+	orm[o * 3] = 1;
+	orm[o * 3 + 1] = here?.rough ?? D.roughness;
+	orm[o * 3 + 2] = here?.metal ?? D.metalness;
+	if (!here || !D.preset) {
+		nrm.set([0, 0, 1], o * 3);
+		return;
+	}
+	const axis = (k: number): V3 => [k === 0 ? 1 : 0, k === 1 ? 1 : 0, k === 2 ? 1 : 0];
+	// the tangent frame: the chart axes pressed onto the surface
+	const onPlane = (a: V3): V3 => {
+		const d = a[0] * N[0] + a[1] * N[1] + a[2] * N[2];
+		const v: V3 = [a[0] - N[0] * d, a[1] - N[1] * d, a[2] - N[2] * d];
+		const l = Math.hypot(...v) || 1;
+		return [v[0] / l, v[1] / l, v[2] / l];
+	};
+	const T = onPlane(axis(ua)), B = onPlane(axis(va));
+	const e = texel;
+	const h = (q: V3) => presetAt(D, q, N)!.height;
+	// the grooves are a tenth of the feature size deep at relief 1
+	const depth = D.preset.relief * D.preset.scale * 0.1;
+	const dhu = ((h([p[0] + T[0] * e, p[1] + T[1] * e, p[2] + T[2] * e]) - h([p[0] - T[0] * e, p[1] - T[1] * e, p[2] - T[2] * e])) / (2 * e)) * depth;
+	const dhv = ((h([p[0] + B[0] * e, p[1] + B[1] * e, p[2] + B[2] * e]) - h([p[0] - B[0] * e, p[1] - B[1] * e, p[2] - B[2] * e])) / (2 * e)) * depth;
+	// tangent space: x along +u, y along -v (up in the image), z out of the surface
+	const tx = -dhu, ty = dhv, tz = 1;
+	const l = Math.hypot(tx, ty, tz);
+	nrm[o * 3] = tx / l;
+	nrm[o * 3 + 1] = ty / l;
+	nrm[o * 3 + 2] = tz / l;
 }

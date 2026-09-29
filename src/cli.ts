@@ -180,6 +180,10 @@ async function main() {
 			const kit = exportKit(items, { atlas: flags.has('atlas') ? Number(flags.get('atlas')) : undefined, embed: flags.has('embed'), ...lookFlags() });
 			mkdirSync(dir, { recursive: true });
 			if (!flags.has('embed')) writeFileSync(`${dir}/atlas.png`, kit.atlas.png);
+			if (!flags.has('embed') && kit.atlas.normalPng) {
+				writeFileSync(`${dir}/atlas_normal.png`, kit.atlas.normalPng);
+				writeFileSync(`${dir}/atlas_orm.png`, kit.atlas.ormPng!);
+			}
 			for (const f of kit.files) writeFileSync(`${dir}/${f.name}.glb`, f.result.glb);
 			console.log(`wrote ${kit.files.length} models to ${dir}/ · atlas ${kit.atlas.size}px, ${kit.atlas.charts} charts, ${Math.round(kit.atlas.coverage * 100)}% used`);
 			return;

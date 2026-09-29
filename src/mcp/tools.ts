@@ -361,6 +361,10 @@ export class Tools {
 			const dir = args.dir ? userPath(args.dir) : resolve(`${this.ws.exportsDir()}/kit`);
 			mkdirSync(dir, { recursive: true });
 			if (!args.embed) writeFileSync(`${dir}/atlas.png`, kit.atlas.png);
+			if (!args.embed && kit.atlas.normalPng) {
+				writeFileSync(`${dir}/atlas_normal.png`, kit.atlas.normalPng);
+				writeFileSync(`${dir}/atlas_orm.png`, kit.atlas.ormPng!);
+			}
 			for (const f of kit.files) writeFileSync(`${dir}/${f.name}.glb`, f.result.glb);
 			const lines = kit.files.map((f) => `  ${f.name}.glb · ${(f.result.stats.bytes / 1024).toFixed(0)} KB · ${f.result.stats.triangles.toLocaleString('en')} triangles`);
 			return { content: [png(kit.atlas.png), text(`wrote ${kit.files.length} models to ${dir}${args.embed ? ' (atlas embedded in each)' : ' + atlas.png'}\natlas ${kit.atlas.size}px · ${kit.atlas.charts} charts · ${Math.round(kit.atlas.coverage * 100)}% used · ${Math.round(kit.atlas.texelsPerMeter)} texels/m\n${lines.join('\n')}`)] };

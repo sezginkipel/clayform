@@ -12,6 +12,7 @@
  */
 
 import { z } from 'zod';
+import { PRESETS } from './materials.js';
 import { migrate } from './migrate.js';
 import { Style, loadStyle } from './style.js';
 
@@ -157,7 +158,16 @@ export const Material = z.strictObject({
 	roughness: num.min(0).max(1).optional().describe('0 = mirror, 1 = matte (default 0.75)'),
 	metalness: num.min(0).max(1).optional().describe('0 = dielectric (default), 1 = metal'),
 	emissive: Color.optional().describe('glow color'),
-	emissiveStrength: num.min(0).max(20).optional().describe('glow multiplier (default 1; >1 exports KHR_materials_emissive_strength)')
+	emissiveStrength: num.min(0).max(20).optional().describe('glow multiplier (default 1; >1 exports KHR_materials_emissive_strength)'),
+	preset: z
+		.strictObject({
+			kind: z.enum(PRESETS).describe('wood, planks, brick, stone, cobbles, tiles, metal, rust, fabric, leather, grass, bark, marble, sand'),
+			scale: pos.optional().describe('feature size in meters (a brick, a board, a stone); each kind has a sensible default'),
+			accent: Color.optional().describe('the second colour (mortar, grout, rust, grain); default derived from the base colour'),
+			relief: num.min(0).max(1).optional().describe('how deep the grooves read: crevice shading, and the normal map in textured exports (default 0.6)')
+		})
+		.optional()
+		.describe('a named surface: the colour becomes that material, with its grooves and, in textured exports, its relief and shine')
 });
 export type Material = z.infer<typeof Material>;
 

@@ -113,6 +113,7 @@ A target can also be `{ "point": [x, y, z] }` in world space.
 | `metalness` | number (≥0, ≤1) | 0 = dielectric (default), 1 = metal |
 | `emissive` | string | glow color |
 | `emissiveStrength` | number (≥0, ≤20) | glow multiplier (default 1; >1 exports KHR_materials_emissive_strength) |
+| `preset` | object | a named surface: the colour becomes that material, with its grooves and, in textured exports, its relief and shine |
 
 ### Pattern
 

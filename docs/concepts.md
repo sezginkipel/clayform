@@ -163,6 +163,40 @@ width. Sheets are always their own meshes.
   `axis` (`around` gives vertical staves).
 - `detail`: bumpy displacement (`amount`, `scale` in meters) for rock, bark and foliage.
 - `palette`: named colors. Recolor a whole model by changing one entry.
+- `material.preset`: a named surface instead of a painted one. The color becomes that material,
+  with its grooves, and textured exports add its relief as a normal map and its roughness and
+  metalness as a map of their own.
+
+![The fourteen presets on cubes and logs](presets.png)
+
+<!-- verify: part house -->
+```json
+{ "id": "flue", "shape": { "type": "box", "size": [0.25, 0.6, 0.25] },
+  "attach": { "to": "roof", "side": "top", "offset": [0.5, 0], "embed": 0.6 },
+  "material": { "color": "#a8452f", "preset": { "kind": "brick", "scale": 0.12 } } }
+```
+
+| kind | what it is | accent (second colour) |
+|---|---|---|
+| `wood` | growth rings around the part's own Y, for logs and turned wood | the darker grain |
+| `planks` | boards with gaps, staggered, each a slightly different tone | the gaps |
+| `brick` | running bond, bricks varied in tone | mortar |
+| `stone` | irregular stones with joints | the joints |
+| `cobbles` | rounded stones, raised in the middle | the joints |
+| `tiles` | square tiles with grout; glossy tiles, matte grout | grout |
+| `metal` | brushed along the part's X, fully metallic | streaks |
+| `rust` | metal with rust blotches that are rough and not metallic | rust |
+| `fabric` | a fine weave, matte | the weave |
+| `leather` | creased and pebbled | creases |
+| `grass` | patchy green | dry patches |
+| `bark` | ridges running up the part's Y | cracks |
+| `marble` | veins, polished | veins |
+| `sand` | ripples and grain | ripples |
+
+`scale` is the size of one feature in meters (one brick, one board, one stone), `accent` the
+second colour (each kind has a default), and `relief` (0–1, default 0.6) how deep the grooves
+read. Patterns on faces (bricks, tiles, planks, stones) follow each face: along a wall and up
+on walls, across floors and roofs. The pattern is in the part's own frame, so it moves with it.
 
 ## Sculpting
 

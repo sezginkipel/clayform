@@ -9,6 +9,7 @@
  * 3. Sculpts are resolved to world-space field modifiers.
  */
 
+import { defaultAccent, PRESET_SCALE, samplePreset, type PresetKind, type PresetSample } from './materials.js';
 import {
 	add, clamp, dot, hexToRgb, len, norm, qAxisAngle, qConj, qEuler, qFromTo, qMul, qRotate, scale, sub,
 	type Quat, type RGB, type V3
@@ -48,6 +49,7 @@ export interface Prim {
 	emissiveStrength: number;
 	pattern: { kind: string; color: RGB; scale: number; amount: number; axis?: string } | null;
 	detail: { amount: number; scale: number } | null;
+	preset: { kind: PresetKind; scale: number; accent: RGB; relief: number } | null;
 	separate: boolean;
 	hidden: boolean;
 	/** In the fused body field? */
@@ -282,6 +284,17 @@ export function compile(scene: Scene): Compiled {
 				? { kind: p.pattern.kind, color: resolveColor(scene, p.pattern.color), scale: p.pattern.scale ?? 0.08, amount: p.pattern.amount ?? 1, axis: p.pattern.axis }
 				: null,
 			detail: p.detail ? { amount: p.detail.amount, scale: p.detail.scale } : null,
+			preset: m.preset
+				? (() => {
+						const base = resolveColor(scene, m.color);
+						return {
+							kind: m.preset.kind,
+							scale: m.preset.scale ?? PRESET_SCALE[m.preset.kind],
+							accent: m.preset.accent ? resolveColor(scene, m.preset.accent) : defaultAccent(m.preset.kind, base),
+							relief: m.preset.relief ?? 0.6
+						};
+					})()
+				: null,
 			// sheets and kept meshes are meshed directly, never through the body's grid
 			separate: !!p.separate || direct,
 			hidden: !!p.hidden,
@@ -747,9 +760,27 @@ function axisCoord(pr: Prim, l: V3, axis: string | undefined): number {
 	return l[1];
 }
 
-/** Base color of a prim at a world point (pattern applied). */
-export function primColor(pr: Prim, p: V3): RGB {
-	if (!pr.pattern) return pr.color;
+/** The preset at a world point on a part (normal in world space), or null. */
+export function presetAt(pr: Prim, p: V3, n: V3 | undefined): PresetSample | null {
+	if (!pr.preset) return null;
+	const l = toLocal(pr, p[0], p[1], p[2]);
+	const nl = n ? qRotate(pr.invRot, n) : ([0, 1, 0] as V3);
+	if (pr.flipX) nl[0] = -nl[0];
+	// the preset's scale is in meters on the part as it is, not before `scale` stretched it
+	return samplePreset(pr.preset.kind, [l[0] * pr.scl[0], l[1] * pr.scl[1], l[2] * pr.scl[2]], nl, pr.preset.scale);
+}
+
+/** Base color of a prim at a world point (preset and pattern applied). `n` is the surface normal, for presets that lie on faces. */
+export function primColor(pr: Prim, p: V3, n?: V3): RGB {
+	let base = pr.color;
+	if (pr.preset) {
+		const s = presetAt(pr, p, n)!;
+		const a = pr.preset.accent, m = Math.max(0, Math.min(1, s.mix));
+		// crevices a little darker, so grooves read even without a normal map
+		const k = (s.shade ?? 1) * (1 - pr.preset.relief * 0.35 * (1 - Math.max(0, Math.min(1, s.height))));
+		base = [(base[0] + (a[0] - base[0]) * m) * k, (base[1] + (a[1] - base[1]) * m) * k, (base[2] + (a[2] - base[2]) * m) * k];
+	}
+	if (!pr.pattern) return base;
 	const pt = pr.pattern;
 	const l = toLocal(pr, p[0], p[1], p[2]);
 	const s = 1 / pt.scale;
@@ -777,7 +808,7 @@ export function primColor(pr: Prim, p: V3): RGB {
 		}
 	}
 	w *= pt.amount;
-	return [pr.color[0] + (pt.color[0] - pr.color[0]) * w, pr.color[1] + (pt.color[1] - pr.color[1]) * w, pr.color[2] + (pt.color[2] - pr.color[2]) * w];
+	return [base[0] + (pt.color[0] - base[0]) * w, base[1] + (pt.color[1] - base[1]) * w, base[2] + (pt.color[2] - base[2]) * w];
 }
 
 export function worldAabb(prims: Prim[]): { min: V3; max: V3 } | null {

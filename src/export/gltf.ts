@@ -140,6 +140,8 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	const first = opts.atlas?.first ?? 0;
 	if (!atlas && opts.texture) atlas = bakeAtlas(prepared, { size: opts.texture, bakeAo, toonBands: toon ? opts.bands ?? 3 : 0 });
 	const extensionsUsed = new Set<string>();
+	// relief and shine maps travel with the atlas when parts use material presets (toon is unlit: it has no use for them)
+	const withMaps = !!(atlas?.normalPng && atlas.ormPng) && !toon;
 
 	/* --------------------------------------------------------- materials */
 	const materials: Record<string, unknown>[] = [];
@@ -154,9 +156,16 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 		if (hit !== undefined) return hit;
 		const pbr: Record<string, unknown> = { baseColorFactor: [1, 1, 1, 1], metallicFactor: toon ? 0 : p?.metalness ?? 0, roughnessFactor: toon ? 1 : p?.roughness ?? 0.75 };
 		if (atlas) pbr.baseColorTexture = { index: 0 };
+		if (withMaps) {
+			// roughness and metalness come from the ORM map (G, B); the factors multiply it, so they are 1
+			pbr.metallicFactor = 1;
+			pbr.roughnessFactor = 1;
+			pbr.metallicRoughnessTexture = { index: 2 };
+		}
 		const m: Record<string, unknown> = {
 			name: p ? (p.emissive ? `glow_${materials.length}` : p.metalness > 0.5 ? `metal_${materials.length}` : `surface_${materials.length}`) : 'surface',
-			pbrMetallicRoughness: pbr
+			pbrMetallicRoughness: pbr,
+			...(withMaps ? { normalTexture: { index: 1 } } : {})
 		};
 		const ext: Record<string, unknown> = {};
 		if (p?.emissive) {
@@ -184,7 +193,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	let triangles = 0, primitiveCount = 0;
 
 	let outlineMaterial = -1;
-	const writeMesh = (src: MeshData, am?: { remap: Uint32Array; uv: Float32Array; indices: Uint32Array }, forceMaterial?: number) => {
+	const writeMesh = (src: MeshData, am?: { remap: Uint32Array; uv: Float32Array; indices: Uint32Array; tangents: Float32Array }, forceMaterial?: number) => {
 		// with an atlas, vertices are split along chart seams
 		const m: MeshData = am ? remapMesh(src, am.remap, am.indices) : src;
 		const n = m.positions.length / 3;
@@ -193,7 +202,9 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			NORMAL: w.accessor(m.normals, 'VEC3', FLOAT, { target: ARRAY_BUFFER })
 		};
 		if (am) attrs.TEXCOORD_0 = w.accessor(am.uv, 'VEC2', FLOAT, { target: ARRAY_BUFFER });
-		else if (forceMaterial === undefined) {
+		// our own tangents, matching how the normal map was baked, so no engine has to guess the frame
+		if (am && withMaps) attrs.TANGENT = w.accessor(am.tangents, 'VEC4', FLOAT, { target: ARRAY_BUFFER });
+		if (!am && forceMaterial === undefined) {
 			const col = new Float32Array(n * 4);
 			for (let v = 0; v < n; v++) {
 				const ao = bakeAo ? m.ao[v] : 1;
@@ -377,7 +388,10 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	/* ----------------------------------------------------------- texture */
 	let images: Record<string, unknown>[] | undefined;
 	if (atlas) {
-		images = [opts.atlas?.uri ? { uri: opts.atlas.uri, name: 'atlas' } : { bufferView: w.raw(atlas.png), mimeType: 'image/png', name: 'atlas' }];
+		const img = (png: Uint8Array, name: string, uri?: string) => (uri ? { uri, name } : { bufferView: w.raw(png), mimeType: 'image/png', name });
+		const uri = opts.atlas?.uri;
+		images = [img(atlas.png, 'atlas', uri)];
+		if (withMaps) images.push(img(atlas.normalPng!, 'atlas_normal', uri && mapUri(uri, 'normal')), img(atlas.ormPng!, 'atlas_orm', uri && mapUri(uri, 'orm')));
 	}
 
 	/* -------------------------------------------------------------- json */
@@ -401,7 +415,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 		json.images = images;
 		// clamp: charts sit right at the edge of the atlas in places
 		json.samplers = [{ magFilter: 9729, minFilter: 9987, wrapS: 33071, wrapT: 33071 }];
-		json.textures = [{ source: 0, sampler: 0 }];
+		json.textures = images.map((_, i) => ({ source: i, sampler: 0 }));
 	}
 	if (usesEmissiveStrength) extensionsUsed.add('KHR_materials_emissive_strength');
 	if (extensionsUsed.size) json.extensionsUsed = [...extensionsUsed];
@@ -426,6 +440,11 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 		},
 		atlas: opts.atlas ? undefined : atlas
 	};
+}
+
+/** Where a kit's normal or ORM map lives next to its atlas: atlas.png → atlas_normal.png. */
+export function mapUri(uri: string, kind: 'normal' | 'orm'): string {
+	return uri.replace(/(\.png)?$/i, `_${kind}.png`);
 }
 
 function remapMesh(m: MeshData, remap: Uint32Array, indices: Uint32Array): MeshData {

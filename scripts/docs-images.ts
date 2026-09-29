@@ -10,7 +10,8 @@ import { drawText } from '../src/render/font.js';
 import { renderClipStrip } from '../src/render/motion.js';
 import { encodePng } from '../src/render/png.js';
 import { decodePng } from '../src/render/pngdecode.js';
-import { renderSheet } from '../src/render/views.js';
+import { renderSheet, renderTiles } from '../src/render/views.js';
+import { FORMAT } from '../src/core/schema.js';
 import { getTemplate } from '../src/templates/index.js';
 import { bakeEffect, resolveEffect } from '../src/vfx/effects.js';
 
@@ -34,6 +35,26 @@ writeFileSync('docs/goblin-walk.png', renderClipStrip(goblin, 'walk', { frames: 
 const torch = getTemplate('torch')!.scene;
 writeFileSync('docs/fire.png', bakeEffect(resolveEffect(torch, torch.effects![0])).preview);
 console.log('docs/goblin.png goblin-parts.png goblin-walk.png fire.png goblin.clay.json');
+
+// Every material preset on a cube or a log.
+{
+	const { PRESETS } = await import('../src/core/materials.js');
+	const base: Record<string, string> = { wood: '#a8743f', planks: '#9a6a3f', brick: '#a8452f', stone: '#8f8a84', cobbles: '#7d7872', tiles: '#e8e2d6', metal: '#9aa0a8', rust: '#8a8f99', fabric: '#3b5f9a', leather: '#6b3f26', grass: '#5a9a3a', bark: '#6f4a2e', marble: '#ecebe6', sand: '#d8c28a' };
+	const T = 200, cols = 7, rows = Math.ceil(PRESETS.length / cols);
+	const W = cols * T, H = rows * T, buf = new Uint8Array(W * H * 4).fill(255);
+	PRESETS.forEach((kind, i) => {
+		const round = kind === 'wood' || kind === 'bark' || kind === 'marble';
+		const shape = round ? { type: 'cylinder', height: 0.8, radius: 0.3 } : { type: 'box', size: [0.7, 0.7, 0.7] };
+		const s = applyOps({ format: FORMAT, name: kind, settings: { resolution: 160, edges: 'sharp' }, parts: [] }, [{ op: 'add_part', part: { id: 'a', shape, material: { color: base[kind], preset: { kind } } } }]);
+		if (!s.ok) throw new Error(s.error);
+		const tile = renderTiles(buildScene(s.scene), { views: ['three_quarter'], size: T }).tiles[0];
+		const ox = (i % cols) * T, oy = Math.floor(i / cols) * T;
+		for (let y = 0; y < T; y++) buf.set(tile.data.subarray(y * T * 4, (y + 1) * T * 4), ((oy + y) * W + ox) * 4);
+		drawText(buf, W, H, ox + 6, oy + 6, kind, [60, 60, 66], 2);
+	});
+	writeFileSync('docs/presets.png', encodePng(buf, W, H));
+	console.log('docs/presets.png');
+}
 
 // The game actions on the biped, one strip per clip, stacked.
 {

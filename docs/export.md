@@ -84,6 +84,13 @@ colors go into a baked atlas instead:
   2-texel gutter is grown around every chart so filtering and mipmaps never reach the background.
 - **Output.** `TEXCOORD_0` and a PNG `baseColorTexture` (clamped, trilinear) embedded in the GLB.
   `COLOR_0` is left out so the color is not applied twice.
+- **Relief and shine.** When a part uses a [material preset](concepts.md#surface-materials-patterns-detail),
+  the atlas also carries a tangent-space `normalTexture` baked from the preset's relief and a
+  `metallicRoughnessTexture` (roughness in green, metalness in blue), and every vertex gets a
+  `TANGENT` built from its chart, so engines do not have to guess the tangent frame. The test
+  suite rebuilds the normal the way glTF defines it (T·x + cross(N, T)·w·y + N·z) and checks that
+  it leans down the relief's slope on faces pointing every way. Kits write `atlas_normal.png` and
+  `atlas_orm.png` next to `atlas.png`.
 
 The test suite samples the atlas at every vertex's UV and requires the median difference from
 the vertex color to stay under 2%. For the biped at 8,000 triangles, a 1024 px atlas holds
