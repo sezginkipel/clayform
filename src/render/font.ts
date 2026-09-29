@@ -58,6 +58,12 @@ const G: Record<string, string> = {
 const BITS: Record<string, number[]> = {};
 for (const [ch, rows] of Object.entries(G)) BITS[ch] = rows.split(' ').map((r) => parseInt(r, 2));
 
+/** The 5×7 rows of a character ('1' = lit), or undefined if the font has none. */
+export function glyph(ch: string): string[] | undefined {
+	const g = G[ch.toUpperCase()];
+	return g ? g.split(' ') : undefined;
+}
+
 export const GLYPH_W = 6;
 export const GLYPH_H = 8;
 

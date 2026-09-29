@@ -253,6 +253,10 @@ function shapeText(p: Scene['parts'][number]): string {
 		case 'torus': return `torus R${f2(s.radius)} t${f2(s.tube)}`;
 		case 'prism': return `prism ${v(s.size)}`;
 		case 'tube': return `tube ${s.points.length} pts`;
+		case 'lathe': return `lathe ${s.profile.length} pts${s.sides ? ` ${s.sides} sides` : ''}`;
+		case 'extrude': return `extrude ${s.outline.length}-pt outline d${f2(s.depth)}`;
+		case 'text': return `text "${s.text}" h${f2(s.height)}`;
+		case 'terrain': return `terrain ${v(s.size)} h${f2(s.height)}`;
 		case 'mesh': return `mesh ${s.src}${s.size ? ` (${f2(s.size)} m)` : ''}`;
 	}
 }

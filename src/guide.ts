@@ -40,6 +40,10 @@ Rotations are Euler degrees [x, y, z]. Ground is y=0; with \`settings.ground: "a
   (smooth swept tube: tails, limbs, horns) · mesh{src, size?, resolution?} (an imported .glb or
   .obj, baked to a distance field so it blends, carves and anchors like any part; color comes
   from material). \`sides\` makes facets (6 = crystal, 4 = pyramid).
+  lathe{profile[[r, y]…], smooth?, shell?, sides?} (spun around Y: vases, columns, bottles; shell =
+  open-topped wall: cups, bowls, lamp shades) · extrude{outline[[x, y]…], depth, rounding?, bevel?,
+  taper?, smooth?} (signs, gears, keys, shields) · text{text, height, depth} (block letters) ·
+  terrain{size[w, d], height, roughness?, scale?, seed?} (a ground tile of hills).
 - **Placement** — one of:
   - \`attach\`: \`{ to, side, offset?, embed?, align? }\` puts the part on another part's surface.
     \`side\` is a world direction you look from: top, bottom, front(+Z), back, left(+X), right, center.

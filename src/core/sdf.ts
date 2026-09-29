@@ -3,6 +3,7 @@
  * Most formulas follow Inigo Quilez's well-known SDF reference.
  */
 
+import { extrudeDist, latheOutline, latheWall, sdPolygon, sdPolyline, smoothPath, terrainDist, textDist2, textGrid, type Pt, type TerrainSpec } from './shapes2d.js';
 import type { Shape } from './schema.js';
 import type { V3 } from './math.js';
 import { meshField } from './meshload.js';
@@ -176,6 +177,36 @@ export function shapeSdf(s: Shape): LocalSdf {
 			const f = meshField(s.src, s.size, s.resolution ?? 64);
 			return f.sdf;
 		}
+		case 'lathe': {
+			const profile = s.smooth ? smoothPath(s.profile as Pt[], false) : (s.profile as Pt[]);
+			const radial = polyRadial(s.sides);
+			const ap = s.sides ? Math.cos(Math.PI / s.sides) : 1;
+			if (s.shell) {
+				const wall = latheWall(profile), t = s.shell / 2;
+				return (x, y, z) => sdPolyline(radial(x, z), y, wall) * ap - t;
+			}
+			const poly = latheOutline(profile);
+			return (x, y, z) => sdPolygon(radial(x, z), y, poly) * ap;
+		}
+		case 'extrude': {
+			const outline = s.smooth ? smoothPath(s.outline as Pt[], true) : (s.outline as Pt[]);
+			const half = s.depth / 2;
+			const r = Math.min(s.rounding ?? 0, half);
+			return (x, y, z) => extrudeDist(x, y, z, outline, half, r, s.bevel ?? 0, s.taper ?? 1);
+		}
+		case 'text': {
+			const g = textGrid(s.text, s.height);
+			const half = s.depth / 2;
+			const r = Math.min(s.rounding ?? g.cell / 6, half, g.cell / 2);
+			return (x, y, z) => {
+				const wx = textDist2(x, y, g) + r, wy = Math.abs(z) - half + r;
+				return Math.min(Math.max(wx, wy), 0) + Math.hypot(Math.max(wx, 0), Math.max(wy, 0)) - r;
+			};
+		}
+		case 'terrain': {
+			const t = terrainSpec(s);
+			return (x, y, z) => terrainDist(x, y, z, t);
+		}
 		case 'tube': {
 			const pts = s.points as V3[];
 			const radii = Array.isArray(s.radius) ? s.radius : pts.map(() => s.radius as number);
@@ -218,6 +249,25 @@ export function shapeBounds(s: Shape): { min: V3; max: V3 } {
 			const f = meshField(s.src, s.size, s.resolution ?? 64);
 			return { min: [...f.min] as V3, max: [...f.max] as V3 };
 		}
+		case 'lathe': {
+			const r = Math.max(...s.profile.map((p) => p[0]));
+			const ys = s.profile.map((p) => p[1]);
+			return { min: [-r, Math.min(...ys), -r], max: [r, Math.max(...ys), r] };
+		}
+		case 'extrude': {
+			const k = Math.max(1, s.taper ?? 1);
+			const xs = s.outline.map((p) => p[0] * k), ys = s.outline.map((p) => p[1] * k);
+			return { min: [Math.min(...xs), Math.min(...ys), -s.depth / 2], max: [Math.max(...xs), Math.max(...ys), s.depth / 2] };
+		}
+		case 'text': {
+			const g = textGrid(s.text, s.height);
+			const hw = (g.cols * g.cell) / 2, hh = (g.rows * g.cell) / 2;
+			return { min: [-hw, -hh, -s.depth / 2], max: [hw, hh, s.depth / 2] };
+		}
+		case 'terrain': {
+			const t = terrainSpec(s);
+			return { min: [-t.width / 2, -t.base, -t.depth / 2], max: [t.width / 2, t.height, t.depth / 2] };
+		}
 		case 'tube': {
 			const radii = Array.isArray(s.radius) ? s.radius : s.points.map(() => s.radius as number);
 			const min: V3 = [Infinity, Infinity, Infinity], max: V3 = [-Infinity, -Infinity, -Infinity];
@@ -230,6 +280,18 @@ export function shapeBounds(s: Shape): { min: V3; max: V3 } {
 			return { min, max };
 		}
 	}
+}
+
+function terrainSpec(s: Extract<Shape, { type: 'terrain' }>): TerrainSpec {
+	return {
+		width: s.size[0],
+		depth: s.size[1],
+		height: s.height,
+		base: s.base ?? s.height * 0.3,
+		scale: s.scale ?? s.size[0] / 3,
+		roughness: s.roughness ?? 0.4,
+		seed: s.seed ?? 1
+	};
 }
 
 /* ---------------------------------------------------------------- noise */

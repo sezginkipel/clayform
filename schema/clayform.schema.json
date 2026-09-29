@@ -525,6 +525,212 @@
                 "properties": {
                   "type": {
                     "type": "string",
+                    "const": "lathe"
+                  },
+                  "profile": {
+                    "minItems": 2,
+                    "maxItems": 64,
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "description": "[radius, height] points from bottom to top, spun around local Y — vases, bottles, columns, lamp shades, chess pieces"
+                  },
+                  "sides": {
+                    "description": "faceted around Y (6 = hexagonal); default round",
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 16
+                  },
+                  "smooth": {
+                    "description": "run a smooth curve through the points instead of straight segments",
+                    "type": "boolean"
+                  },
+                  "shell": {
+                    "description": "wall thickness: an open-topped wall along the profile instead of a solid — cups, bowls, vases, lamp shades, bells",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "type",
+                  "profile"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "extrude"
+                  },
+                  "outline": {
+                    "minItems": 3,
+                    "maxItems": 128,
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "description": "closed [x, y] outline in local XY (no crossings), pushed out along local Z — signs, gears, keys, shields, panels"
+                  },
+                  "depth": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "thickness along Z"
+                  },
+                  "rounding": {
+                    "description": "round every edge by this radius",
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "bevel": {
+                    "description": "45° chamfer on the front and back rims",
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "taper": {
+                    "description": "the front face is this many times the back face (1 = straight)",
+                    "type": "number",
+                    "minimum": 0.05,
+                    "maximum": 4
+                  },
+                  "smooth": {
+                    "description": "run a smooth closed curve through the points instead of straight segments",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "type",
+                  "outline",
+                  "depth"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "text"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "pattern": "^[A-Za-z0-9 .,:;!?'\"()+\\-/#&%*=<>_]+$"
+                  },
+                  "height": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "letter height in meters"
+                  },
+                  "depth": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "extrusion along Z"
+                  },
+                  "rounding": {
+                    "description": "soften the block letters (default a sixth of a stroke)",
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "type",
+                  "text",
+                  "height",
+                  "depth"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "terrain"
+                  },
+                  "size": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "width (X) and depth (Z)"
+                  },
+                  "height": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "highest hills above the base"
+                  },
+                  "base": {
+                    "description": "solid thickness under the lowest point (default 0.3 × height)",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "scale": {
+                    "description": "feature size of the hills in meters (default a third of the width)",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "roughness": {
+                    "description": "0 = smooth rolling hills, 1 = broken rocky ground (default 0.4)",
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "seed": {
+                    "description": "another seed, another landscape",
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "type",
+                  "size",
+                  "height"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
                     "const": "tube"
                   },
                   "points": {

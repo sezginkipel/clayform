@@ -77,6 +77,42 @@ export const Shape = z.discriminatedUnion('type', [
 		resolution: z.number().int().min(16).max(160).optional().describe('distance grid cells on the longest axis (default 64)')
 	}),
 	z.strictObject({
+		type: z.literal('lathe'),
+		profile: z
+			.array(z.tuple([num.min(0), num]))
+			.min(2)
+			.max(64)
+			.describe('[radius, height] points from bottom to top, spun around local Y — vases, bottles, columns, lamp shades, chess pieces'),
+		sides: z.number().int().min(3).max(16).optional().describe('faceted around Y (6 = hexagonal); default round'),
+		smooth: z.boolean().optional().describe('run a smooth curve through the points instead of straight segments'),
+		shell: pos.optional().describe('wall thickness: an open-topped wall along the profile instead of a solid — cups, bowls, vases, lamp shades, bells')
+	}),
+	z.strictObject({
+		type: z.literal('extrude'),
+		outline: z.array(z.tuple([num, num])).min(3).max(128).describe('closed [x, y] outline in local XY (no crossings), pushed out along local Z — signs, gears, keys, shields, panels'),
+		depth: pos.describe('thickness along Z'),
+		rounding: num.min(0).optional().describe('round every edge by this radius'),
+		bevel: num.min(0).optional().describe('45° chamfer on the front and back rims'),
+		taper: num.min(0.05).max(4).optional().describe('the front face is this many times the back face (1 = straight)'),
+		smooth: z.boolean().optional().describe('run a smooth closed curve through the points instead of straight segments')
+	}),
+	z.strictObject({
+		type: z.literal('text'),
+		text: z.string().min(1).max(40).regex(/^[A-Za-z0-9 .,:;!?'"()+\-/#&%*=<>_]+$/, 'letters, digits, spaces and common punctuation'),
+		height: pos.describe('letter height in meters'),
+		depth: pos.describe('extrusion along Z'),
+		rounding: num.min(0).optional().describe('soften the block letters (default a sixth of a stroke)')
+	}),
+	z.strictObject({
+		type: z.literal('terrain'),
+		size: z.tuple([pos, pos]).describe('width (X) and depth (Z)'),
+		height: pos.describe('highest hills above the base'),
+		base: pos.optional().describe('solid thickness under the lowest point (default 0.3 × height)'),
+		scale: pos.optional().describe('feature size of the hills in meters (default a third of the width)'),
+		roughness: num.min(0).max(1).optional().describe('0 = smooth rolling hills, 1 = broken rocky ground (default 0.4)'),
+		seed: z.number().int().optional().describe('another seed, another landscape')
+	}),
+	z.strictObject({
 		type: z.literal('tube'),
 		points: z.array(Vec3).min(2).max(64).describe('local points of a smooth swept tube — tails, limbs, horns, tentacles'),
 		radius: z.union([pos, z.array(pos).min(2).max(64)]).describe('one radius, or one per point for tapering')
