@@ -20,7 +20,7 @@ import {
 	type M4, type Quat, type V3
 } from '../core/math.js';
 import type { Clip } from '../core/schema.js';
-import { footPath, rigidLeg, twoBoneLeg } from './ik.js';
+import { footPath, rigidLeg, twoBoneArm, twoBoneLeg } from './ik.js';
 
 export interface Joint {
 	name: string;
@@ -148,7 +148,7 @@ type Driver = (t: number) => Motion;
 
 const PERIOD: Record<string, number> = {
 	idle: 2.4, walk: 1.0, run: 0.62, hop: 0.8, fly: 0.5, swim: 1.4, drive: 1.0, spin: 4, hover: 2, wave: 1.2, nod: 1.2,
-	attack: 0.9, jump: 1.2, sit: 1.6, turn: 1.2, die: 1.8, blend: 0.4, keyframes: 1
+	attack: 0.9, jump: 1.2, sit: 1.6, turn: 1.2, die: 1.8, reach: 2, point: 1.8, pickup: 2.6, look: 2.4, blend: 0.4, keyframes: 1
 };
 
 const TAU = Math.PI * 2;
@@ -184,6 +184,12 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 		const m = drive.get(joint)?.(t) ?? {};
 		const local = m4Compose(add(jt.local, m.off ?? [0, 0, 0]), toQuat(m.rot), m.scl ?? [1, 1, 1]);
 		return jt.parent >= 0 ? m4Mul(worldAt(jt.parent, t), local) : local;
+	};
+	/** World rotation of a joint at time t from the drivers set so far. */
+	const rotAt = (joint: number, t: number): Quat => {
+		const jt = rig.joints[joint];
+		const r = toQuat(drive.get(joint)?.(t)?.rot);
+		return jt.parent >= 0 ? qMul(rotAt(jt.parent, t), r) : r;
 	};
 	let speed = 0;
 
@@ -451,6 +457,10 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 			const jt = rig.joints[c.top];
 			const rest = sub(c.ankle, c.hip);
 			let memoT = NaN, memo = { hip: qIdentity(), knee: qIdentity(), flat: qIdentity() };
+			// a planted foot lies flat with its own heading in the world, whatever turns above it (a lean, a turn);
+			// as the plant fades out the foot goes back to riding on the leg
+			const level = (leg: Quat, t: number, wgt: number) =>
+				qMul(qSlerp(qConj(leg), qConj(qMul(rotAt(jt.parent, t), leg)), wgt), qAxisAngle(Y, heading(c, t) * DEG));
 			const solve = (t: number) => {
 				if (t === memoT) return memo;
 				const tp = sub(m4Point(m4Invert(worldAt(jt.parent, t)), target(c, t)), jt.local);
@@ -459,7 +469,7 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 					const kn = sub(c.knee, c.hip);
 					const s2 = twoBoneLeg([kn[1], kn[2]], [rest[1], rest[2]], [tp[1], tp[2]]);
 					const hip = qSlerp(qIdentity(), qAxisAngle(X, s2.hip), wgt), knee = qSlerp(qIdentity(), qAxisAngle(X, s2.knee), wgt);
-					memo = { hip, knee, flat: qMul(qConj(qMul(hip, knee)), qAxisAngle(Y, heading(c, t) * DEG)) };
+					memo = { hip, knee, flat: level(qMul(hip, knee), t, wgt) };
 				} else {
 					let q = qFromTo(norm(rest), norm(tp));
 					// a rigid leg cannot shorten to lift its foot: tip it outward until the foot reaches the target's height
@@ -473,7 +483,7 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 					}
 					q = qSlerp(qIdentity(), q, wgt);
 					// the foot keeps its own heading in the world, not the body's
-					memo = { hip: q, knee: qIdentity(), flat: qMul(qConj(q), qAxisAngle(Y, heading(c, t) * DEG)) };
+					memo = { hip: q, knee: qIdentity(), flat: level(q, t, wgt) };
 				}
 				memoT = t;
 				return memo;
@@ -483,6 +493,106 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 			for (const f of c.flat) set(f, (t) => ({ rot: solve(t).flat }));
 		}
 	};
+	/** A clip's `at`: a world point, or a part's center. */
+	function pointOf(at: Clip['at']): V3 | null {
+		if (!at) return null;
+		if (typeof at !== 'string') return [at[0], at[1], at[2]];
+		const p = prims.find((q) => q.id === at);
+		return p ? add([(p.min[0] + p.max[0]) / 2, (p.min[1] + p.max[1]) / 2, (p.min[2] + p.max[2]) / 2], b.offset) : null;
+	}
+	/** A part and everything attached below it. */
+	function subtreeOf(i: number): Set<number> {
+		const set = new Set([i]);
+		for (const p of prims) if (p.parent >= 0 && set.has(p.parent)) set.add(p.index);
+		return set;
+	}
+	/** The body a part hangs from (the hips a head sits on). */
+	function hipsOf(p: Prim): Prim | null {
+		let cur: Prim | undefined = p;
+		while (cur && cur.parent >= 0) {
+			const up: Prim = prims[cur.parent];
+			if (up.role === 'body' && (up.parent < 0 || prims[up.parent].role !== 'body')) return up;
+			cur = up;
+		}
+		return null;
+	}
+	/** The point of a set of parts farthest from `from` (grounded): a fingertip. */
+	function tipOf(set: Set<number>, from: V3): V3 {
+		let best = from, d = -1;
+		for (const m of b.meshes)
+			for (let v = 0; v < m.positions.length / 3; v++) {
+				if (!set.has(m.prim >= 0 ? m.prim : m.vertPrim[v])) continue;
+				const q: V3 = [m.positions[v * 3], m.positions[v * 3 + 1], m.positions[v * 3 + 2]];
+				const l = (q[0] - from[0]) ** 2 + (q[1] - from[1]) ** 2 + (q[2] - from[2]) ** 2;
+				if (l > d) (d = l), (best = q);
+			}
+		return best;
+	}
+	/**
+	 * Put a hand on a point: a one-piece arm turns to aim its tip at it, an
+	 * arm in two parts (an `arm` under an `arm`) bends at the elbow to touch
+	 * it. `straight` keeps the elbow straight (pointing). Solved against the
+	 * pose of everything above the arm, so a lean or a walk is taken into account.
+	 */
+	function reachArm(arm: Prim, goal: (t: number) => V3, weight: (t: number) => number, straight = false) {
+		const top = j(arm), jt = rig.joints[top];
+		const shoulder = jt.rest;
+		const fore = prims.find((p) => p.parent === arm.index && p.role === 'arm');
+		const tip = tipOf(subtreeOf(arm.index), shoulder);
+		const s = sideOf(arm, cx);
+		let memoT = NaN, memo = { up: qIdentity(), low: qIdentity() };
+		const solve = (t: number) => {
+			if (t === memoT) return memo;
+			const wgt = weight(t);
+			const tp = sub(m4Point(m4Invert(worldAt(jt.parent, t)), goal(t)), jt.local);
+			if (fore && !straight) {
+				const elbow = add(fore.pivot, b.offset);
+				const r = twoBoneArm(sub(elbow, shoulder), sub(tip, elbow), tp, [s * 0.4, -0.5, -1]);
+				memo = { up: qSlerp(qIdentity(), r.shoulder, wgt), low: qSlerp(qIdentity(), r.elbow, wgt) };
+			} else memo = { up: qSlerp(qIdentity(), qFromTo(sub(tip, shoulder), tp), wgt), low: qIdentity() };
+			memoT = t;
+			return memo;
+		};
+		set(top, (t) => ({ rot: solve(t).up }));
+		if (fore) set(j(fore), (t) => ({ rot: solve(t).low }));
+	}
+	/**
+	 * Turn the head (and eyes) toward a point, on top of what they already do.
+	 * The head turns up to 75° to the side and 40° up or down; eyes take up to
+	 * 20° more.
+	 */
+	function look(goal: (t: number) => V3, weight: (t: number) => number) {
+		for (const head of heads) {
+			const J = j(head), jt = rig.joints[J];
+			const center = add([(head.min[0] + head.max[0]) / 2, (head.min[1] + head.max[1]) / 2, (head.min[2] + head.max[2]) / 2], b.offset);
+			const prev = drive.get(J);
+			const aim = (t: number, from: V3, jl: V3, parent: number, maxYaw: number, maxPitch: number) => {
+				const tp = sub(m4Point(m4Invert(worldAt(parent, t)), goal(t)), add(jl, sub(from, rig.joints[J].rest)));
+				const yaw = Math.max(-maxYaw, Math.min(maxYaw, Math.atan2(tp[0], tp[2])));
+				const pitch = Math.max(-maxPitch, Math.min(maxPitch, Math.atan2(-tp[1], Math.hypot(tp[0], tp[2]))));
+				return { yaw, pitch };
+			};
+			drive.set(J, (t) => {
+				const m = prev ? prev(t) : {};
+				const a = aim(t, center, jt.local, jt.parent, 75 * DEG, 40 * DEG);
+				const q = qSlerp(qIdentity(), qMul(qAxisAngle(Y, a.yaw), qAxisAngle(X, a.pitch)), weight(t));
+				return { ...m, rot: qMul(q, toQuat(m.rot)) };
+			});
+			for (const eye of prims.filter((p) => p.role === 'eye' && !p.hidden && subtreeOf(head.index).has(p.index))) {
+				const E = j(eye), ej = rig.joints[E];
+				const ec = add([(eye.min[0] + eye.max[0]) / 2, (eye.min[1] + eye.max[1]) / 2, (eye.min[2] + eye.max[2]) / 2], b.offset);
+				const eprev = drive.get(E);
+				drive.set(E, (t) => {
+					const m = eprev ? eprev(t) : {};
+					const tp = sub(m4Point(m4Invert(worldAt(ej.parent, t)), goal(t)), add(ej.local, sub(ec, ej.rest)));
+					const yaw = Math.max(-20 * DEG, Math.min(20 * DEG, Math.atan2(tp[0], tp[2])));
+					const pitch = Math.max(-20 * DEG, Math.min(20 * DEG, Math.atan2(-tp[1], Math.hypot(tp[0], tp[2]))));
+					const q = qSlerp(qIdentity(), qMul(qAxisAngle(Y, yaw), qAxisAngle(X, pitch)), weight(t));
+					return { ...m, rot: qMul(q, toQuat(m.rot)) };
+				});
+			}
+		}
+	}
 	// the model's right arm (-X) is the one that strikes, unless a target is named
 	const strikeArm = clip.target ? prims.find((p) => p.id === clip.target) : topArms.slice().sort((a, c) => a.pivot[0] - c.pivot[0])[0];
 
@@ -583,7 +693,7 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 				const frac = (yaw / total) * steps;
 				const up = moving ? Math.sin(Math.PI * (frac - Math.floor(frac))) : 0;
 				return add(qRotate(qAxisAngle(Y, yaw * DEG), c.ankle), [0, lift * up, 0]);
-			}, undefined, (c, t) => stepYaw(phases[index.get(c.top)!], t) - bodyYaw(t));
+			}, undefined, (c, t) => stepYaw(phases[index.get(c.top)!], t));
 			tails.forEach((p) => set(j(p), (t) => ({ rot: [0, -0.3 * total * (seg(t, 0.1, 0.5) - seg(t, 0.5, 0.95)), 0] })));
 			break;
 		}
@@ -711,9 +821,62 @@ function drivers(b: Build, rig: Rig, clip: Clip): { period: number; drive: Map<n
 			if (head) set(j(head), (t) => ({ rot: [14 * amp * Math.max(0, w(t)), 0, 0] }));
 			break;
 		}
+		case 'reach':
+		case 'point':
+		case 'pickup': {
+			const arm = clip.target ? prims.find((p) => p.id === clip.target) : topArms.slice().sort((a, c) => a.pivot[0] - c.pivot[0])[0];
+			if (!arm) break;
+			const s = sideOf(arm, cx);
+			const shoulder = add(arm.pivot, b.offset);
+			const len = Math.hypot(...sub(tipOf(subtreeOf(arm.index), shoulder), shoulder));
+			// where to go: the named point, or in front of the shoulder (reach, point), or on the ground in front (pickup)
+			const goal: V3 =
+				pointOf(clip.at) ??
+				(clip.type === 'pickup' ? [shoulder[0] * 0.6, b.cell, shoulder[2] + h * 0.28] : clip.type === 'point' ? [shoulder[0] + s * len * 0.4, shoulder[1] + len * 0.3, shoulder[2] + len * 3] : [shoulder[0], shoulder[1] - len * 0.1, shoulder[2] + len * 0.8]);
+			// out, hold, back; pointing holds longer
+			const hold = clip.type === 'point' ? [0.3, 0.75] : clip.type === 'pickup' ? [0.4, 0.55] : [0.35, 0.65];
+			const weight = (t: number) => seg(t, 0, hold[0]) - seg(t, hold[1], 1);
+			if (clip.type === 'pickup') {
+				// bend at the hips until the hand can reach the ground: the smallest lean that brings the shoulder within reach
+				const hips = hipsOf(arm);
+				if (hips) {
+					// the bend is at the hip joints, so the legs keep their length and the feet stay put
+					const own = topLegs.filter((p) => subtreeOf(hips.index).has(p.index));
+					const hp: V3 = own.length ? add([0, 0, 0].map((_, k) => own.reduce((sm, p) => sm + p.pivot[k], 0) / own.length) as V3, b.offset) : add(hips.pivot, b.offset);
+					const arm0 = sub(hp, add(hips.pivot, b.offset));
+					let lean = 0;
+					for (let a = 0; a <= 80; a += 2) {
+						lean = a;
+						const q = qAxisAngle(X, a * DEG);
+						const sh = add(hp, qRotate(q, sub(shoulder, hp)));
+						if (Math.hypot(...sub(goal, sh)) < len * 0.97) break;
+					}
+					set(j(hips), (t) => {
+						const q = qAxisAngle(X, lean * amp * weight(t) * DEG);
+						return { rot: q, off: sub(arm0, qRotate(q, arm0)) };
+					});
+					plant();
+					groundLock();
+				}
+			}
+			reachArm(arm, (t) => goal, weight, clip.type === 'point');
+			// the other arm hangs back a little, the head looks where the hand goes
+			topArms.filter((p) => p !== arm).forEach((p) => set(j(p), (t) => ({ rot: [-6 * amp * weight(t), 0, sideOf(p, cx) * 4 * amp * weight(t)] })));
+			if (!clip.lookAt) look(() => goal, weight);
+			break;
+		}
+		case 'look': {
+			const goal = pointOf(clip.at);
+			if (!goal) break;
+			look(() => goal, (t) => seg(t, 0, 0.3) - seg(t, 0.7, 1));
+			break;
+		}
 		case 'keyframes':
 			break;
 	}
+	// a clip-wide gaze on top of whatever the clip does
+	const gaze = pointOf(clip.lookAt);
+	if (gaze) look(() => gaze, () => 1);
 	return { period, drive, speed, followThrough };
 }
 

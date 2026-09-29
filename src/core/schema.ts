@@ -255,7 +255,7 @@ export type Sculpt = z.infer<typeof Sculpt>;
 
 /* ----------------------------------------------------------------- animation */
 
-export const CLIP_TYPES = ['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'attack', 'jump', 'sit', 'turn', 'die', 'blend', 'keyframes'] as const;
+export const CLIP_TYPES = ['idle', 'walk', 'run', 'hop', 'fly', 'swim', 'drive', 'spin', 'hover', 'wave', 'nod', 'attack', 'jump', 'sit', 'turn', 'die', 'reach', 'point', 'pickup', 'look', 'blend', 'keyframes'] as const;
 
 export const Key = z.strictObject({
 	t: num.min(0).describe('seconds'),
@@ -271,7 +271,15 @@ export const Clip = z.strictObject({
 	speed: num.min(0.05).max(10).optional().describe('cycle speed multiplier'),
 	amplitude: num.min(0).max(4).optional().describe('motion size multiplier'),
 	duration: num.min(0.1).max(60).optional().describe('seconds; default one natural cycle'),
-	target: Id.optional().describe('part to drive for wave/nod/spin/attack (default: auto)'),
+	target: Id.optional().describe('part to drive for wave/nod/spin/attack/reach/point/pickup (default: auto)'),
+	at: z
+		.union([Vec3, Id])
+		.optional()
+		.describe('reach/point/pickup/look: where, as a world point [x, y, z] in meters (the model stands on y=0 and faces +Z) or a part id (its center)'),
+	lookAt: z
+		.union([Vec3, Id])
+		.optional()
+		.describe('keep the head turned to this point or part through the whole clip, on top of its own motion'),
 	from: Id.optional().describe('blend: the clip to fade out of'),
 	to: Id.optional().describe('blend: the clip to fade into; the blend ends where that clip starts, so play it next'),
 	tracks: z.array(Track).max(128).optional().describe('keyframes (type "keyframes") or layered on top of a procedural clip'),
@@ -426,6 +434,10 @@ export function integrity(s: Scene): Problem[] {
 		if (cids.has(c.id)) out.push({ path: `clips[${i}].id`, message: `duplicate clip id "${c.id}"` });
 		cids.add(c.id);
 		if (c.target && !ids.has(c.target)) out.push({ path: `clips[${i}].target`, message: `unknown part "${c.target}"` });
+		for (const k of ['at', 'lookAt'] as const) {
+			const v = c[k];
+			if (typeof v === 'string' && !ids.has(v.replace(/\.m$/, ''))) out.push({ path: `clips[${i}].${k}`, message: `unknown part "${v}"` });
+		}
 		c.tracks?.forEach((t, j) => {
 			if (!ids.has(t.part.replace(/\.m$/, ''))) out.push({ path: `clips[${i}].tracks[${j}]`, message: `unknown part "${t.part}"` });
 		});

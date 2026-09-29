@@ -87,7 +87,8 @@ crease (groove from \`at\` to \`to\`, width = radius, depth = amount) · noise (
 
 ## Animation (intent, not keyframes)
 \`{ "id": "walk", "type": "walk", "speed": 1, "amplitude": 1 }\` — loops: idle walk run hop
-fly swim drive spin hover wave nod; one-shots: attack jump sit turn die; blend (\`from\`, \`to\`:
+fly swim drive spin hover wave nod; one-shots: attack jump sit turn die, and reach point pickup
+look (\`at\`: [x, y, z] or a part id; \`lookAt\` on any clip keeps the head on it); blend (\`from\`, \`to\`:
 a crossfade that ends where \`to\` starts); keyframes. Legs pair by side (bipeds alternate,
 quadrupeds trot diagonally) and walks plant the feet (export has extras.speed: move the
 character at it). Arms counter-swing, wheels roll, rotors spin; tails, ears and antennas

@@ -84,6 +84,35 @@ right), `nod`.
 
 ![attack, jump, sit, turn and die on the biped template](actions.png)
 
+**Reach and look** take a place, `at`: a world point `[x, y, z]` in meters (the model stands on
+y = 0 and faces +Z) or a part id, meaning that part's center.
+
+| clip | what happens | default `at` |
+|---|---|---|
+| `reach` | the hand goes to the point, holds, comes back; the head looks at it | in front of the shoulder |
+| `point` | the arm straightens toward the point and holds longer | ahead and a little up |
+| `pickup` | bends at the hips just far enough for the hand to reach, feet planted, then stands up | the ground in front |
+| `look` | the head turns to the point (up to 75° to the side and 40° up or down), the eyes take up to 20° more, then back | none, `at` is required |
+
+<!-- verify: clip biped -->
+```json
+{ "id": "grab", "type": "reach", "at": [-0.25, 0.55, 0.3] }
+```
+
+The arm is the `target`, or the one on the model's right. An arm in two parts (an `arm` attached
+under an `arm`) bends at the elbow and touches the point with its fingertip. The elbow bends the
+way it bends at rest, or down and back if the arm is straight. A one-piece arm is rigid: it turns
+to aim its tip at the point, and a point out of reach is pointed at. Either way the solve is
+against the pose of everything above the arm, so it holds while the body leans. The test suite
+checks that the fingertip ends within a cell and a half of the point (two parts), that the aim is
+within 2° (one piece), and that during `pickup` the hand is at the ground while the feet stay put.
+
+`lookAt` on any clip keeps the head on a point for the whole clip, on top of its own motion:
+
+```json
+{ "id": "walk_watching", "type": "walk", "lookAt": [1, 1.2, 0.8] }
+```
+
 `sit` and `die` keep the model's lowest point on the ground the whole way, so it tips over the
 edge it rests on instead of sinking or floating. `amplitude` scales every action (a turn of
 `amplitude: 2` is a half turn).

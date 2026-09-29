@@ -1654,6 +1654,10 @@
               "sit",
               "turn",
               "die",
+              "reach",
+              "point",
+              "pickup",
+              "look",
               "blend",
               "keyframes"
             ],
@@ -1678,9 +1682,61 @@
             "maximum": 60
           },
           "target": {
-            "description": "part to drive for wave/nod/spin/attack (default: auto)",
+            "description": "part to drive for wave/nod/spin/attack/reach/point/pickup (default: auto)",
             "type": "string",
             "pattern": "^[a-z][a-z0-9_]{0,47}$"
+          },
+          "at": {
+            "description": "reach/point/pickup/look: where, as a world point [x, y, z] in meters (the model stands on y=0 and faces +Z) or a part id (its center)",
+            "anyOf": [
+              {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3
+              },
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,47}$"
+              }
+            ]
+          },
+          "lookAt": {
+            "description": "keep the head turned to this point or part through the whole clip, on top of its own motion",
+            "anyOf": [
+              {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3
+              },
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,47}$"
+              }
+            ]
           },
           "from": {
             "description": "blend: the clip to fade out of",
