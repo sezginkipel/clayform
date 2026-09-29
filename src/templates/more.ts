@@ -431,6 +431,50 @@ export const lantern = S('Lantern', {
 	]
 });
 
+export const cup = S('Cup', {
+	notes: 'A tea cup ~0.2 m: a smooth lathe wall (shell) with a torus handle. Recolour via palette.',
+	palette: { glaze: '#e8e2d6', rim: '#2f5f9a' },
+	settings: { resolution: 110 },
+	parts: [
+		{ id: 'cup', role: 'body', shape: { type: 'lathe', smooth: true, shell: 0.012, profile: [[0.1, 0], [0.13, 0.05], [0.15, 0.14], [0.16, 0.2]] }, material: { color: 'glaze', roughness: 0.25 }, pattern: { kind: 'gradient', color: 'rim', scale: 0.03, amount: 0 } },
+		{ id: 'handle', shape: { type: 'torus', radius: 0.05, tube: 0.012 }, rotation: [90, 0, 0], attach: { to: 'cup', side: 'left', offset: [0, 0.1], embed: 0.3 }, material: { color: 'glaze', roughness: 0.25 } }
+	]
+});
+
+export const signpost = S('Sign post', {
+	notes: 'A tavern sign ~1.6 m: turned post (lathe), an extruded board with a chamfer, and block text. Change the word in `word`.',
+	palette: { wood: '#6b4a2b', post: '#5a4030', paint: '#f2d27a' },
+	settings: { resolution: 110 },
+	parts: [
+		{ id: 'post', role: 'body', shape: { type: 'lathe', smooth: true, profile: [[0.09, 0], [0.07, 0.1], [0.05, 1.2], [0.06, 1.25], [0.04, 1.32]] }, material: { color: 'post', roughness: 0.85 } },
+		{ id: 'board', shape: { type: 'extrude', depth: 0.06, bevel: 0.012, outline: [[-0.42, -0.16], [0.42, -0.16], [0.48, 0], [0.42, 0.16], [-0.42, 0.16], [-0.48, 0]] }, attach: { to: 'post', side: 'front', offset: [0, 0.55], embed: 0.2 }, material: { color: 'wood', roughness: 0.8 } },
+		{ id: 'word', shape: { type: 'text', text: 'INN', height: 0.16, depth: 0.05 }, attach: { to: 'board', side: 'front', embed: 0.5 }, material: { color: 'paint', roughness: 0.6 } }
+	]
+});
+
+export const flagpole = S('Flag pole', {
+	notes: 'A flag ~2.2 m on a pole: the flag is a thin sheet with a wave; stripes via the pattern. Swap colours in the palette.',
+	palette: { metal: '#8a8f99', cloth: '#c8403a', stripe: '#f3efe6', stone: '#9a948c' },
+	settings: { resolution: 110 },
+	parts: [
+		{ id: 'base', role: 'body', shape: { type: 'cylinder', height: 0.12, radius: 0.22, rounding: 0.02 }, position: [0, 0.06, 0], material: { color: 'stone', roughness: 0.9 } },
+		{ id: 'pole', shape: { type: 'cylinder', height: 2.1, radius: 0.035 }, attach: { to: 'base', side: 'top', embed: 0.05 }, material: { color: 'metal', metalness: 0.8, roughness: 0.35 } },
+		{ id: 'finial', shape: { type: 'sphere', radius: 0.05 }, attach: { to: 'pole', side: 'top', embed: 0.4 }, material: { color: 'metal', metalness: 0.9, roughness: 0.3 } },
+		{ id: 'flag', shape: { type: 'sheet', size: [0.9, 0.55], wave: { amplitude: 0.05, length: 0.45 } }, attach: { to: 'pole', side: 'left', offset: [0, 0.78], embed: 1 }, position: [0.47, 0, 0], material: { color: 'cloth', roughness: 0.9 }, pattern: { kind: 'stripes', color: 'stripe', scale: 0.09, axis: 'y' } }
+	]
+});
+
+export const meadow = S('Meadow tile', {
+	notes: 'A 4 × 4 m ground tile: terrain with trees and rocks scattered over it. Change seeds for another layout, counts for density.',
+	palette: { grass: '#6a9a4a', leaves: '#2f7a4b', rock: '#8f8a84', trunk: '#6f4a2e' },
+	settings: { resolution: 128 },
+	parts: [
+		{ id: 'ground', role: 'body', shape: { type: 'terrain', size: [4, 4], height: 0.4, seed: 5 }, material: { color: 'grass', roughness: 0.95 } },
+		{ id: 'tree', shape: { type: 'cone', height: 0.6, radius: 0.18, sides: 7 }, material: { color: 'leaves', roughness: 0.85 }, scatter: { on: 'ground', count: 14, minGap: 0.45, scale: [0.7, 1.4], align: false, seed: 2 } },
+		{ id: 'rock', shape: { type: 'ellipsoid', radii: [0.12, 0.07, 0.1] }, material: { color: 'rock', roughness: 0.95 }, detail: { amount: 0.006, scale: 0.03 }, scatter: { on: 'ground', count: 10, minGap: 0.3, scale: [0.6, 1.5], seed: 9 } }
+	]
+});
+
 export const MORE = [
 	{ id: 'knight', title: 'Knight', tags: ['character', 'armor', 'medieval'], scene: knight },
 	{ id: 'wizard', title: 'Wizard', tags: ['character', 'magic', 'fantasy'], scene: wizard },
@@ -455,5 +499,9 @@ export const MORE = [
 	{ id: 'table', title: 'Wooden table', tags: ['furniture', 'prop', 'tavern'], scene: table },
 	{ id: 'chair', title: 'Wooden chair', tags: ['furniture', 'prop', 'tavern'], scene: chair },
 	{ id: 'shield', title: 'Round shield', tags: ['weapon', 'prop', 'item'], scene: shield },
-	{ id: 'lantern', title: 'Lantern', tags: ['prop', 'light', 'item'], scene: lantern }
+	{ id: 'lantern', title: 'Lantern', tags: ['prop', 'light', 'item'], scene: lantern },
+	{ id: 'cup', title: 'Cup', tags: ['prop', 'item', 'kitchen'], scene: cup },
+	{ id: 'signpost', title: 'Sign post', tags: ['prop', 'street', 'text'], scene: signpost },
+	{ id: 'flagpole', title: 'Flag pole', tags: ['prop', 'cloth', 'environment'], scene: flagpole },
+	{ id: 'meadow', title: 'Meadow tile', tags: ['nature', 'environment', 'terrain'], scene: meadow }
 ];

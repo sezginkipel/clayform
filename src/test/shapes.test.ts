@@ -5,6 +5,7 @@ import { buildScene } from '../core/build.js';
 import { FORMAT, parseScene, type Shape } from '../core/schema.js';
 import { shapeBounds, shapeSdf } from '../core/sdf.js';
 import { simplifyBuild } from '../core/simplify.js';
+import { smoothPath } from '../core/shapes2d.js';
 import { critique } from '../critic/critics.js';
 import { exportGlb } from '../export/gltf.js';
 
@@ -29,6 +30,11 @@ describe('lathe', () => {
 		expect(cup(0.2, 0.25, 0)).toBeLessThan(0); // inside the wall
 		expect(cup(0, 0.3, 0)).toBeGreaterThan(0.1); // the hollow middle
 		expect(cup(0, 0, 0)).toBeLessThan(0); // the closed bottom
+	});
+	it('smoothing never folds a profile back, even with uneven spacing', () => {
+		// a short foot, a long shaft, a short cap: uniform Catmull-Rom loops back here and splits the post
+		const out = smoothPath([[0.09, 0], [0.07, 0.1], [0.05, 1.2], [0.06, 1.25], [0.04, 1.32]], false);
+		for (let i = 1; i < out.length; i++) expect(out[i][1]).toBeGreaterThanOrEqual(out[i - 1][1] - 1e-9);
 	});
 	it('smooth runs a curve through the points', () => {
 		const sharp = sdf({ type: 'lathe', profile: [[0.1, 0], [0.3, 0.5], [0.1, 1]] }).f;

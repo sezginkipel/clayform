@@ -21,7 +21,7 @@ layouts and styles get one the first time either format has to change.
 ## How it is enforced
 
 The test suite keeps a frozen copy of everything Clayform shipped when the format was frozen:
-all 43 templates, the README's goblin, the example layout and the example style sheet
+all 43 templates of that release, the README's goblin, the example layout and the example style sheet
 ([`src/test/fixtures/clayform-1.json`](../src/test/fixtures/clayform-1.json)). Every release
 must parse and build each of them. The fixture file is never edited. A new format gets a corpus
 file of its own next to it.

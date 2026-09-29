@@ -10,19 +10,36 @@ import { fbm3 } from './sdf.js';
 
 export type Pt = [number, number];
 
-/** Catmull-Rom through the points, `steps` segments per span; closed curves wrap around. */
+/**
+ * Centripetal Catmull-Rom through the points, `steps` segments per span;
+ * closed curves wrap around. Centripetal spacing never overshoots or loops
+ * back, even when the points are unevenly spaced (a short foot, then a long
+ * shaft), so a smoothed profile never folds over itself.
+ */
 export function smoothPath(pts: Pt[], closed: boolean, steps = 8): Pt[] {
 	const n = pts.length;
 	if (n < 3) return pts;
-	const at = (i: number) => (closed ? pts[((i % n) + n) % n] : pts[Math.max(0, Math.min(n - 1, i))]);
+	const at = (i: number): Pt => {
+		if (closed) return pts[((i % n) + n) % n];
+		if (i < 0) return [2 * pts[0][0] - pts[1][0], 2 * pts[0][1] - pts[1][1]];
+		if (i >= n) return [2 * pts[n - 1][0] - pts[n - 2][0], 2 * pts[n - 1][1] - pts[n - 2][1]];
+		return pts[i];
+	};
+	const knot = (a: Pt, b: Pt) => Math.max(1e-6, Math.sqrt(Math.hypot(b[0] - a[0], b[1] - a[1])));
 	const out: Pt[] = [];
 	const spans = closed ? n : n - 1;
 	for (let i = 0; i < spans; i++) {
 		const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+		const t0 = 0, t1 = t0 + knot(p0, p1), t2 = t1 + knot(p1, p2), t3 = t2 + knot(p2, p3);
 		for (let k = 0; k < steps; k++) {
-			const t = k / steps, t2 = t * t, t3 = t2 * t;
-			const f = (a: number, b: number, c: number, d: number) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
-			out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+			const t = t1 + ((t2 - t1) * k) / steps;
+			const lerp = (a: Pt, b: Pt, ta: number, tb: number): Pt => {
+				const w = (t - ta) / (tb - ta);
+				return [a[0] + (b[0] - a[0]) * w, a[1] + (b[1] - a[1]) * w];
+			};
+			const a1 = lerp(p0, p1, t0, t1), a2 = lerp(p1, p2, t1, t2), a3 = lerp(p2, p3, t2, t3);
+			const b1 = lerp(a1, a2, t0, t2), b2 = lerp(a2, a3, t1, t3);
+			out.push(lerp(b1, b2, t1, t2));
 		}
 	}
 	if (!closed) out.push(pts[n - 1]);

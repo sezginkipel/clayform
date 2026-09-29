@@ -512,3 +512,47 @@ Hand lantern ~0.4 m with a glowing glass core, metal frame and ring handle.
 - parts: `base`, `frame`, `pane`, `glass`, `cap`, `handle`
 - roles: body
 - palette: `metal` #3a3e46, `glass` #ffd98a
+
+## Cup — `cup`
+
+<img src="templates/cup.png" width="192" alt="Cup template, three-quarter view">
+
+A tea cup ~0.2 m: a smooth lathe wall (shell) with a torus handle. Recolour via palette.
+
+- tags: prop, item, kitchen
+- parts: `cup`, `handle`
+- roles: body
+- palette: `glaze` #e8e2d6, `rim` #2f5f9a
+
+## Sign post — `signpost`
+
+<img src="templates/signpost.png" width="192" alt="Sign post template, three-quarter view">
+
+A tavern sign ~1.6 m: turned post (lathe), an extruded board with a chamfer, and block text. Change the word in `word`.
+
+- tags: prop, street, text
+- parts: `post`, `board`, `word`
+- roles: body
+- palette: `wood` #6b4a2b, `post` #5a4030, `paint` #f2d27a
+
+## Flag pole — `flagpole`
+
+<img src="templates/flagpole.png" width="192" alt="Flag pole template, three-quarter view">
+
+A flag ~2.2 m on a pole: the flag is a thin sheet with a wave; stripes via the pattern. Swap colours in the palette.
+
+- tags: prop, cloth, environment
+- parts: `base`, `pole`, `finial`, `flag`
+- roles: body
+- palette: `metal` #8a8f99, `cloth` #c8403a, `stripe` #f3efe6, `stone` #9a948c
+
+## Meadow tile — `meadow`
+
+<img src="templates/meadow.png" width="192" alt="Meadow tile template, three-quarter view">
+
+A 4 × 4 m ground tile: terrain with trees and rocks scattered over it. Change seeds for another layout, counts for density.
+
+- tags: nature, environment, terrain
+- parts: `ground`, `tree`, `rock`
+- roles: body
+- palette: `grass` #6a9a4a, `leaves` #2f7a4b, `rock` #8f8a84, `trunk` #6f4a2e
