@@ -55,3 +55,33 @@ describe('simplification', () => {
 		expect(roomy.simplified!.error).toBeLessThan(d.simplified!.error);
 	});
 });
+
+describe('colour at seams', () => {
+	const pair = (blend: number) =>
+		buildScene({
+			format: FORMAT,
+			name: 'seam',
+			settings: { resolution: 64 },
+			parts: [
+				{ id: 'wall', shape: { type: 'box', size: [1, 1, 0.3] }, position: [0, 0.5, 0], material: { color: '#ffffff' } },
+				{ id: 'door', shape: { type: 'box', size: [0.3, 0.5, 0.1] }, position: [0, 0.3, 0.17], blend, material: { color: '#ff00ff' } }
+			] as never
+		});
+	/** How many vertices on the wall's front face, away from the door, pick up some of the door's colour. */
+	const bleed = (blend: number) => {
+		const b = pair(blend);
+		const m = b.meshes[0];
+		let n = 0;
+		for (let v = 0; v < m.positions.length / 3; v++) {
+			const x = m.positions[v * 3], z = m.positions[v * 3 + 2];
+			const nearDoor = Math.abs(x) < 0.15 + 0.06;
+			if (z > 0.14 && !nearDoor && m.colors[v * 3 + 1] < 0.98) n++;
+		}
+		return n;
+	};
+
+	it('a hard seam keeps each part its own colour, a blended one mixes', () => {
+		expect(bleed(0)).toBe(0);
+		expect(bleed(0.08)).toBeGreaterThan(0);
+	});
+});

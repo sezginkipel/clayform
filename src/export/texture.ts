@@ -14,8 +14,8 @@
  */
 
 import type { Build, MeshData } from '../core/build.js';
-import { colorWeight } from '../core/build.js';
-import { primColor, type Prim } from '../core/compile.js';
+import { colorWeight, mixColors } from '../core/build.js';
+import type { Prim } from '../core/compile.js';
 import type { V3 } from '../core/math.js';
 import { encodePng } from '../render/png.js';
 
@@ -345,15 +345,16 @@ export function bakeAtlas(sources: AtlasSource[], opts: AtlasOptions = {}): Atla
 				let r = at(m.colors, 0, 3), g = at(m.colors, 1, 3), bl = at(m.colors, 2, 3);
 				if (b && cand.length) {
 					const p: V3 = [at(m.positions, 0, 3) - b.offset[0], at(m.positions, 1, 3) - b.offset[1], at(m.positions, 2, 3) - b.offset[2]];
-					let tw = 0, sr = 0, sg = 0, sb = 0;
+					const ids: number[] = [], ws: number[] = [];
+					let dom = -1;
 					for (const pr of cand) {
 						const wt = colorWeight(pr, p[0], p[1], p[2], b.cell);
 						if (wt < 0) continue;
-						const col = primColor(pr, p);
-						sr += col[0] * wt; sg += col[1] * wt; sb += col[2] * wt;
-						tw += wt;
+						ids.push(pr.index);
+						ws.push(wt);
+						if (dom < 0 || wt > ws[dom]) dom = ws.length - 1;
 					}
-					if (tw > 0) { r = sr / tw; g = sg / tw; bl = sb / tw; }
+					if (ids.length) [r, g, bl] = mixColors(b.compiled.prims, ids, ws, dom, p);
 				}
 				const ao = at(m.ao, 0, 1);
 				let k = bakeAo ? ao : 1;

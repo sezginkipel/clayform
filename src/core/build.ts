@@ -263,6 +263,25 @@ export interface VertexAttrs {
 	weights: Float32Array;
 }
 
+/**
+ * The surface color at a point from weighted parts. Two parts' colors mix only
+ * where their seam is smooth (one of them has a blend radius): a hard seam
+ * keeps a crisp line, so paint does not bleed from a door onto the wall and
+ * parts need not be separate just to keep their colors apart.
+ */
+export function mixColors(prims: Prim[], ids: ArrayLike<number>, w: ArrayLike<number>, dominant: number, p: V3): [number, number, number] {
+	const dom = prims[ids[dominant]];
+	let tw = 0, r = 0, g = 0, b = 0;
+	for (let j = 0; j < ids.length; j++) {
+		const pr = prims[ids[j]];
+		if (j !== dominant && Math.max(pr.k, dom.k) <= 0) continue;
+		const col = primColor(pr, p);
+		r += col[0] * w[j]; g += col[1] * w[j]; b += col[2] * w[j];
+		tw += w[j];
+	}
+	return [r / tw, g / tw, b / tw];
+}
+
 /** How much a part colors the surface at a point (inverse square distance); -1 when it never does. */
 export function colorWeight(pr: Prim, x: number, y: number, z: number, cell: number): number {
 	if (pr.op === 'intersect') return -1;
@@ -347,16 +366,11 @@ function computeAttributes(
 			w.push(1);
 			ids.push(best);
 		}
-		// color: weighted blend; dominant prim: max weight
-		let tw = 0, r = 0, g = 0, b = 0, bi = 0;
-		for (let j = 0; j < ids.length; j++) {
-			const pr = c.prims[ids[j]];
-			const col = primColor(pr, [x, y, z]);
-			r += col[0] * w[j]; g += col[1] * w[j]; b += col[2] * w[j];
-			tw += w[j];
-			if (w[j] > w[bi]) bi = j;
-		}
-		colors[v * 3] = r / tw; colors[v * 3 + 1] = g / tw; colors[v * 3 + 2] = b / tw;
+		// color: the dominant part's, mixed only with parts it blends with; dominant prim: max weight
+		let bi = 0;
+		for (let j = 0; j < ids.length; j++) if (w[j] > w[bi]) bi = j;
+		const col = mixColors(c.prims, ids, w, bi, [x, y, z]);
+		colors[v * 3] = col[0]; colors[v * 3 + 1] = col[1]; colors[v * 3 + 2] = col[2];
 		vertPrim[v] = ids[bi];
 
 		// skin: top 4 among parts whose surface is really here — within their blend

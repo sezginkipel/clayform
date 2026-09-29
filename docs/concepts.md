@@ -49,6 +49,9 @@ All non-separate parts fuse into one smooth body (a signed distance field). **Th
 `parts` matters.** Each part combines with everything listed *before* it:
 
 - `op: "add"` (default) with `blend` = smooth-merge radius in meters (0 = a hard seam).
+  Colors follow the seam: across a hard seam each part keeps its own color with a crisp line,
+  so a painted door or a company stripe can stay fused to the body instead of being `separate`;
+  across a blended seam the colors blend too.
 - `op: "carve"` cuts itself out of the parts listed before it. Parts listed after it are not cut.
   To hollow a mushroom cap without cutting its stem, list the stem after the carve.
 - `op: "intersect"` keeps only the overlap. The barrel template trims an ellipsoid flat this way.
