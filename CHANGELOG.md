@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.9.0 — 2026-09-29
+
+Part of the 1.0 work: the format is frozen, the tools can be hosted, and the docs have a site.
+
+- **`clayform/1` is frozen.** Valid documents stay valid and build the same model in every later
+  version. New optional fields can still be added; anything else bumps the format and ships a
+  migration. `parseScene` walks old files up the migration chain and says what changed, a file
+  from a newer Clayform is refused with a way forward, and `clayform migrate` writes the upgrade
+  to disk. A frozen corpus of every template, the README goblin, the example layout and style
+  must parse and build in every release. See docs/format.md. (#19)
+- **MCP over HTTP.** `clayform serve` hosts the tools over streamable HTTP. Each session gets its
+  own workspace folder, removed when the session ends or goes idle, and every path a tool is
+  given (exports, imports, reference images, mesh sources, style sheets, layout scene files) must
+  stay inside it, including inside build workers. A bearer token is required off loopback, and
+  loopback checks the Host header. (#21)
+- **Documentation site.** `site/` builds the docs from `docs/*.md` with SvelteKit for Cloudflare:
+  the real renders, a contact sheet of every template, and a mark on each example the test suite
+  checks. The build fails on any broken link or anchor, and CI runs it. (#20, not deployed yet)
+- An edit whose scene no longer builds is now taken back instead of saved.
+
 ## 0.8.0 — 2026-09-29
 
 - **Planted feet.** Walks and runs move each foot along the ground while it is down and swing
