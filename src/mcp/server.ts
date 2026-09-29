@@ -123,6 +123,10 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 			lods: z.array(z.number().gt(0).lt(1)).max(4).optional().describe('extra levels of detail as fractions of the triangle count, e.g. [0.5, 0.2] → <name>_LOD1, _LOD2'),
 			collision: z.enum(['none', 'parts', 'hull']).optional().describe('convex collision shapes: one per part (parts, a compound collider), one for the whole model (hull)'),
 			engine: z.enum(['godot', 'unreal', 'unity', 'plain']).optional().describe('name collision nodes the way that engine picks them up (godot: -convcolonly, unreal: UCX_, unity: _collider)'),
+			skeleton: z
+				.enum(['parts', 'humanoid', 'mixamo', 'unreal'])
+				.optional()
+				.describe('bone names: one per part (default), or the standard humanoid set so Unity Humanoid, Mixamo or Unreal retarget clips onto the character (needs a body, head, two arms, two legs or a robe to the ground)'),
 			texture: z.number().int().min(64).max(8192).optional().describe('bake colors into a texture of this many pixels (e.g. 1024) with UVs, for engines whose default material ignores vertex colors'),
 			shading: z.enum(['smooth', 'flat', 'toon']).optional().describe('smooth (default) · flat: faceted low-poly normals · toon: light baked in bands, unlit material'),
 			bands: z.number().int().min(2).max(8).optional().describe('light steps for toon shading (default 3)'),

@@ -13,6 +13,7 @@
  * an inverted-hull rim.
  */
 
+import { boneName, exportLocals, humanoidSkeleton, partsSkeleton, type ExportSkeleton, type SkeletonNaming } from '../anim/humanoid.js';
 import type { Build, MeshData } from '../core/build.js';
 import { m4Compose, m4Invert, qIdentity, srgbToLinear, type V3 } from '../core/math.js';
 import { buildRig, sampleClip, type Rig, type SampledClip } from '../anim/rig.js';
@@ -41,6 +42,8 @@ export interface GlbOptions {
 	bands?: number;
 	/** inverted-hull outline this many meters wide (toon look); 0 = none */
 	outline?: number;
+	/** bone names: one per part (default), or the standard humanoid set for retargeting (Unity Humanoid, Mixamo, Unreal) */
+	skeleton?: SkeletonNaming;
 	/** a shared atlas baked from `glbMeshes` of several builds (kits); `first` is this build's first mesh in it */
 	atlas?: { atlas: Atlas; first: number; uri?: string };
 }
@@ -130,7 +133,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	const prims = b.compiled.prims;
 	const bakeAo = opts.bakeAo ?? true;
 	const clipDefs = (scene.clips ?? []).filter((c) => !opts.clips || opts.clips.includes(c.id));
-	const wantRig = scene.settings?.rig !== 'none' && (opts.rig || clipDefs.length > 0);
+	const wantRig = scene.settings?.rig !== 'none' && (opts.rig || clipDefs.length > 0 || (!!opts.skeleton && opts.skeleton !== 'parts'));
 	const rig: Rig | null = wantRig ? buildRig(b) : null;
 	const w = new BinWriter();
 	const shading = opts.shading ?? 'smooth';
@@ -268,17 +271,25 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 	let skinIndex = -1;
 	let ibmAcc = -1;
 	const jointNode: number[] = [];
-	if (rig) {
-		rig.joints.forEach((jt) => {
-			nodes.push({ name: exportName(jt.name), translation: jt.local });
+	const boneNaming = opts.skeleton ?? 'parts';
+	const skel: ExportSkeleton | null = rig ? (boneNaming === 'parts' ? partsSkeleton(rig) : humanoidSkeleton(b, rig)) : null;
+	if (skel && boneNaming !== 'parts' && skel.missing.length)
+		throw new Error(`a ${boneNaming} skeleton needs a body with a head, two arms, and two legs or a robe to the ground; this model has no place for ${skel.missing.join(', ')} (export with skeleton "parts" instead)`);
+	const locals = skel ? exportLocals(skel) : [];
+	if (rig && skel) {
+		// standard names first, so a part called "Head" does not take the bone's name
+		for (const jt of skel.joints) if (jt.bone) taken.add(boneName(jt.bone, boneNaming));
+		skel.joints.forEach((jt, i) => {
+			const name = jt.bone ? boneName(jt.bone, boneNaming) : jt.joint >= 0 ? exportName(rig.joints[jt.joint].name) : safeName(jt.name ?? 'bone');
+			nodes.push({ name, translation: locals[i] });
 			jointNode.push(nodes.length - 1);
 		});
-		rig.joints.forEach((jt, i) => {
-			const kids = rig.joints.map((k, ki) => (k.parent === i ? jointNode[ki] : -1)).filter((x) => x >= 0);
+		skel.joints.forEach((_, i) => {
+			const kids = skel.joints.map((k, ki) => (k.parent === i ? jointNode[ki] : -1)).filter((x) => x >= 0);
 			if (kids.length) nodes[jointNode[i]].children = kids;
 		});
-		const ibm = new Float32Array(rig.joints.length * 16);
-		rig.joints.forEach((jt, i) => ibm.set(m4Invert(m4Compose(jt.rest, qIdentity())), i * 16));
+		const ibm = new Float32Array(skel.joints.length * 16);
+		skel.joints.forEach((jt, i) => ibm.set(m4Invert(m4Compose(jt.rest, qIdentity())), i * 16));
 		ibmAcc = w.accessor(ibm, 'MAT4', FLOAT);
 		skinIndex = 0;
 		sceneNodes.push(jointNode[0]);
@@ -367,7 +378,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 				samplers.push({ input, output: w.accessor(rot, 'VEC4', FLOAT), interpolation: 'LINEAR' });
 				channels.push({ sampler: samplers.length - 1, target: { node, path: 'rotation' } });
 				if (ch.off.some((o) => o[0] || o[1] || o[2])) {
-					const base = rig.joints[ch.joint].local;
+					const base = locals[ch.joint];
 					const tr = new Float32Array(ch.off.length * 3);
 					ch.off.forEach((o, i) => tr.set([base[0] + o[0], base[1] + o[1], base[2] + o[2]] as V3, i * 3));
 					samplers.push({ input, output: w.accessor(tr, 'VEC3', FLOAT), interpolation: 'LINEAR' });
@@ -429,7 +440,7 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			primitives: primitiveCount,
 			materials: materials.length,
 			triangles,
-			joints: rig?.joints.length ?? 0,
+			joints: skel?.joints.length ?? 0,
 			animations: animations.length,
 			bytes: glb.byteLength,
 			lods: levels.length,

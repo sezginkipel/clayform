@@ -3,6 +3,7 @@
  * Each returns MCP content blocks: text for facts, PNG images for eyes.
  */
 
+import type { SkeletonNaming } from '../anim/humanoid.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { buildRig, critiqueClip, sampleClip } from '../anim/rig.js';
@@ -309,7 +310,7 @@ export class Tools {
 		});
 	}
 
-	exportScene(args: { scene: string; format?: 'glb' | 'obj' | 'json' | 'flipbook'; path?: string; triangles?: number; effect?: string; bakeAo?: boolean; lods?: number[]; collision?: 'none' | 'parts' | 'hull'; engine?: 'godot' | 'unreal' | 'unity' | 'plain'; texture?: number; shading?: Shading; bands?: number; outline?: number }): Promise<Result> {
+	exportScene(args: { scene: string; format?: 'glb' | 'obj' | 'json' | 'flipbook'; path?: string; triangles?: number; effect?: string; bakeAo?: boolean; lods?: number[]; collision?: 'none' | 'parts' | 'hull'; engine?: 'godot' | 'unreal' | 'unity' | 'plain'; texture?: number; shading?: Shading; bands?: number; outline?: number; skeleton?: SkeletonNaming }): Promise<Result> {
 		return wrap(async () => {
 			const scene = this.ws.get(args.scene);
 			const fmt = args.format ?? 'glb';
@@ -337,7 +338,12 @@ export class Tools {
 			}
 			const lods = [];
 			for (const f of args.lods ?? []) lods.push(await simplifyBuild(full, { triangles: Math.max(100, Math.round(b.stats.triangles * f)) }));
-			const r = exportGlb(b, { bakeAo: args.bakeAo, lods, collision: args.collision, naming: args.engine, texture: args.texture, shading: args.shading, bands: args.bands, outline: args.outline });
+			let r;
+			try {
+				r = exportGlb(b, { bakeAo: args.bakeAo, lods, collision: args.collision, naming: args.engine, texture: args.texture, shading: args.shading, bands: args.bands, outline: args.outline, skeleton: args.skeleton });
+			} catch (e) {
+				return fail((e as Error).message);
+			}
 			writeFileSync(out, r.glb);
 			const s = r.stats;
 			const tex = r.atlas ? ` · ${r.atlas.size}px texture (${r.atlas.charts} charts, ${Math.round(r.atlas.coverage * 100)}% used, ${Math.round(r.atlas.texelsPerMeter)} texels/m)` : '';

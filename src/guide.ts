@@ -20,7 +20,8 @@ rigs it and exports it. You never place vertices.
    names the parts that are too wide or narrow. Fix the biggest difference, compare again.
 8. \`export\` (glb for engines; \`triangles\` sets a budget, default keeps shape within 0.4%;
    \`texture: 1024\` bakes colors into a texture for engines that ignore vertex colors;
-   \`shading: "toon"\` + \`outline: 0.01\` for a cel look; \`export_kit\` for a set sharing one atlas).
+   \`shading: "toon"\` + \`outline: 0.01\` for a cel look; \`export_kit\` for a set sharing one atlas;
+   \`skeleton: "humanoid" | "mixamo" | "unreal"\` names a character's bones for retargeting).
 
 ## Conventions
 Meters. +Y up. The model faces **+Z** (front). The model's own **left is +X**.

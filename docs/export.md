@@ -13,6 +13,42 @@
   at the clip's fps with linear interpolation.
 - **Names**: nodes use part ids. Mirror twins are `<id>_mirror` (engines treat `.` specially in
   animation paths), and skinned mesh nodes end in `_mesh` so they never collide with a joint name.
+- **Humanoid bone names**: `skeleton: "humanoid"` (or `"mixamo"`, `"unreal"`; `--skeleton` on the
+  command line) names the joints the way retargeters look for them, so clips made for other
+  characters can play on this one. See [below](#humanoid-skeletons).
+
+## Humanoid skeletons
+
+By default each joint is named after its part. Unity's Humanoid avatar, Mixamo and Unreal's IK
+retargeter instead look for a fixed set of bones. `skeleton` finds them among the parts:
+
+| bone | found as | added when missing |
+|---|---|---|
+| Hips | the body part under `root` | never; without a body there is no humanoid |
+| Spine | | halfway from the hips to the shoulders; arms and head hang from it |
+| Neck, Head, eyes | `neck`, `head` and `eye` roles | Neck and eyes are optional |
+| UpperArm, LowerArm, Hand | the top `arm`, an `arm` under it, the part at its end | the elbow halfway down, the hand at the tip |
+| UpperLeg, LowerLeg, Foot | the top `leg`, a `leg` under it, the flat part it stands on | the knee halfway down |
+
+Left is the character's left, +X. The names are Unity's (`LeftUpperArm`), Mixamo's
+(`mixamorig:LeftArm`, `mixamorig:LeftForeArm`, `mixamorig:LeftUpLeg`) or the Unreal mannequin's
+(`upperarm_l`, `lowerarm_l`, `thigh_l`, `pelvis`, `spine_01`). Parts that play no standard role
+(a sword, a hat) keep their names.
+
+The added bones have no vertices bound to them and sit on the chain between the parts, so the
+model and its own clips move exactly as before. The test suite checks that every joint rests where
+the part-named export puts it. This matters for what a retargeted clip can do: a one-piece arm
+stays rigid, and a retargeted elbow bend moves only the hand. Parts are rigid; for bending limbs,
+model the arm in two parts (`arm` under `arm`). A robe that reaches the ground with no legs under it
+gets leg bones where the legs would be. They are bound to nothing, so a retargeted walk moves
+the arms and head and the robe stays still.
+
+The rest pose is the model as built, with arms hanging, not a T-pose. Unity maps it with
+**Configure → Pose → Enforce T-Pose**; Mixamo and Unreal accept an A-pose. A model with no body,
+head, two arms and two legs (or a robe) is refused, and the message names the bones it could not
+place. The six humanoid templates (biped, knight, robot, teddy, wizard, snowman) all map. The
+names have been checked against each tool's documentation, but not yet imported into Unity,
+Mixamo or Unreal.
 
 The test suite runs every export kind through the [Khronos glTF validator](https://github.com/KhronosGroup/glTF-Validator)
 and requires zero errors. The skinned walk has also been checked playing in three.js. Other engines

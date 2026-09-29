@@ -158,7 +158,14 @@ async function main() {
 			else {
 				const lods = [];
 				for (const f of (flags.get('lods') ?? '').split(',').filter(Boolean).map(Number)) lods.push(await simplifyBuild(full, { triangles: Math.max(100, Math.round(b.stats.triangles * f)) }));
-				const r = exportGlb(b, { lods, texture: flags.has('texture') ? Number(flags.get('texture')) : undefined, ...lookFlags() });
+				const skeleton = flags.get('skeleton');
+				if (skeleton && !['parts', 'humanoid', 'mixamo', 'unreal'].includes(skeleton)) die('--skeleton is parts, humanoid, mixamo or unreal');
+				let r;
+				try {
+					r = exportGlb(b, { lods, texture: flags.has('texture') ? Number(flags.get('texture')) : undefined, skeleton: skeleton as 'parts' | undefined, ...lookFlags() });
+				} catch (e) {
+					die((e as Error).message);
+				}
 				writeFileSync(out, r.glb);
 				if (r.atlas) console.log(`texture ${r.atlas.size}px · ${r.atlas.charts} charts · ${Math.round(r.atlas.coverage * 100)}% used · ${Math.round(r.atlas.texelsPerMeter)} texels per meter`);
 			}
@@ -318,7 +325,7 @@ async function main() {
   clayform render <scene|template> [-o out.png] [--views front,left] [--mode parts] [--size 384]
   clayform inspect <scene|template>     part summary + critics (exit 2 on errors)
   clayform export <scene|template> [-o out.glb|.obj] [--triangles N] [--lods 0.5,0.2] [--collision parts|hull] [--engine godot|unreal|unity]
-                 [--texture 1024] [--shading flat|toon] [--bands 3] [--outline 0.01]
+                 [--texture 1024] [--shading flat|toon] [--bands 3] [--outline 0.01] [--skeleton humanoid|mixamo|unreal]
   clayform kit <scene|template> [more …] [-o dir] [--atlas 2048] [--embed]   one shared texture atlas
   clayform motion <scene> [clip] [-o out.png] [--view left]
   clayform effect <scene> [effect] [-o out.png]
