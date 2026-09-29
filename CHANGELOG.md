@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.13.0 — 2026-09-29
+
+Characters that act: standard bones for retargeting, reach and look, faces that blink and talk, cloth that moves.
+
+- **Humanoid bone names** (#47): `skeleton: "humanoid" | "mixamo" | "unreal"` on export (and
+  `--skeleton`) names a character's joints the way Unity Humanoid, Mixamo and Unreal's retargeter
+  look for them. Parts are found by role and side. A spine, a forearm on a one-piece arm, a shin on
+  a one-piece leg, and legs under a robe are added as bones with nothing bound to them, so the model
+  moves as before. Rest positions are checked against the part-named export. Six templates map.
+  Models that are not humanoid are refused with the bones that could not be placed.
+- **Reach, point, pick up, look** (#48): new clip types. `at` is a world point or a part. An arm
+  in two parts bends at the elbow (3D two-bone IK) and touches the point with its fingertip; a
+  one-piece arm aims at it. `pickup` bends at the hip joints just far enough to reach the ground,
+  feet planted. `look` turns the head and eyes, and `lookAt` holds a gaze through any clip.
+- Planted feet now stay flat under any lean or turn above them, not only the leg's own swing.
+- **Expressions** (#46): `expressions` are faces written as part changes and sculpts, with presets
+  `blink`, `smile`, `frown`, `open_mouth` and `surprise`. They export as glTF morph targets
+  (`extras.targetNames`). New clips `blink`, `talk` and `expression`, and `face` on any clip,
+  animate their weights, and motion strips show them. Vertices ride with their part and settle onto
+  the new surface, so untouched parts stay still and a mouth's color follows its corners. The
+  critic warns when a blink closes eyes that are blended into the face.
+- **`curve`** bends any part along its local X (a smile, an arched brow, a banana).
+- **Cloth** (#49): `cloth: { pin?, wind?, amplitude?, wavelength? }` on a sheet (or any separate
+  part) ripples it in every clip as a wave running from the pinned edge. It exports as four morph
+  targets whose weights stay between 0 and 1, and loops fit whole waves. The new `wind` clip plays
+  only that, and the flagpole template now uses it. Capes and cloth also swing behind the body on
+  a spring. Blends carry face and cloth weights across.
+
 ## 0.12.0 — 2026-09-29
 
 Materials and detail: surfaces an agent names instead of paints, and relief that costs no triangles.

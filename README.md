@@ -185,23 +185,24 @@ or open a pull request with a small JSON file ([the rules](docs/showcase.md)).
 
 ## Limits (today)
 
-- The look is **stylized**: smooth, clay-like, vertex-colored. There are no UV textures or
-  photoreal materials. Hard mechanical edges are rounded at the cell size, so raise
-  `resolution` for crisp props.
+- The look is **stylized**: smooth and clay-like, colored per vertex or in a baked texture.
+  Material presets add normal and roughness maps, but nothing is photoreal. Hard mechanical
+  edges are rounded at the cell size unless `edges` is `sharp`, so raise `resolution` for crisp props.
 - It does **not** generate organic detail from a text or image model yet. You can import a
   mesh made elsewhere (`mesh` shape, GLB or OBJ) and keep working on it. Built-in hand-off to
   an image-to-3D model is on the roadmap.
-- Animation is procedural plus keyframes, with no physics, IK or retargeting. Motion critics
-  check ground contact and parts passing through each other.
+- Animation is procedural plus keyframes on **rigid parts**: feet and arms use IK, characters
+  can export humanoid bone names for retargeting, faces are morph targets and cloth ripples as a
+  baked wave. Limbs bend only where parts meet, and there is no physics or cloth simulation.
+  Motion critics check ground contact, sliding feet and parts passing through each other.
 - The renderer is for judging shape and color. It is not a final-quality renderer.
 - Nobody has run the bench yet ([`bench/`](bench/README.md)), so this README makes no
   quality comparison.
 
 ## Roadmap
 
-Next up: image-to-3D hand-off (v0.4), readability critics for game cameras
-(v0.5), style-consistent asset packs for engines (v0.6), textures (v0.7), IK and foot planting
-(v0.8), and a published bench (v0.9). See
+Next up: beauty renders, turntables and physics settling for layouts (v0.14), image-to-3D
+hand-off (v0.4), and a published bench (v0.9). See
 [ROADMAP.md](ROADMAP.md), [milestones](https://github.com/sezginkipel/clayform/milestones) and the
 [changelog](CHANGELOG.md).
 
