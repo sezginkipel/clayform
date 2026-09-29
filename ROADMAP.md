@@ -69,10 +69,10 @@ A consistent set of assets that imports into Godot, Unity or Unreal without hand
 
 ## v1.0 — Stable
 
-- The `clayform/1` scene format frozen, with migrations for anything after it
+- ✅ The `clayform/1` scene format frozen, with migrations for anything after it (0.9.0)
 - Published bench results, re-run every release
-- An npm release and a documentation site
-- A remote MCP server (HTTP) for hosted use
+- An npm release and a documentation site (npm is published; the site is built in `site/`, not deployed yet)
+- ✅ A remote MCP server (HTTP) for hosted use (0.9.0)
 - Import guides for Godot, Unity and Unreal, each tested in the engine
 
 ## Not planned
