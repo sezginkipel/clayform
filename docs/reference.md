@@ -41,7 +41,7 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 | `id` **required** | string | unique snake_case id; a mirror twin is id + ".m" (exported to glTF as id_mirror) |
 | `role` | string | semantic role used by animation and critics: body, head, leg, arm, tail, wing, wheel, rotor, eye, ear, horn, prop … |
 | `label` | string | free text for people |
-| `shape` **required** | one of `sphere`, `ellipsoid`, `box`, `capsule`, `cylinder`, `cone`, `torus`, `prism`, `mesh`, `lathe`, `extrude`, `text`, `terrain`, `tube` | see Shapes |
+| `shape` **required** | one of `sphere`, `ellipsoid`, `box`, `capsule`, `cylinder`, `cone`, `torus`, `prism`, `mesh`, `sheet`, `lathe`, `extrude`, `text`, `terrain`, `tube` | see Shapes |
 | `position` | [number, number, number] | relative to parent; with attach it is an extra world offset |
 | `rotation` | [number, number, number] | Euler degrees XYZ |
 | `scale` | number (>0) or [number (>0), number (>0), number (>0)] | uniform or per local axis; the easy way to stretch a template part |
@@ -78,7 +78,9 @@ Conventions: meters, +Y up, the model faces +Z, the model's left is +X, rotation
 
 **`prism`** — `size`: [number (>0), number (>0), number (>0)] (triangular cross-section in XY (peak on top), extruded along Z — roofs, blades); `rounding`?: number (≥0)
 
-**`mesh`** — `src`: string (path to a .glb or .obj (absolute, or relative to where the server runs / the workspace)); `size`?: number (>0) (scale so the longest axis is this many meters; default keeps the file's units); `resolution`?: integer (≥16, ≤160) (distance grid cells on the longest axis (default 64))
+**`mesh`** — `src`: string (path to a .glb or .obj (absolute, or relative to where the server runs / the workspace)); `size`?: number (>0) (scale so the longest axis is this many meters; default keeps the file's units); `resolution`?: integer (≥16, ≤160) (distance grid cells on the longest axis (default 64)); `keep`?: boolean (keep the file's own triangles (fine and sharp detail survives) instead of rebuilding it from the distance grid; it is then always a separate mesh)
+
+**`sheet`** — `size`: [number (>0), number (>0)] (width (local X) and height (local Y); the sheet faces +Z); `thickness`?: number (>0) (meters (default 0.004): leaves, paper, cloth, flags, sails, cards); `bend`?: number (≥-340, ≤340) (total curl in degrees along its height, toward +Z (negative: toward -Z)); `wave`?: object (ripples across its width, like a flag or a curtain)
 
 **`lathe`** — `profile`: [number (≥0), number][] ([radius, height] points from bottom to top, spun around local Y — vases, bottles, columns, lamp shades, chess pieces); `sides`?: integer (≥3, ≤16) (faceted around Y (6 = hexagonal); default round); `smooth`?: boolean (run a smooth curve through the points instead of straight segments); `shell`?: number (>0) (wall thickness: an open-topped wall along the profile instead of a solid — cups, bowls, vases, lamp shades, bells)
 

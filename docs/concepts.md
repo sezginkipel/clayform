@@ -137,6 +137,24 @@ things attach to it, it blends and carves, it mirrors, and the critics check it.
 - Geometry only: the color comes from `material`, and textures and vertex colors in the file are ignored.
 - An open mesh (with holes) is kept as a thin shell, and a `placement` warning says so.
 - Compressed glTF (Draco, meshopt, quantization) is refused with a message. Export without compression.
+- `keep: true` keeps the file's own triangles instead of rebuilding them from the grid, so fine and
+  sharp detail survives (the example crate is 12 triangles kept, about 110,000 rebuilt). It still
+  attaches, anchors, colors and animates like a part, and it is always its own mesh: it does not
+  blend or carve into the body.
+
+## Sheets
+
+Leaves, flags, sails, paper, cloth and playing cards are thinner than any grid can hold, so a
+`sheet` is meshed directly: a front, a back `thickness` apart (default 4 mm) and a thin rim. It
+faces +Z, `bend` curls it along its height (degrees, toward +Z), and `wave` ripples it across its
+width. Sheets are always their own meshes.
+
+<!-- verify: part tree -->
+```json
+{ "id": "leaf", "shape": { "type": "sheet", "size": [0.12, 0.2], "bend": 40 },
+  "scatter": { "on": "canopy", "count": 30, "where": "all", "embed": 0, "seed": 4 },
+  "material": { "color": "#4f9a3a" } }
+```
 
 ## Surface: materials, patterns, detail
 

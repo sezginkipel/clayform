@@ -251,6 +251,7 @@ export function compile(scene: Scene): Compiled {
 		}
 		const b = shapeBounds(p.shape);
 		const scl = scaleOf(p);
+		const direct = p.shape.type === 'sheet' || (p.shape.type === 'mesh' && !!p.shape.keep);
 		const m = p.material ?? {};
 		return {
 			index: -1,
@@ -281,9 +282,10 @@ export function compile(scene: Scene): Compiled {
 				? { kind: p.pattern.kind, color: resolveColor(scene, p.pattern.color), scale: p.pattern.scale ?? 0.08, amount: p.pattern.amount ?? 1, axis: p.pattern.axis }
 				: null,
 			detail: p.detail ? { amount: p.detail.amount, scale: p.detail.scale } : null,
-			separate: !!p.separate,
+			// sheets and kept meshes are meshed directly, never through the body's grid
+			separate: !!p.separate || direct,
 			hidden: !!p.hidden,
-			inBody: !p.separate && !p.hidden,
+			inBody: !p.separate && !direct && !p.hidden,
 			pivot: [0, 0, 0],
 			parent: -1,
 			attachPoint: null,

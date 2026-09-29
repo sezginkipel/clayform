@@ -272,6 +272,17 @@ const cache = new Map<string, MeshField>();
  * Load + normalize + bake. `size` scales the longest axis to that many
  * meters; the mesh is centered on its bounding box.
  */
+/** The file's triangles in the same local frame the distance field uses (centred, scaled to `size`). */
+export function meshTriangles(src: string, size: number | undefined): { positions: Float32Array; indices: Uint32Array } {
+	const m = loadTriMesh(src);
+	const ext = [m.max[0] - m.min[0], m.max[1] - m.min[1], m.max[2] - m.min[2]];
+	const k = size ? size / Math.max(...ext, 1e-9) : 1;
+	const c = [(m.min[0] + m.max[0]) / 2, (m.min[1] + m.max[1]) / 2, (m.min[2] + m.max[2]) / 2];
+	const P = new Float32Array(m.positions.length);
+	for (let i = 0; i < P.length; i += 3) for (let a = 0; a < 3; a++) P[i + a] = (m.positions[i + a] - c[a]) * k;
+	return { positions: P, indices: m.indices };
+}
+
 export function meshField(src: string, size: number | undefined, res: number): MeshField {
 	const file = resolveAsset(src);
 	const key = `${file}|${existsSync(file) ? statSync(file).mtimeMs : 0}|${size ?? ''}|${res}`;

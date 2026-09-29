@@ -6,6 +6,7 @@
 
 import { add, clamp, type V3 } from './math.js';
 import { bodyBase, bodyField, compile, partDist, primColor, primDist, worldAabb, type Compiled, type Prim } from './compile.js';
+import { directMesh, geometricNormals } from './direct.js';
 import { surfaceNets, type Eval, type MeshField } from './mesher.js';
 import { applyStyle } from './style.js';
 import type { Scene } from './schema.js';
@@ -213,6 +214,15 @@ export function finishBuild(ctx: BuildContext, body: MeshData | null, samples: n
 			const n = Math.hypot(gx, gy, gz) || 1;
 			return [gx / n, gy / n, gz / n];
 		};
+		const direct = directMesh(pr, cell);
+		if (direct) {
+			// sheets and kept meshes: their own triangles, normals from those triangles
+			const at = computeAttributes(direct.positions, 0, direct.positions.length / 3, sc, c, [pr], pr.index, () => null, f, wantAo, e);
+			at.normals = geometricNormals(direct.positions, direct.indices);
+			const m = assemble(pr.id, direct.positions, direct.indices, at, pr.index);
+			meshes.push(direct.sharp ? splitSharp(m, 40) : m);
+			continue;
+		}
 		const raw = surfaceNets(field, sc, sharp ? { normal: gradSep } : {});
 		samples += raw.samples;
 		const m = assemble(pr.id, raw.positions, raw.indices, computeAttributes(raw.positions, 0, raw.positions.length / 3, sc, c, [pr], pr.index, () => null, f, wantAo, e), pr.index);

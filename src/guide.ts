@@ -43,7 +43,9 @@ Rotations are Euler degrees [x, y, z]. Ground is y=0; with \`settings.ground: "a
   lathe{profile[[r, y]…], smooth?, shell?, sides?} (spun around Y: vases, columns, bottles; shell =
   open-topped wall: cups, bowls, lamp shades) · extrude{outline[[x, y]…], depth, rounding?, bevel?,
   taper?, smooth?} (signs, gears, keys, shields) · text{text, height, depth} (block letters) ·
-  terrain{size[w, d], height, roughness?, scale?, seed?} (a ground tile of hills).
+  terrain{size[w, d], height, roughness?, scale?, seed?} (a ground tile of hills) ·
+  sheet{size[w, h], thickness?, bend?, wave?{amplitude, length}} (really thin: leaves, flags, sails,
+  paper, cloth; always its own mesh). mesh{…, keep: true} keeps the file's own triangles.
 - **Placement** — one of:
   - \`attach\`: \`{ to, side, offset?, embed?, align? }\` puts the part on another part's surface.
     \`side\` is a world direction you look from: top, bottom, front(+Z), back, left(+X), right, center.

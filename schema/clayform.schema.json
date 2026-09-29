@@ -512,11 +512,76 @@
                     "type": "integer",
                     "minimum": 16,
                     "maximum": 160
+                  },
+                  "keep": {
+                    "description": "keep the file's own triangles (fine and sharp detail survives) instead of rebuilding it from the distance grid; it is then always a separate mesh",
+                    "type": "boolean"
                   }
                 },
                 "required": [
                   "type",
                   "src"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "sheet"
+                  },
+                  "size": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "width (local X) and height (local Y); the sheet faces +Z"
+                  },
+                  "thickness": {
+                    "description": "meters (default 0.004): leaves, paper, cloth, flags, sails, cards",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "bend": {
+                    "description": "total curl in degrees along its height, toward +Z (negative: toward -Z)",
+                    "type": "number",
+                    "minimum": -340,
+                    "maximum": 340
+                  },
+                  "wave": {
+                    "description": "ripples across its width, like a flag or a curtain",
+                    "type": "object",
+                    "properties": {
+                      "amplitude": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "length": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "amplitude",
+                      "length"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "size"
                 ],
                 "additionalProperties": false
               },

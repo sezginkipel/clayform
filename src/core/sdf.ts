@@ -3,6 +3,7 @@
  * Most formulas follow Inigo Quilez's well-known SDF reference.
  */
 
+import { sheetBounds, sheetDist, sheetSpec } from './direct.js';
 import { extrudeDist, latheOutline, latheWall, sdPolygon, sdPolyline, smoothPath, terrainDist, textDist2, textGrid, type Pt, type TerrainSpec } from './shapes2d.js';
 import type { Shape } from './schema.js';
 import type { V3 } from './math.js';
@@ -207,6 +208,10 @@ export function shapeSdf(s: Shape): LocalSdf {
 			const t = terrainSpec(s);
 			return (x, y, z) => terrainDist(x, y, z, t);
 		}
+		case 'sheet': {
+			const sp = sheetSpec(s);
+			return (x, y, z) => sheetDist(x, y, z, sp);
+		}
 		case 'tube': {
 			const pts = s.points as V3[];
 			const radii = Array.isArray(s.radius) ? s.radius : pts.map(() => s.radius as number);
@@ -268,6 +273,8 @@ export function shapeBounds(s: Shape): { min: V3; max: V3 } {
 			const t = terrainSpec(s);
 			return { min: [-t.width / 2, -t.base, -t.depth / 2], max: [t.width / 2, t.height, t.depth / 2] };
 		}
+		case 'sheet':
+			return sheetBounds(sheetSpec(s));
 		case 'tube': {
 			const radii = Array.isArray(s.radius) ? s.radius : s.points.map(() => s.radius as number);
 			const min: V3 = [Infinity, Infinity, Infinity], max: V3 = [-Infinity, -Infinity, -Infinity];

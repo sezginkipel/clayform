@@ -257,6 +257,7 @@ function shapeText(p: Scene['parts'][number]): string {
 		case 'extrude': return `extrude ${s.outline.length}-pt outline d${f2(s.depth)}`;
 		case 'text': return `text "${s.text}" h${f2(s.height)}`;
 		case 'terrain': return `terrain ${v(s.size)} h${f2(s.height)}`;
+		case 'sheet': return `sheet ${v(s.size)}${s.bend ? ` bent ${f2(s.bend)}°` : ''}${s.wave ? ' waving' : ''}`;
 		case 'mesh': return `mesh ${s.src}${s.size ? ` (${f2(s.size)} m)` : ''}`;
 	}
 }

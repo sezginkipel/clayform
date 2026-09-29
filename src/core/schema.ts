@@ -74,7 +74,15 @@ export const Shape = z.discriminatedUnion('type', [
 		type: z.literal('mesh'),
 		src: z.string().min(1).max(500).describe('path to a .glb or .obj (absolute, or relative to where the server runs / the workspace)'),
 		size: pos.optional().describe('scale so the longest axis is this many meters; default keeps the file\'s units'),
-		resolution: z.number().int().min(16).max(160).optional().describe('distance grid cells on the longest axis (default 64)')
+		resolution: z.number().int().min(16).max(160).optional().describe('distance grid cells on the longest axis (default 64)'),
+		keep: z.boolean().optional().describe('keep the file\'s own triangles (fine and sharp detail survives) instead of rebuilding it from the distance grid; it is then always a separate mesh')
+	}),
+	z.strictObject({
+		type: z.literal('sheet'),
+		size: z.tuple([pos, pos]).describe('width (local X) and height (local Y); the sheet faces +Z'),
+		thickness: pos.optional().describe('meters (default 0.004): leaves, paper, cloth, flags, sails, cards'),
+		bend: num.min(-340).max(340).optional().describe('total curl in degrees along its height, toward +Z (negative: toward -Z)'),
+		wave: z.strictObject({ amplitude: num.min(0), length: pos }).optional().describe('ripples across its width, like a flag or a curtain')
 	}),
 	z.strictObject({
 		type: z.literal('lathe'),
