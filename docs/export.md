@@ -24,12 +24,29 @@ Meshing works at `settings.resolution`, which is dense (surface nets spends as m
 a flat wall as on a nose). Export simplifies with meshoptimizer while keeping color seams,
 normals and material borders:
 
-- Default: remove everything that keeps the shape within **0.4%** of the model size.
-- `triangles: N`: reduce to at most N across all meshes, shared by size.
+- **One error for the whole model.** Every mesh (the body and each `separate` part) is held to the
+  same geometric error, measured against the whole model's size. A small wheel is not kept finer
+  than the body just because it is small, so the triangles go where the shape needs them.
+- **Default:** remove everything that keeps the shape within **0.4%** of the model size.
+- **`triangles: N`:** the shared error is raised until the model fits in N triangles, up to
+  `error` (default 5% of the model size). A budget with room to spare gets a finer model than the
+  default.
+- **Sharp edges simplify too.** Flat faces next to a sharp edge collapse across it when the error
+  allows, so a tilted box or a pyramid reduces to 12 or 6 triangles instead of staying at 90 or
+  180.
+- **Nothing vanishes.** A part the error would prune away entirely (a window, a bolt) is kept as
+  its simplest shape, about 12 triangles, so a budget never deletes it. When the parts need more
+  than the budget, the export says it is over budget instead of dropping them. Colors stay crisp
+  across hard seams, so painted parts can be fused into the body rather than kept separate.
 
-Measured on the templates: the cottage goes from 149,804 to 6,324 triangles by default, and
-the toy car from 147,784 to 3,992 with `triangles: 4000`, with no visible difference in the
-renders.
+Measured on the templates: the cottage goes from 149,804 to 2,116 triangles by default, and the
+toy car from 147,784 to 3,972 with `triangles: 4000`.
+
+Measured on the 146 models of [Cargo Century](https://cargocentury.sadelabs.site), each with its
+own budget and the game's own settings: before this, 85 came out more than 5% over budget and the
+set was 29% over in total; now 34 are and the set is 15% over. Vehicles went from 51 over budget to
+9. The other 25 are houses with 52 to 125 separate parts and a 150-triangle budget, which cannot
+fit without merging parts, and the export says so.
 
 ## Levels of detail and collision
 

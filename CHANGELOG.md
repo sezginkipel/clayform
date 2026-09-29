@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.10.0 — 2026-09-29
+
+Budgets that hold. Everything here came from building the 146 models of Cargo Century with Clayform.
+
+- **One error for the whole model.** Simplification now measures error against the whole model's
+  size and raises one shared error until the budget fits, instead of splitting the budget by raw
+  triangle counts. A budget with room to spare gets a finer model than the default.
+- **Sharp edges simplify.** Flat faces collapse across sharp edges when the error allows, so a
+  tilted box reaches 12 triangles and a pyramid 6 (they used to stay near 90 and 180). Sharp
+  meshes get exact face normals back afterwards. The cottage template now goes from 149,804 to
+  2,116 triangles by default.
+- **Nothing vanishes.** A part the error would prune away (a window, a bolt) is kept as its
+  simplest shape. A budget that cannot be met without dropping parts is reported
+  (`simplified.overBudget`, and a line in the export message).
+- **Crisp colours at hard seams.** Two parts' colours mix only where their seam is blended, so
+  paint does not bleed from a door onto a wall and painted parts no longer need to be `separate`.
+- **`only` on carve and intersect** cuts just the parts it names (and their twins): a window
+  through one wall of two, a roof clipped to its own box.
+- On Cargo Century's 146 models with the game's own budgets: models more than 5% over budget went
+  from 85 to 34 and the set from 29% to 15% over. Vehicles went from 51 over to 9; the other 25
+  are houses with 52 to 125 separate parts and a 150-triangle budget.
+
 ## 0.9.0 — 2026-09-29
 
 Part of the 1.0 work: the format is frozen, the tools can be hosted, and the docs have a site.
