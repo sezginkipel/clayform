@@ -254,13 +254,23 @@ async function main() {
 			const target = pos[0];
 			if (!target) die('usage: clayform view <scene.clay.json | template | model.glb> [--port 5231] [--watch]');
 			const isGlb = target!.toLowerCase().endsWith('.glb');
+			let lastDiag: { ok: boolean; triangles: number; issues: string[]; sockets: string[] } | undefined;
 			const make = async () => {
 				if (isGlb) return readGlb(target!);
 				const scene = loadSceneSoft(target!);
-				const b = await simplifyBuild(await buildSceneAsync(scene), flags.get('triangles') ? { triangles: Number(flags.get('triangles')) } : {});
-				return exportGlb(b).glb;
+				const full = await buildSceneAsync(scene);
+				const rep = critique(full);
+				const b = await simplifyBuild(full, flags.get('triangles') ? { triangles: Number(flags.get('triangles')) } : {});
+				lastDiag = {
+					ok: rep.ok,
+					triangles: b.stats.triangles,
+					issues: rep.issues.filter((i) => i.severity !== 'info').map((i) => `${i.severity.toUpperCase()} [${i.code}] ${i.message}`),
+					sockets: b.compiled.prims.map((p) => p.part.socket).filter(Boolean) as string[]
+				};
+				return exportGlb(b, { naming: (flags.get('engine') as any) ?? 'plain', collision: 'parts' }).glb;
 			};
-			const model = { glb: await make(), version: 1, error: '' };
+			const initialGlb = await make();
+			const model = { glb: initialGlb, version: 1, error: '', diagnostics: lastDiag };
 			const title = isGlb ? stem(target!) : loadSceneSoft(target!).name;
 			const url = await serveViewer(model, title, Number(flags.get('port') ?? 5231));
 			console.log(`viewing ${title} at ${url}${flags.has('watch') ? ' — watching for changes' : ''} (Ctrl+C to stop)`);
@@ -272,6 +282,7 @@ async function main() {
 					busy = true;
 					try {
 						model.glb = await make();
+						model.diagnostics = lastDiag;
 						model.error = '';
 						model.version++;
 						console.log(`reloaded (${new Date().toLocaleTimeString()})`);
@@ -283,6 +294,36 @@ async function main() {
 					}
 				});
 			}
+			return;
+		}
+		case 'eval': {
+			const { evaluateBenchmarkFolder, evaluateTemplates, formatEvalReport } = await import('./eval.js');
+			const engine = (flags.get('engine') ?? 'all') as 'godot' | 'unity' | 'unreal' | 'all';
+			const isTemplates = flags.has('templates') || (!pos[0] && !flags.has('bench'));
+			let summary;
+			console.log(`Running Clayform evaluation harness (target engine: ${engine})...\n`);
+			if (isTemplates) {
+				const filter = flags.get('templates') && flags.get('templates') !== 'true'
+					? flags.get('templates')!.split(',').map((s) => s.trim())
+					: pos.length ? pos : undefined;
+				summary = await evaluateTemplates(engine, filter);
+			} else {
+				const dir = pos[0] ?? 'bench';
+				summary = await evaluateBenchmarkFolder(dir, 'bench/prompts.json', engine);
+			}
+
+			const md = formatEvalReport(summary);
+			console.log(md);
+			if (flags.get('out')) {
+				writeFileSync(flags.get('out')!, md);
+				console.log(`Wrote evaluation report to ${flags.get('out')}`);
+			}
+			if (flags.has('json')) {
+				const jsonOut = flags.get('json-out') ?? 'eval-summary.json';
+				writeFileSync(jsonOut, JSON.stringify(summary, null, 2));
+				console.log(`Wrote JSON summary to ${jsonOut}`);
+			}
+			if (summary.failed > 0) process.exit(1);
 			return;
 		}
 		case 'compare': {
@@ -399,6 +440,7 @@ async function main() {
   clayform effect <scene> [effect] [-o out.png]
   clayform auto-fix <scene> [-o out.clay.json]   automatically apply fixes suggested by critics
   clayform validate-engine <file.glb> [--engine godot|unity|unreal]   verify bones, sockets and anims
+  clayform eval [--templates] [--bench dir] [--engine godot|unity|unreal]   automated test harness
   clayform view <scene|template|file.glb> [--port 5231] [--watch]   three.js viewer, live reload
   clayform compare <scene> <ref.png> [--view front] [-o overlay.png]   fit to a reference image
   clayform layout <file.layout.json> [--render out.png] [--export out.glb]   place many objects

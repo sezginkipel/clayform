@@ -106,7 +106,7 @@ export function validateEngineGlb(bytes: Uint8Array, targetEngine: 'godot' | 'un
 	}
 
 	// 5. Engine-specific checks
-	if (targetEngine === 'godot' || targetEngine === 'all') {
+	if (targetEngine === 'godot') {
 		const godotCol = colliders.filter((c) => c.endsWith('-convcolonly') || c.endsWith('-col'));
 		checks.push({
 			name: 'Godot: Collision Nodes',
@@ -115,7 +115,7 @@ export function validateEngineGlb(bytes: Uint8Array, targetEngine: 'godot' | 'un
 		});
 	}
 
-	if (targetEngine === 'unity' || targetEngine === 'all') {
+	if (targetEngine === 'unity') {
 		if (skins.length) {
 			const humanoidRequired = ['Hips', 'Spine', 'Head'];
 			const missing = humanoidRequired.filter((req) => !nodeNames.some((n) => n.toLowerCase().includes(req.toLowerCase())));
@@ -127,7 +127,7 @@ export function validateEngineGlb(bytes: Uint8Array, targetEngine: 'godot' | 'un
 		}
 	}
 
-	if (targetEngine === 'unreal' || targetEngine === 'all') {
+	if (targetEngine === 'unreal') {
 		const unrealCol = colliders.filter((c) => c.startsWith('UCX_'));
 		checks.push({
 			name: 'Unreal: Collision Hulls',
