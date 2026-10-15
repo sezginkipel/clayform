@@ -12,6 +12,7 @@ import { colorBlend, sameSilhouette, tinyDetail } from './readability.js';
 import { styleDrift } from '../core/style.js';
 import type { Build, MeshData } from '../core/build.js';
 import type { V3 } from '../core/math.js';
+import type { Op } from '../core/ops.js';
 
 export type Severity = 'error' | 'warn' | 'info';
 
@@ -21,6 +22,7 @@ export interface Issue {
 	message: string;
 	parts?: string[];
 	at?: V3;
+	suggested_ops?: Op[];
 }
 
 export interface Report {
@@ -49,7 +51,13 @@ export function critique(b: Build): Report {
 	for (const m of expressionNotes(b)) issues.push({ severity: 'warn', code: 'expression', message: m });
 	for (const pr of c.prims)
 		if (pr.part.cloth && !pr.separate && !pr.twin)
-			issues.push({ severity: 'warn', code: 'cloth', message: `${pr.partId} has cloth but is blended into the body, so it cannot flutter; set "separate": true (sheets always are)`, parts: [pr.partId] });
+			issues.push({
+				severity: 'warn',
+				code: 'cloth',
+				message: `${pr.partId} has cloth but is blended into the body, so it cannot flutter; set "separate": true (sheets always are)`,
+				parts: [pr.partId],
+				suggested_ops: [{ op: 'update_part', id: pr.partId, set: { separate: true } }]
+			});
 
 	const body = b.meshes.find((m) => m.prim < 0);
 	const idOf = (i: number) => c.prims[i]?.id ?? String(i);
@@ -93,9 +101,25 @@ export function critique(b: Build): Report {
 		const cell = p.separate ? Math.min(b.cell, ext / 20) : b.cell;
 		if (!shown.has(p.index)) {
 			if (ext < cell * 2)
-				issues.push({ severity: 'error', code: 'too-small', message: `${p.id} (${(ext * 100).toFixed(1)} cm thick) is smaller than two cells (${(cell * 100).toFixed(1)} cm) and vanished — raise settings.resolution or make it separate`, parts: [p.id] });
-			else
-				issues.push({ severity: 'error', code: 'buried', message: `${p.id} is completely inside other parts, nothing of it is visible — move it outward, lower its embed, or remove it`, parts: [p.id] });
+				issues.push({
+					severity: 'error',
+					code: 'too-small',
+					message: `${p.id} (${(ext * 100).toFixed(1)} cm thick) is smaller than two cells (${(cell * 100).toFixed(1)} cm) and vanished — raise settings.resolution or make it separate`,
+					parts: [p.id],
+					suggested_ops: [{ op: 'update_part', id: p.id, set: { separate: true } }]
+				});
+			else {
+				const embed = p.part.attach?.embed ?? 0.35;
+				issues.push({
+					severity: 'error',
+					code: 'buried',
+					message: `${p.id} is completely inside other parts, nothing of it is visible — move it outward, lower its embed, or remove it`,
+					parts: [p.id],
+					suggested_ops: p.part.attach
+						? [{ op: 'update_part', id: p.id, set: { attach: { embed: Math.max(0.05, +(embed - 0.25).toFixed(2)) } } }]
+						: [{ op: 'remove_part', id: p.id }]
+				});
+			}
 		} else if (!p.separate && ext < cell * 2.5) {
 			issues.push({ severity: 'warn', code: 'thin', message: `${p.id} is only ${(ext / cell).toFixed(1)} cells thick and will look lumpy — raise resolution or make it separate`, parts: [p.id] });
 		}
@@ -142,7 +166,14 @@ export function critique(b: Build): Report {
 		}
 		for (const [k, n] of [...pairs.entries()].sort((a, z) => z[1] - a[1]).slice(0, 4)) {
 			if (n < 6) continue;
-			issues.push({ severity: 'warn', code: 'fused-unrelated', message: `${k} touch and fuse into one surface but move independently — the bridge will stretch when animated; move them apart (more than their blend radius) or make one separate`, parts: k.split(' + ') });
+			const parts = k.split(' + ');
+			issues.push({
+				severity: 'warn',
+				code: 'fused-unrelated',
+				message: `${k} touch and fuse into one surface but move independently — the bridge will stretch when animated; move them apart (more than their blend radius) or make one separate`,
+				parts,
+				suggested_ops: [{ op: 'update_part', id: parts[1], set: { separate: true } }]
+			});
 		}
 	}
 
@@ -243,7 +274,12 @@ export function critique(b: Build): Report {
 	if (budget && b.stats.triangles > budget) {
 		const res = c.scene.settings?.resolution ?? 96;
 		const suggest = Math.max(16, Math.floor(res * Math.sqrt(budget / b.stats.triangles)));
-		issues.push({ severity: 'warn', code: 'over-budget', message: `${b.stats.triangles} triangles is over the budget of ${budget}; resolution ${suggest} would fit` });
+		issues.push({
+			severity: 'warn',
+			code: 'over-budget',
+			message: `${b.stats.triangles} triangles is over the budget of ${budget}; resolution ${suggest} would fit`,
+			suggested_ops: [{ op: 'set_settings', set: { resolution: suggest } }]
+		});
 	}
 
 	const size: V3 = [b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]];
@@ -264,13 +300,46 @@ export function critique(b: Build): Report {
 	};
 }
 
+/** Collect non-conflicting suggested edit operations across issues */
+export function extractFixes(r: Report): Op[] {
+	const ops: Op[] = [];
+	const seenParts = new Set<string>();
+	let seenSettings = false;
+	for (const iss of r.issues) {
+		if (!iss.suggested_ops) continue;
+		for (const op of iss.suggested_ops) {
+			if (op.op === 'update_part') {
+				if (seenParts.has(op.id)) continue;
+				seenParts.add(op.id);
+				ops.push(op);
+			} else if (op.op === 'set_settings') {
+				if (seenSettings) continue;
+				seenSettings = true;
+				ops.push(op);
+			} else {
+				ops.push(op);
+			}
+		}
+	}
+	return ops;
+}
+
 export function formatReport(r: Report): string {
 	const s = r.stats;
 	const lines = [
 		`size ${s.size.map((v) => v.toFixed(2)).join(' × ')} m · ${s.triangles.toLocaleString('en')} triangles · ${s.islands} body island${s.islands === 1 ? '' : 's'} · built in ${s.buildMs} ms`
 	];
 	if (!r.issues.length) lines.push('critics: no issues found');
-	for (const i of r.issues) lines.push(`${i.severity.toUpperCase()} [${i.code}] ${i.message}`);
+	for (const i of r.issues) {
+		lines.push(`${i.severity.toUpperCase()} [${i.code}] ${i.message}`);
+		if (i.suggested_ops?.length) {
+			lines.push(`  💡 fix: ${i.suggested_ops.map((op) => JSON.stringify(op)).join('; ')}`);
+		}
+	}
+	const fixes = extractFixes(r);
+	if (fixes.length > 0) {
+		lines.push(`👉 ${fixes.length} automatic fix(es) available (run auto_fix to apply)`);
+	}
 	return lines.join('\n');
 }
 

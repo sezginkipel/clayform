@@ -22,8 +22,10 @@ import { buildScene } from './core/build.js';
 import { buildSceneAsync } from './core/parallel.js';
 import { parseScene, type Scene } from './core/schema.js';
 import { simplifyBuild } from './core/simplify.js';
-import { critique, formatReport } from './critic/critics.js';
+import { applyOps } from './core/ops.js';
+import { critique, extractFixes, formatReport } from './critic/critics.js';
 import { exportGlb, exportObj } from './export/gltf.js';
+import { validateEngineGlb } from './export/validate-engine.js';
 import { GUIDE } from './guide.js';
 import { renderClipStrip } from './render/motion.js';
 import { LIGHTS, renderBeauty, renderTurntable, type LightPreset } from './render/beauty.js';
@@ -334,6 +336,42 @@ async function main() {
 			console.log(`wrote ${out}\n${ok.migrated.map((m) => '• ' + m).join('\n')}`);
 			return;
 		}
+		case 'auto-fix': {
+			const scene = loadScene(pos[0]);
+			const b = await buildSceneAsync(scene);
+			const rep = critique(b);
+			const fixes = extractFixes(rep);
+			if (!fixes.length) {
+				console.log(`no automatic fixes needed or available for ${pos[0]}`);
+				return;
+			}
+			const r = applyOps(scene, fixes);
+			if (!r.ok) die(`failed to apply fixes: ${r.error}`);
+			const out = flags.get('out') ?? pos[0]!;
+			writeFileSync(out, JSON.stringify(r.scene, null, 2));
+			console.log(`applied ${fixes.length} fix(es) to ${out}:\n${r.changes.join('\n')}`);
+			return;
+		}
+		case 'validate-engine': {
+			if (!pos[0]) die('usage: clayform validate-engine <file.glb> [--engine godot|unity|unreal]');
+			const buf = readFileSync(pos[0]);
+			const engine = (flags.get('engine') ?? 'all') as 'godot' | 'unity' | 'unreal' | 'all';
+			const res = validateEngineGlb(buf, engine);
+			console.log(`\nValidating ${pos[0]} for ${res.engine.toUpperCase()} compatibility:\n`);
+			for (const ch of res.checks) {
+				console.log(`  ${ch.passed ? '✓' : '✗'} ${ch.name}: ${ch.message}`);
+			}
+			const s = res.summary;
+			console.log(`\nSummary:`);
+			console.log(`  Meshes: ${s.meshes} · Materials: ${s.materials} · Bones: ${s.joints}`);
+			if (s.sockets.length) console.log(`  Sockets: ${s.sockets.join(', ')}`);
+			if (s.animations.length) console.log(`  Animations: ${s.animations.join(', ')}`);
+			if (s.morphTargets.length) console.log(`  Morph Targets: ${s.morphTargets.join(', ')}`);
+			if (s.colliders.length) console.log(`  Colliders: ${s.colliders.join(', ')}`);
+			console.log(`\nResult: ${res.ok ? 'COMPATIBLE' : 'ISSUES DETECTED'}\n`);
+			if (!res.ok) process.exit(1);
+			return;
+		}
 		case 'guide':
 			console.log(GUIDE);
 			return;
@@ -359,6 +397,8 @@ async function main() {
   clayform kit <scene|template> [more …] [-o dir] [--atlas 2048] [--embed]   one shared texture atlas
   clayform motion <scene> [clip] [-o out.png] [--view left]
   clayform effect <scene> [effect] [-o out.png]
+  clayform auto-fix <scene> [-o out.clay.json]   automatically apply fixes suggested by critics
+  clayform validate-engine <file.glb> [--engine godot|unity|unreal]   verify bones, sockets and anims
   clayform view <scene|template|file.glb> [--port 5231] [--watch]   three.js viewer, live reload
   clayform compare <scene> <ref.png> [--view front] [-o overlay.png]   fit to a reference image
   clayform layout <file.layout.json> [--render out.png] [--export out.glb]   place many objects

@@ -115,6 +115,12 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 		inputSchema: { scene }
 	}, (a) => t.inspect(a));
 
+	server.registerTool('auto_fix', {
+		title: 'Auto-fix critic issues',
+		description: 'Automatically apply suggested edits from critics (embed depths for buried parts, separate flags for cloth/unrelated fused parts, contrast adjustments, resolution for budget). Returns the applied ops and updated report.',
+		inputSchema: { scene }
+	}, (a) => t.autoFix(a));
+
 	server.registerTool('preview_motion', {
 		title: 'See a clip as frames',
 		description: 'Render a clip as a labelled film strip (default 6 frames from the left side) and report ground contact.',

@@ -1401,6 +1401,11 @@
               }
             ]
           },
+          "socket": {
+            "description": "name an engine attachment socket at this part (e.g. \"hand_r\", \"hand_l\", \"head\", \"back\", \"weapon\"); exported to glTF as an empty node named \"SOCKET_<name>\" under this part or its bone, ready for runtime equipment in Godot, Unity, or Unreal",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,31}$"
+          },
           "hidden": {
             "description": "not meshed; still usable as an anchor or joint",
             "type": "boolean"

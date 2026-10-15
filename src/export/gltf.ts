@@ -66,7 +66,7 @@ export function glbMeshes(b: Build, opts: Pick<GlbOptions, 'lods' | 'shading' | 
 export interface GlbResult {
 	glb: Uint8Array;
 	json: Record<string, unknown>;
-	stats: { meshes: number; primitives: number; materials: number; triangles: number; joints: number; animations: number; bytes: number; lods: number; colliders: number; texture: number; charts: number; outlines: number };
+	stats: { meshes: number; primitives: number; materials: number; triangles: number; joints: number; animations: number; bytes: number; lods: number; colliders: number; texture: number; charts: number; outlines: number; sockets: number };
 	/** the baked atlas when `texture` was set */
 	atlas?: Atlas;
 	/** each expression exported as a morph target: how many vertices it moves (base level) and how far at most, in meters */
@@ -389,6 +389,48 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 		colliders = n;
 	}
 
+	/* ----------------------------------------------------------- sockets */
+	let sockets = 0;
+	for (const p of prims) {
+		const sockName = p.part.socket;
+		if (!sockName) continue;
+		const name = p.twin ? (sockName.endsWith('_r') ? sockName.replace(/_r$/, '_l') : `${sockName}_mirror`) : sockName;
+		const nodeName = `SOCKET_${name}`;
+		if (taken.has(nodeName)) continue;
+		taken.add(nodeName);
+
+		const pivotWorld: [number, number, number] = [
+			+((p.min[0] + p.max[0]) / 2).toFixed(4),
+			+((p.min[1] + p.max[1]) / 2).toFixed(4),
+			+((p.min[2] + p.max[2]) / 2).toFixed(4)
+		];
+
+		if (rig && skel) {
+			const ji = skel.joints.findIndex(
+				(jt) => (jt.joint >= 0 && rig.joints[jt.joint].name === p.id) || (jt.bone && boneName(jt.bone, boneNaming) === exportName(p.id))
+			);
+			if (ji >= 0) {
+				const parentJoint = skel.joints[ji];
+				const relTrans: [number, number, number] = [
+					+(pivotWorld[0] - parentJoint.rest[0]).toFixed(4),
+					+(pivotWorld[1] - parentJoint.rest[1]).toFixed(4),
+					+(pivotWorld[2] - parentJoint.rest[2]).toFixed(4)
+				];
+				const sockNodeIdx = nodes.length;
+				nodes.push({ name: nodeName, translation: relTrans });
+				const pNode = nodes[jointNode[ji]] as { children?: number[] };
+				pNode.children = [...(pNode.children ?? []), sockNodeIdx];
+				sockets++;
+				continue;
+			}
+		}
+
+		const sockNodeIdx = nodes.length;
+		nodes.push({ name: nodeName, translation: pivotWorld });
+		sceneNodes.push(sockNodeIdx);
+		sockets++;
+	}
+
 	/* ------------------------------------------------------- animations */
 	const animations: Record<string, unknown>[] = [];
 	if (rig) {
@@ -486,7 +528,8 @@ export function exportGlb(b: Build, opts: GlbOptions = {}): GlbResult {
 			colliders,
 			texture: atlas?.size ?? 0,
 			charts: atlas && !opts.atlas ? atlas.charts : 0,
-			outlines
+			outlines,
+			sockets
 		},
 		atlas: opts.atlas ? undefined : atlas,
 		...(exprIds.length ? { expressions: exprIds.filter((id) => !clothIds.has(id)).map((id) => ({ id, vertices: morphStats.get(id)?.vertices ?? 0, max: morphStats.get(id)?.max ?? 0 })) } : {})

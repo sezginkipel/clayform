@@ -9,7 +9,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { buildRig, critiqueClip, sampleClip } from '../anim/rig.js';
 import { simplifyBuild } from '../core/simplify.js';
-import { critique, formatReport } from '../critic/critics.js';
+import { critique, extractFixes, formatReport } from '../critic/critics.js';
 import { exportGlb, exportObj } from '../export/gltf.js';
 import { exportKit } from '../export/kit.js';
 import type { Shading } from '../export/texture.js';
@@ -306,6 +306,32 @@ export class Tools {
 				}
 			}
 			return { content: [text(lines.join('\n'))] };
+		});
+	}
+
+	autoFix(args: { scene: string }): Promise<Result> {
+		return wrap(async () => {
+			const b = await this.ws.buildAsync(args.scene);
+			const rep = critique(b);
+			const fixes = extractFixes(rep);
+			if (!fixes.length) {
+				return { content: [text(`no automatic fixes available for "${args.scene}" — either no issues have suggestions or the model is already clean\n\n${formatReport(rep)}`)] };
+			}
+			const r = this.ws.edit(args.scene, fixes);
+			if (!r.ok) return fail(`failed to apply automatic fixes:\n${r.error}`);
+			let nextB;
+			try {
+				nextB = await this.ws.buildAsync(args.scene);
+			} catch (e) {
+				this.ws.undo(args.scene);
+				return fail(`auto-fix caused build failure, rolled back:\n${e instanceof Error ? e.message : String(e)}`);
+			}
+			const nextRep = critique(nextB);
+			return {
+				content: [
+					text(`applied ${fixes.length} automatic fix${fixes.length === 1 ? '' : 'es'}:\n${r.changes.join('\n')}\n\n${formatReport(nextRep)}`)
+				]
+			};
 		});
 	}
 

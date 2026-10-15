@@ -103,7 +103,8 @@ export function colorBlend(b: Build): Issue[] {
 			severity: 'warn',
 			code: 'colors-blend',
 			message: `${c.prims[a].id} and ${c.prims[z].id} touch and their colors are too close to tell apart (ΔE ${dE.toFixed(1)}, contrast ${cr.toFixed(2)}:1) — they will read as one blob; try ${suggestion} for ${c.prims[small].id}, or give them the same color on purpose`,
-			parts: [c.prims[a].id, c.prims[z].id]
+			parts: [c.prims[a].id, c.prims[z].id],
+			suggested_ops: [{ op: 'update_part', id: c.prims[small].id, set: { material: { color: suggestion } } }]
 		});
 		if (out.length >= 4) break;
 	}

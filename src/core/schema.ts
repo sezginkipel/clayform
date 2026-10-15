@@ -244,6 +244,11 @@ export const Part = z.strictObject({
 		.describe('spread copies of this part over another part\'s surface: spikes on a back, rivets, flowers and rocks on terrain, moss on a roof'),
 	separate: z.boolean().optional().describe('mesh on its own instead of fusing into the body (wheels, props that spin, held items)'),
 	pivot: z.union([z.enum(PIVOTS), Vec3]).optional().describe('joint location for animation; default: attach point, else top for legs/arms, else center'),
+	socket: z
+		.string()
+		.regex(/^[a-z][a-z0-9_]{0,31}$/)
+		.optional()
+		.describe('name an engine attachment socket at this part (e.g. "hand_r", "hand_l", "head", "back", "weapon"); exported to glTF as an empty node named "SOCKET_<name>" under this part or its bone, ready for runtime equipment in Godot, Unity, or Unreal'),
 	hidden: z.boolean().optional().describe('not meshed; still usable as an anchor or joint')
 });
 export type Part = z.infer<typeof Part>;
