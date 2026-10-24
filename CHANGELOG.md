@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.15.0 — 2026-10-24
+
+Self-healing critics, equipment sockets, live game engine sync, multi-asset biome packs, hybrid AI + procedural rig bridge (free local / BYOK), and the browser 3D playground:
+
+- **Self-healing critics** (`auto_fix` MCP tool & `clayform auto-fix`): geometric and readability critics now emit actionable `suggested_ops` (`separate: true` for cloth or thin parts, embed adjustments for buried parts, accessible palette contrast fixes for `colors-blend`, and target resolution for `over-budget`) that can be applied atomically.
+- **Equipment sockets** (`socket` on parts): exports `SOCKET_<name>` attachment nodes bound to character joints or static parts in `.glb` (with automatic `_l` / `_mirror` naming on mirrored twins).
+- **Live game engine sync bridge** (`sync_engine` MCP tool & `clayform sync --watch`): syncs `.glb` models with engine-specific collision hulls (`-convcolonly` + `.glb.import` sidecar for Godot 4, `_collider` + `.clayform.json` for Unity, `UCX_` + `.clayform.json` for Unreal Engine) directly into a game project and runs `validateEngineExport`.
+- **Multi-asset biome & world pack generator** (`create_asset_pack` MCP tool & `clayform pack`): builds a cohesive pack of assets sharing a `clayform-style/1` stylesheet, runs `auto_fix`, bakes a single shared PBR texture atlas (`exportKit`), and exports a physics-settled showcase layout (`<pack>_layout.glb` + `pack_preview.png`).
+- **Zero-cost / BYOK hybrid AI mesh + rig bridge** (`generate_part` MCP tool & `generate3DMesh`): attaches external 3D meshes from a free local open-weight endpoint (`provider: "local"`, `CLAYFORM_3D_ENDPOINT` or `endpoint`) or a user-supplied BYOK API key (`provider: "meshy"` or `"tripo"`, `api_key`) directly onto procedural skeletons and sockets.
+- **Interactive 3D diagnostic viewer & browser playground** (`clayform view` & `https://clayform.sadelabs.site/play`): live bone/socket/collider overlays, slow-motion playback, expression sliders, and a zero-install WebGL playground with client-side `.glb` export and `/benchmark` verification matrix.
+
 ## 0.14.0 — 2026-09-29
 
 Presentation and physics: pictures to show people, and layouts that settle.
