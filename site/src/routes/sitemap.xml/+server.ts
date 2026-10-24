@@ -6,6 +6,8 @@ export const prerender = true;
 export function GET() {
 	const urls = [
 		{ loc: `${SITE_URL}/`, priority: '1.0', changefreq: 'weekly' },
+		{ loc: `${SITE_URL}/play`, priority: '0.9', changefreq: 'weekly' },
+		{ loc: `${SITE_URL}/benchmark`, priority: '0.9', changefreq: 'weekly' },
 		{ loc: `${SITE_URL}/showcase`, priority: '0.8', changefreq: 'weekly' },
 		...pages.map((p) => ({
 			loc: p.slug ? `${SITE_URL}/docs/${p.slug}` : `${SITE_URL}/docs`,

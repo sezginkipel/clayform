@@ -204,6 +204,86 @@ export function createServer(workspaceDir?: string): { server: McpServer; tools:
 		inputSchema: { path: z.string().optional(), json: z.unknown().optional(), name: z.string().optional() }
 	}, (a) => t.importScene(a));
 
+	server.registerTool('generate_part', {
+		title: 'Generate a 3D mesh part (Local GPU or BYOK)',
+		description:
+			'Generate an organic 3D mesh from a text prompt or image and attach it as a part in the scene. Zero-cost by default: uses a local open-weight model server (provider: "local", CLAYFORM_3D_ENDPOINT) or Bring-Your-Own-Key (BYOK) via api_key for "meshy" or "tripo".',
+		inputSchema: {
+			scene,
+			id: z.string().min(1).max(60).describe('part id to add to the scene'),
+			prompt: z.string().optional().describe('text prompt describing the part'),
+			image: z.string().optional().describe('image URL or data URI'),
+			provider: z.enum(['local', 'meshy', 'tripo']).optional().describe('local (free local server, default) · meshy (BYOK) · tripo (BYOK)'),
+			api_key: z.string().optional().describe('your own API key when using meshy or tripo (BYOK)'),
+			endpoint: z.string().optional().describe('local server URL when using provider: "local" (default http://127.0.0.1:8000)'),
+			size: z.number().positive().max(20).optional().describe('longest axis in meters (default 0.4)'),
+			keep: z.boolean().optional().describe('true = keep raw triangles; false = bake into SDF so it blends/sculpts'),
+			role: z.string().optional(),
+			attach: z
+				.object({
+					to: z.string(),
+					side: z.string().optional(),
+					offset: z.array(z.number()).optional(),
+					align: z.boolean().optional(),
+					embed: z.number().optional()
+				})
+				.optional(),
+			socket: z.string().optional(),
+			color: z.string().optional()
+		}
+	}, (a) => t.generatePart(a));
+
+	server.registerTool('sync_engine', {
+		title: 'Sync scene into a Godot, Unity or Unreal project',
+		description:
+			'Export the scene directly into a game engine project directory with engine-specific collision hulls (-convcolonly / UCX_ / _collider), LODs, humanoid bones, and sidecar files (.glb.import for Godot 4, .clayform.json for Unity/Unreal), then validate engine compatibility.',
+		inputSchema: {
+			scene,
+			project_dir: z.string().describe('path to the Godot, Unity, or Unreal project root'),
+			engine: z.enum(['godot', 'unity', 'unreal']),
+			asset_name: z.string().optional().describe('file stem (defaults to scene id)'),
+			subdir: z.string().optional().describe('subfolder inside project_dir (defaults to assets/models, Assets/Models, or Content/Models)'),
+			skeleton: z.enum(['parts', 'humanoid', 'mixamo', 'unreal']).optional(),
+			collision: z.enum(['none', 'parts', 'hull']).optional(),
+			lods: z.array(z.number().gt(0).lt(1)).max(4).optional(),
+			triangles: z.number().int().min(100).max(2_000_000).optional(),
+			texture: z.number().int().min(64).max(8192).optional(),
+			shading: z.enum(['smooth', 'flat', 'toon']).optional()
+		}
+	}, (a) => t.syncEngine(a));
+
+	server.registerTool('create_asset_pack', {
+		title: 'Build a multi-asset world/biome kit',
+		description:
+			'Build a cohesive pack of multiple 3D assets sharing a unified style sheet, auto-fix critic issues, bake a single shared PBR texture atlas, and export both individual engine-ready GLBs and a settled showcase layout.',
+		inputSchema: {
+			name: z.string().min(1).max(80),
+			style: z.union([z.string(), z.record(z.string(), z.unknown())]).optional().describe('shared clayform-style/1 document or path'),
+			assets: z
+				.array(
+					z.object({
+						id: z.string().min(1),
+						template: z.string().optional(),
+						scene: z.string().optional(),
+						category: z.string().optional(),
+						ops: z.array(z.record(z.string(), z.unknown())).optional()
+					})
+				)
+				.min(1)
+				.max(64),
+			dir: z.string().optional(),
+			atlas: z.number().int().min(64).max(8192).optional(),
+			triangles: z.number().int().min(100).max(2_000_000).optional(),
+			shading: z.enum(['smooth', 'flat', 'toon']).optional(),
+			bands: z.number().int().min(2).max(8).optional(),
+			outline: z.number().min(0).max(0.2).optional(),
+			collision: z.enum(['none', 'parts', 'hull']).optional(),
+			engine: z.enum(['godot', 'unity', 'unreal', 'plain']).optional(),
+			embed: z.boolean().optional(),
+			autoFix: z.boolean().optional()
+		}
+	}, (a) => t.createAssetPack(a as any));
+
 	return { server, tools: t };
 }
 

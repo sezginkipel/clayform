@@ -22,4 +22,8 @@ export { GUIDE } from './guide.js';
 export { fitReference, silhouettePng } from './reference.js';
 export { measureBetween, measurePart, measureRatio, partAtPixel } from './measure.js';
 export { decodePng } from './render/pngdecode.js';
+export { syncToEngineProject, type EngineSyncOptions, type EngineSyncResult, type TargetEngine } from './export/engine-sync.js';
+export { buildAssetPack, type AssetPackSpec, type AssetPackSummary, type PackAssetEntry } from './pack.js';
+export { generate3DMesh, PROVIDERS, Local3DProvider, MeshyProvider, TripoProvider, type Generate3DInput, type ImageTo3DProvider, type ProviderResult } from './geometry/provider.js';
 export { VERSION } from './version.js';
+

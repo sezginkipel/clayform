@@ -61,8 +61,10 @@
 		<span>Menu</span>
 	</button>
 	<nav id="site-nav" class:open={navOpen} aria-label="Site">
+		<a href="/play" aria-current={page.url.pathname.startsWith('/play') ? 'page' : undefined}>Playground</a>
 		<a href="/docs/getting-started" aria-current={inDocs ? 'page' : undefined}>Docs</a>
 		<a href="/docs/templates">Templates</a>
+		<a href="/benchmark" aria-current={page.url.pathname.startsWith('/benchmark') ? 'page' : undefined}>Benchmarks</a>
 		<a href="/showcase" aria-current={page.url.pathname.startsWith('/showcase') ? 'page' : undefined}>Showcase</a>
 		<a href={`${REPO}/blob/main/CHANGELOG.md`} rel="noopener">v{VERSION}</a>
 		<a href={REPO} rel="noopener">GitHub</a>

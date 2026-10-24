@@ -26,7 +26,10 @@ Clayform is an open-source (Apache-2.0) Node.js library, CLI, and Model Context 
 ## Quick Facts & Install
 
 - **Install MCP Server**: \`${INSTALL}\`
+- **Interactive 3D Browser Playground**: ${SITE_URL}/play
+- **Benchmarks & Verification Harness**: ${SITE_URL}/benchmark
 - **Run CLI / Viewer**: \`npx -y @s1444/clayform view knight --port 8765\`
+- **Live Engine Sync**: \`npx -y @s1444/clayform sync knight ./my-godot-game --engine godot --watch\`
 - **npm Package**: ${NPM}
 - **GitHub Repository**: ${REPO}
 - **Full LLM Corpus**: ${SITE_URL}/llms-full.txt

@@ -37,6 +37,9 @@ import { encodePng } from '../render/png.js';
 import type { Scene as SceneDoc } from '../core/schema.js';
 import { z } from 'zod';
 import { Scene } from '../core/schema.js';
+import { generate3DMesh } from '../geometry/provider.js';
+import { syncToEngineProject, type TargetEngine } from '../export/engine-sync.js';
+import { buildAssetPack, type AssetPackSpec } from '../pack.js';
 
 export type Content = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string };
 export interface Result {
@@ -453,6 +456,121 @@ export class Tools {
 		return wrap(async () => {
 			const r = args.path ? this.ws.load(args.path) : this.ws.import(typeof args.json === 'string' ? JSON.parse(args.json) : args.json, args.name);
 			return { content: [text(`imported as "${r.id}"\n\n${describe(r.scene)}`)] };
+		});
+	}
+
+	generatePart(args: {
+		scene: string;
+		id: string;
+		prompt?: string;
+		image?: string;
+		provider?: 'local' | 'meshy' | 'tripo';
+		api_key?: string;
+		endpoint?: string;
+		size?: number;
+		keep?: boolean;
+		role?: string;
+		attach?: { to: string; side?: string; offset?: number[]; align?: boolean; embed?: number };
+		socket?: string;
+		color?: string;
+	}): Promise<Result> {
+		return wrap(async () => {
+			this.ws.get(args.scene);
+			const provider = args.provider ?? 'local';
+			const res = await generate3DMesh(provider, {
+				prompt: args.prompt,
+				image: args.image,
+				apiKey: args.api_key,
+				endpoint: args.endpoint
+			});
+			const safeId = args.id.replace(/[^a-zA-Z0-9_-]+/g, '_') || 'generated_part';
+			const meshDir = resolve(this.ws.dir, 'meshes');
+			mkdirSync(meshDir, { recursive: true });
+			const meshFile = resolve(meshDir, `${safeId}.glb`);
+			writeFileSync(meshFile, res.glbBytes);
+
+			const part: Record<string, unknown> = {
+				id: safeId,
+				shape: {
+					type: 'mesh',
+					src: meshFile,
+					size: args.size ?? 0.4,
+					...(args.keep !== undefined ? { keep: args.keep } : {})
+				}
+			};
+			if (args.role) part.role = args.role;
+			if (args.attach) part.attach = args.attach;
+			if (args.socket) part.socket = args.socket;
+			if (args.color) part.material = { color: args.color };
+
+			const edited = this.ws.edit(args.scene, [{ op: 'add_part', part }]);
+			if (!edited.ok) return fail(edited.error);
+			const b = await this.ws.buildAsync(args.scene);
+			const rep = critique(b);
+			return {
+				content: [
+					text(
+						`generated part "${safeId}" via ${res.provider} (${res.latencyMs} ms, ${res.costUsd > 0 ? `BYOK ~$${res.costUsd.toFixed(2)}` : 'free local'}) → ${meshFile}\n\n${describe(this.ws.get(args.scene))}\n\n${formatReport(rep)}`
+					)
+				]
+			};
+		});
+	}
+
+	syncEngine(args: {
+		scene: string;
+		project_dir: string;
+		engine: TargetEngine;
+		asset_name?: string;
+		subdir?: string;
+		skeleton?: SkeletonNaming;
+		collision?: 'none' | 'parts' | 'hull';
+		lods?: number[];
+		triangles?: number;
+		texture?: number;
+		shading?: Shading;
+	}): Promise<Result> {
+		return wrap(async () => {
+			const full = await this.ws.buildAsync(args.scene);
+			const res = await syncToEngineProject(full, {
+				projectDir: args.project_dir,
+				assetName: args.asset_name ?? args.scene,
+				engine: args.engine,
+				subdir: args.subdir,
+				skeleton: args.skeleton,
+				collision: args.collision,
+				lods: args.lods,
+				triangles: args.triangles,
+				texture: args.texture,
+				shading: args.shading
+			});
+			const v = res.validation;
+			const checks = v.checks.map((c) => `  ${c.passed ? '✓' : '✗'} ${c.name}: ${c.message}`).join('\n');
+			return {
+				content: [
+					text(
+						`synced "${args.scene}" to ${res.engine.toUpperCase()} project → ${res.glbPath} (${(res.bytes / 1024).toFixed(0)} KB · ${res.triangles.toLocaleString('en')} triangles)${res.sidecarPath ? `\nsidecar: ${res.sidecarPath}` : ''}\n\nEngine validation (${v.ok ? 'PASSED' : 'ISSUES'}):\n${checks}`
+					)
+				]
+			};
+		});
+	}
+
+	createAssetPack(args: AssetPackSpec & { dir?: string }): Promise<Result> {
+		return wrap(async () => {
+			const summary = await buildAssetPack(this.ws, args, args.dir);
+			const lines = summary.assets.map(
+				(a) =>
+					`  ${a.id}.glb · ${(a.bytes / 1024).toFixed(0)} KB · ${a.triangles.toLocaleString('en')} tris · ${a.ok ? 'critics OK' : `${a.issues.length} issue(s)`}${a.autoFixed ? ` (${a.autoFixed} auto-fixed)` : ''}`
+			);
+			return {
+				content: [
+					png(summary.previewPng),
+					text(
+						`built asset pack "${summary.name}" in ${summary.dir}\nshared atlas: ${summary.atlasSize}px (${(summary.atlasCoverage * 100).toFixed(1)}% coverage)\nsettled pack layout: ${summary.layoutGlbPath}\nassets (${summary.assets.length}):\n${lines.join('\n')}`
+					)
+				]
+			};
 		});
 	}
 }

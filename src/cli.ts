@@ -413,6 +413,64 @@ async function main() {
 			if (!res.ok) process.exit(1);
 			return;
 		}
+		case 'sync': {
+			const { syncToEngineProject } = await import('./export/engine-sync.js');
+			const target = pos[0];
+			const projectDir = pos[1];
+			if (!target || !projectDir) {
+				die('usage: clayform sync <scene.clay.json|template> <engine_project_dir> [--engine godot|unity|unreal] [--watch]');
+			}
+			const engine = (flags.get('engine') ?? 'godot') as 'godot' | 'unity' | 'unreal';
+			const runSync = async () => {
+				const scene = loadSceneSoft(target);
+				const full = await buildSceneAsync(scene);
+				const res = await syncToEngineProject(full, {
+					projectDir,
+					assetName: flags.get('name') ?? stem(target),
+					engine,
+					subdir: flags.get('subdir'),
+					skeleton: flags.get('skeleton') as any,
+					collision: (flags.get('collision') as any) ?? 'parts',
+					triangles: flags.has('triangles') ? Number(flags.get('triangles')) : undefined,
+					texture: flags.has('texture') ? Number(flags.get('texture')) : undefined,
+					shading: flags.get('shading') as any
+				});
+				console.log(
+					`[${new Date().toLocaleTimeString()}] synced → ${res.glbPath} (${(res.bytes / 1024).toFixed(0)} KB · ${res.triangles} tris · ${res.validation.ok ? 'engine valid' : 'warnings'})`
+				);
+			};
+			await runSync();
+			if (flags.has('watch') && !getTemplate(target)) {
+				const { watchFile } = await import('node:fs');
+				let busy = false;
+				console.log(`watching ${target} for changes → live syncing to ${engine.toUpperCase()} project at ${projectDir}...`);
+				watchFile(target, { interval: 400 }, async () => {
+					if (busy) return;
+					busy = true;
+					try {
+						await runSync();
+					} catch (e) {
+						console.error(`sync error: ${e instanceof Error ? e.message : String(e)}`);
+					} finally {
+						busy = false;
+					}
+				});
+			}
+			return;
+		}
+		case 'pack': {
+			const { buildAssetPack } = await import('./pack.js');
+			const { Workspace } = await import('./session.js');
+			if (!pos[0]) die('usage: clayform pack <pack.json> [-o dir]');
+			const spec = JSON.parse(readFileSync(pos[0], 'utf8'));
+			const ws = new Workspace();
+			const res = await buildAssetPack(ws, spec, flags.get('out'));
+			console.log(`built pack "${res.name}" in ${res.dir} (${res.assets.length} assets · atlas ${res.atlasSize}px, ${(res.atlasCoverage * 100).toFixed(1)}% used)`);
+			for (const a of res.assets) {
+				console.log(`  • ${a.id}.glb (${(a.bytes / 1024).toFixed(0)} KB, ${a.triangles} tris)${a.autoFixed ? ` [${a.autoFixed} auto-fixed]` : ''}`);
+			}
+			return;
+		}
 		case 'guide':
 			console.log(GUIDE);
 			return;
@@ -435,6 +493,8 @@ async function main() {
   clayform inspect <scene|template>     part summary + critics (exit 2 on errors)
   clayform export <scene|template> [-o out.glb|.obj] [--triangles N] [--lods 0.5,0.2] [--collision parts|hull] [--engine godot|unreal|unity]
                  [--texture 1024] [--shading flat|toon] [--bands 3] [--outline 0.01] [--skeleton humanoid|mixamo|unreal]
+  clayform sync <scene> <project_dir> [--engine godot|unity|unreal] [--watch]   live-sync GLB + sidecar into game engine
+  clayform pack <pack.json> [-o dir]    build a multi-asset biome kit with shared atlas and settled layout
   clayform kit <scene|template> [more …] [-o dir] [--atlas 2048] [--embed]   one shared texture atlas
   clayform motion <scene> [clip] [-o out.png] [--view left]
   clayform effect <scene> [effect] [-o out.png]
