@@ -1,8 +1,12 @@
-# The sadelabs.site zone keeps HTML at the edge for hours; pages must revalidate so a deploy shows at once.
-# Hashed assets under /_app/immutable get their long cache from the adapter.
-/
+/*
   Cache-Control: no-cache
-/docs
-  Cache-Control: no-cache
-/docs/*
-  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+/_app/immutable/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/og-card.png
+  Cache-Control: public, max-age=86400

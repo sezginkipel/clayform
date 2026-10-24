@@ -1,11 +1,42 @@
 <script lang="ts">
+	import { SITE_URL } from '$lib/meta';
+
 	let { data } = $props();
 	const host = (u: string) => new URL(u).host.replace(/^www\./, '');
+	const pageTitle = 'Showcase — made with Clayform';
+	const pageDescription = 'Live games, interactive scenes, and web projects whose 3D models, animations or effects were built with Clayform.';
+	const jsonLd = $derived(
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'CollectionPage',
+			'@id': `${SITE_URL}/showcase#collection`,
+			name: pageTitle,
+			description: pageDescription,
+			url: `${SITE_URL}/showcase`,
+			inLanguage: 'en',
+			mainEntity: {
+				'@type': 'ItemList',
+				itemListElement: data.entries.map((e, i) => ({
+					'@type': 'ListItem',
+					position: i + 1,
+					name: e.name,
+					url: e.url,
+					description: e.summary
+				}))
+			}
+		})
+	);
 </script>
 
 <svelte:head>
-	<title>Showcase — made with Clayform</title>
-	<meta name="description" content="Games and sites whose models, animations or effects were made with Clayform." />
+	<title>{pageTitle}</title>
+	<meta name="description" content={pageDescription} />
+	<meta property="og:type" content="website" />
+	<meta property="og:title" content={pageTitle} />
+	<meta property="og:description" content={pageDescription} />
+	<meta name="twitter:title" content={pageTitle} />
+	<meta name="twitter:description" content={pageDescription} />
+	{@html `<script type="application/ld+json">${jsonLd}</script>`}
 </svelte:head>
 
 <main id="main">
@@ -90,6 +121,9 @@
 		display: grid;
 		gap: var(--s5);
 	}
+	.list > li > * {
+		min-width: 0;
+	}
 	.shot {
 		display: block;
 		border-radius: var(--radius);
@@ -161,6 +195,7 @@
 	.button {
 		display: inline-flex;
 		align-items: center;
+		justify-content: center;
 		min-height: 44px;
 		padding: 0 var(--s5);
 		background: var(--blue);
@@ -196,7 +231,11 @@
 			padding: 0 var(--s4);
 		}
 		.intro {
-			padding-top: var(--s7);
+			padding-top: var(--s6);
+		}
+		.button {
+			width: 100%;
 		}
 	}
 </style>
+

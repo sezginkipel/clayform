@@ -9,7 +9,9 @@ import { Marked, type Tokens } from 'marked';
 
 const REPO = 'https://github.com/sezginkipel/clayform';
 
-const raw = import.meta.glob('../../../docs/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const rawRoot = import.meta.glob('../../../docs/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const rawEngines = import.meta.glob('../../../docs/engines/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const raw: Record<string, string> = { ...rawRoot, ...rawEngines };
 const images = import.meta.glob('../../../docs/**/*.png', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 
 /** docs-relative image path (templates/biped.png) → built asset url */
@@ -20,6 +22,8 @@ const slugOf = (file: string) => {
 	return base === 'README' ? '' : base;
 };
 
+const relDocPath = (file: string) => file.replace(/^.*\/docs\//, '');
+
 export interface Heading {
 	depth: number;
 	text: string;
@@ -29,7 +33,9 @@ export interface Heading {
 export interface Page {
 	slug: string;
 	title: string;
+	description: string;
 	html: string;
+	markdown: string;
 	headings: Heading[];
 	source: string;
 }
@@ -48,14 +54,17 @@ function githubSlug(text: string, seen: Map<string, number>): string {
 }
 
 function rewriteHref(href: string): string {
-	if (/^(https?:|mailto:|#)/.test(href)) return href;
-	const [path, hash] = href.split('#');
+	const trimmed = href.trim();
+	if (/^(javascript:|data:|vbscript:)/i.test(trimmed)) return '#';
+	if (/^(https?:|mailto:|#)/.test(trimmed)) return trimmed;
+	const [path, hash] = trimmed.split('#');
 	const anchor = hash ? `#${hash}` : '';
-	if (/^[\w-]+\.md$/.test(path)) return `/docs/${slugOf(path)}${anchor}`.replace(/\/$/, '') || '/docs';
-	if (path.startsWith('../')) return `${REPO}/blob/main/${path.slice(3)}${anchor}`;
+	const cleanPath = path.replace(/^\.\//, '');
+	if (/^(?:engines\/)?[\w-]+\.md$/.test(cleanPath)) return `/docs/${slugOf(cleanPath)}${anchor}`.replace(/\/$/, '') || '/docs';
+	if (cleanPath.startsWith('../')) return `${REPO}/blob/main/${cleanPath.slice(3)}${anchor}`;
 	// any other file next to the docs (example scenes, layouts) lives in the repository
-	if (path && !path.startsWith('/')) return `${REPO}/blob/main/docs/${path}${anchor}`;
-	return href;
+	if (cleanPath && !cleanPath.startsWith('/')) return `${REPO}/blob/main/docs/${cleanPath}${anchor}`;
+	return trimmed;
 }
 
 function rewriteSrc(src: string): string {
@@ -63,6 +72,34 @@ function rewriteSrc(src: string): string {
 }
 
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escapeAttr = (s: string) => escapeHtml(s).replace(/"/g, '&quot;');
+
+/** Extract the first prose paragraph from markdown as a clean meta description. */
+function extractDescription(source: string, fallbackTitle: string): string {
+	const stripped = source
+		.replace(/<!--[\s\S]*?-->/g, '')
+		.replace(/```[\s\S]*?```/g, '');
+	const blocks = stripped.split(/\n\s*\n/);
+	for (const block of blocks) {
+		const trimmed = block.trim();
+		if (!trimmed) continue;
+		if (trimmed.startsWith('#') || trimmed.startsWith('!') || trimmed.startsWith('|') || trimmed.startsWith('<') || trimmed.startsWith('- ') || /^\d+\.\s/.test(trimmed)) {
+			continue;
+		}
+		const plain = trimmed
+			.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+			.replace(/`([^`]+)`/g, '$1')
+			.replace(/\*\*([^*]+)\*\*/g, '$1')
+			.replace(/\*([^*]+)\*/g, '$1')
+			.replace(/<[^>]+>/g, '')
+			.replace(/\s+/g, ' ')
+			.trim();
+		if (plain.length >= 25) {
+			return plain.length <= 165 ? plain : plain.slice(0, 162).replace(/\s+\S*$/, '') + '…';
+		}
+	}
+	return `Clayform documentation: ${fallbackTitle}.`;
+}
 
 /** A little colour for JSON and shell: keys, strings, numbers, comments. */
 function highlight(code: string, lang: string): string {
@@ -77,7 +114,7 @@ function highlight(code: string, lang: string): string {
 	return e;
 }
 
-function render(source: string, slug: string): Page {
+function render(source: string, slug: string, docRelPath: string): Page {
 	const seen = new Map<string, number>();
 	const headings: Heading[] = [];
 	let title = '';
@@ -99,28 +136,39 @@ function render(source: string, slug: string): Page {
 			link({ href, title: t, tokens }: Tokens.Link) {
 				const url = rewriteHref(href);
 				const external = /^https?:/.test(url);
-				return `<a href="${url}"${t ? ` title="${t}"` : ''}${external ? ' rel="noopener"' : ''}>${this.parser.parseInline(tokens)}</a>`;
+				return `<a href="${escapeAttr(url)}"${t ? ` title="${escapeAttr(t)}"` : ''}${external ? ' rel="noopener"' : ''}>${this.parser.parseInline(tokens)}</a>`;
 			},
 			image({ href, text }: Tokens.Image) {
-				return `<img src="${rewriteSrc(href)}" alt="${escapeHtml(text)}" loading="lazy">`;
+				return `<img src="${escapeAttr(rewriteSrc(href))}" alt="${escapeAttr(text)}" loading="lazy">`;
 			},
 			html({ text }: Tokens.HTML | Tokens.Tag) {
 				// raw <img> in generated pages (templates, parts) point at docs-relative files too
-				return text.replace(/<!--[\s\S]*?-->/g, '').replace(/src="([^"]+)"/g, (_, s) => `src="${rewriteSrc(s)}" loading="lazy"`);
+				return text.replace(/<!--[\s\S]*?-->/g, '').replace(/src="([^"]+)"/g, (_, s) => `src="${escapeAttr(rewriteSrc(s))}" loading="lazy"`);
 			},
 			code({ text, lang }: Tokens.Code) {
 				const [language = '', flag] = (lang ?? '').split(/\s+/);
 				const badge = flag === 'verified' ? '<span class="verified" title="The test suite parses and builds this example on every change">checked by the tests</span>' : '';
-				return `<figure class="code">${badge}<pre><code class="lang-${language}">${highlight(text, language)}</code></pre></figure>`;
+				return `<figure class="code">${badge}<pre><code class="lang-${escapeAttr(language)}">${highlight(text, language)}</code></pre></figure>`;
 			}
 		}
 	});
 	const html = md.parse(marked_) as string;
-	return { slug, title: title || slug, html, headings, source: `${REPO}/blob/main/docs/${slug || 'README'}.md` };
+	const resolvedTitle = title || slug || 'Overview';
+	const description = extractDescription(source, resolvedTitle);
+	const cleanMarkdown = source.replace(/<!--[\s\S]*?-->\s*/g, '').trim();
+	return {
+		slug,
+		title: resolvedTitle,
+		description,
+		html,
+		markdown: cleanMarkdown,
+		headings,
+		source: `${REPO}/blob/main/docs/${docRelPath}`
+	};
 }
 
 export const pages: Page[] = Object.entries(raw)
-	.map(([file, text]) => render(text, slugOf(file)))
+	.map(([file, text]) => render(text, slugOf(file), relDocPath(file)))
 	.sort((a, b) => a.slug.localeCompare(b.slug));
 
 export const pageBySlug = new Map(pages.map((p) => [p.slug, p]));
@@ -129,16 +177,24 @@ export const pageBySlug = new Map(pages.map((p) => [p.slug, p]));
 const GROUPS: { name: string; slugs: string[] }[] = [
 	{ name: 'Start', slugs: ['', 'getting-started', 'concepts', 'mcp-tools'] },
 	{ name: 'Build', slugs: ['critics', 'matching-a-reference', 'layouts', 'animation', 'effects', 'export'] },
+	{ name: 'Engines', slugs: ['godot', 'unity', 'unreal'] },
 	{ name: 'Reference', slugs: ['reference', 'templates', 'parts', 'cli-and-library', 'format', 'showcase'] },
 	{ name: 'Inside', slugs: ['architecture', 'faq'] }
 ];
+
+const SHORT_TITLES: Record<string, string> = {
+	'': 'Overview',
+	godot: 'Godot 4',
+	unity: 'Unity',
+	unreal: 'Unreal Engine 5'
+};
 
 export const nav = (() => {
 	const used = new Set(GROUPS.flatMap((g) => g.slugs));
 	const more = pages.filter((p) => !used.has(p.slug)).map((p) => p.slug);
 	return [...GROUPS, ...(more.length ? [{ name: 'More', slugs: more }] : [])].map((g) => ({
 		name: g.name,
-		items: g.slugs.filter((s) => pageBySlug.has(s)).map((s) => ({ slug: s, title: s === '' ? 'Overview' : pageBySlug.get(s)!.title }))
+		items: g.slugs.filter((s) => pageBySlug.has(s)).map((s) => ({ slug: s, title: SHORT_TITLES[s] ?? pageBySlug.get(s)!.title }))
 	}));
 })();
 
@@ -155,3 +211,4 @@ export const templates = (() => {
 })();
 
 export const image = (name: string) => imageUrl.get(name) ?? '';
+

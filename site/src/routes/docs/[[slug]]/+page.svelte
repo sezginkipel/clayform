@@ -1,10 +1,70 @@
 <script lang="ts">
 	import { page as current } from '$app/state';
+	import { SITE_NAME, SITE_URL } from '$lib/meta';
 
 	let { data } = $props();
 	let menuOpen = $state(false);
 	const here = $derived(data.page.slug);
 	const toc = $derived(data.page.headings.filter((h) => h.depth === 2));
+	const pageTitle = $derived(data.page.slug ? `${data.page.title} — Clayform docs` : 'Clayform documentation');
+	const pageUrl = $derived(data.page.slug ? `${SITE_URL}/docs/${data.page.slug}` : `${SITE_URL}/docs`);
+	const jsonLd = $derived(
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@graph': [
+				{
+					'@type': 'TechArticle',
+					'@id': `${pageUrl}#article`,
+					headline: data.page.title,
+					description: data.page.description,
+					url: pageUrl,
+					image: `${SITE_URL}/og-card.png`,
+					inLanguage: 'en',
+					author: {
+						'@type': 'Organization',
+						name: SITE_NAME,
+						url: SITE_URL
+					},
+					publisher: {
+						'@type': 'Organization',
+						name: SITE_NAME,
+						url: SITE_URL
+					},
+					isPartOf: {
+						'@id': `${SITE_URL}/#website`
+					}
+				},
+				{
+					'@type': 'BreadcrumbList',
+					itemListElement: [
+						{
+							'@type': 'ListItem',
+							position: 1,
+							name: 'Clayform',
+							item: SITE_URL
+						},
+						{
+							'@type': 'ListItem',
+							position: 2,
+							name: 'Docs',
+							item: `${SITE_URL}/docs`
+						},
+						...(data.page.slug
+							? [
+									{
+										'@type': 'ListItem',
+										position: 3,
+										name: data.page.title,
+										item: pageUrl
+									}
+								]
+							: [])
+					]
+				}
+			]
+		})
+	);
+
 	// close the phone menu when the page changes
 	$effect(() => {
 		void current.url.pathname;
@@ -13,13 +73,20 @@
 </script>
 
 <svelte:head>
-	<title>{data.page.slug ? `${data.page.title} — Clayform docs` : 'Clayform documentation'}</title>
-	<meta name="description" content={`Clayform documentation: ${data.page.title}.`} />
+	<title>{pageTitle}</title>
+	<meta name="description" content={data.page.description} />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content={pageTitle} />
+	<meta property="og:description" content={data.page.description} />
+	<meta name="twitter:title" content={pageTitle} />
+	<meta name="twitter:description" content={data.page.description} />
+	{@html `<script type="application/ld+json">${jsonLd}</script>`}
 </svelte:head>
 
 <div class="docs">
 	<button class="menu" type="button" aria-expanded={menuOpen} aria-controls="sidebar" onclick={() => (menuOpen = !menuOpen)}>
-		{menuOpen ? 'Close the contents' : 'Show the contents'}
+		<span>{menuOpen ? 'Close documentation menu' : `Docs: ${data.page.title}`}</span>
+		<span aria-hidden="true">{menuOpen ? '▴' : '▾'}</span>
 	</button>
 
 	<aside id="sidebar" class:open={menuOpen} aria-label="Documentation">
@@ -96,13 +163,14 @@
 	}
 	aside a,
 	.toc a {
-		display: block;
-		padding: 5px var(--s3);
+		display: flex;
+		align-items: center;
+		padding: 6px var(--s3);
 		margin-left: calc(-1 * var(--s3));
 		text-decoration: none;
 		color: var(--ink-2);
 		border-radius: var(--radius);
-		min-height: 32px;
+		min-height: 36px;
 	}
 	aside a[aria-current='page'] {
 		background: var(--blue-wash);
@@ -112,7 +180,8 @@
 	}
 	.toc a {
 		font-size: 13.5px;
-		padding: 3px var(--s3);
+		padding: 4px var(--s3);
+		min-height: 32px;
 	}
 	main {
 		min-width: 0;
@@ -126,20 +195,23 @@
 	/* the rendered markdown */
 	.prose {
 		max-width: 76ch;
+		min-width: 0;
 	}
 	.prose :global(h1) {
-		font-size: 38px;
+		font-size: clamp(28px, 4vw, 38px);
 		line-height: 1.12;
 		letter-spacing: -0.02em;
 		margin: 0 0 var(--s5);
+		overflow-wrap: break-word;
 	}
 	.prose :global(h2) {
-		font-size: 25px;
+		font-size: clamp(21px, 3vw, 25px);
 		line-height: 1.25;
 		letter-spacing: -0.01em;
 		margin: var(--s7) 0 var(--s3);
 		padding-top: var(--s4);
 		border-top: 1px solid var(--line);
+		overflow-wrap: break-word;
 	}
 	.prose :global(h3) {
 		font-size: 19px;
@@ -165,6 +237,7 @@
 	.prose :global(p),
 	.prose :global(li) {
 		color: var(--ink);
+		overflow-wrap: break-word;
 	}
 	.prose :global(ul),
 	.prose :global(ol) {
@@ -184,9 +257,11 @@
 	.prose :global(figure.code) {
 		position: relative;
 		margin: var(--s4) 0;
+		max-width: 100%;
 	}
 	.prose :global(pre) {
 		margin: 0;
+		max-width: 100%;
 		background: var(--wash);
 		border: 1px solid var(--line);
 		border-radius: var(--radius);
@@ -221,6 +296,7 @@
 	}
 	.prose :global(table) {
 		display: block;
+		max-width: 100%;
 		overflow-x: auto;
 		border-collapse: collapse;
 		font-size: 14.5px;
@@ -263,13 +339,16 @@
 			padding: var(--s4) var(--s4) 0;
 		}
 		.menu {
-			display: block;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--s2);
 			font: inherit;
 			font-size: 15px;
 			font-weight: 600;
 			min-height: 44px;
 			border: 1px solid var(--line-strong);
-			background: var(--paper);
+			background: var(--wash);
 			border-radius: var(--radius);
 			text-align: left;
 			padding: 0 var(--s4);
@@ -279,14 +358,25 @@
 			display: none;
 			position: static;
 			max-height: none;
-			border-bottom: 1px solid var(--line);
-			padding-bottom: var(--s4);
+			background: var(--wash);
+			border: 1px solid var(--line);
+			border-radius: var(--radius);
+			padding: var(--s4);
 		}
 		aside.open {
 			display: block;
 		}
-		.prose :global(h1) {
-			font-size: 30px;
+		aside a {
+			min-height: 42px;
+			margin-left: 0;
+		}
+		.prose :global(.anchor) {
+			display: none;
+		}
+		.prose :global(pre) {
+			padding: var(--s4) var(--s3) var(--s3);
+			font-size: 12px;
 		}
 	}
 </style>
+

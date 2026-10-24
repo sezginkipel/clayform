@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { INSTALL, REPO } from '$lib/meta';
+	import { DEFAULT_DESCRIPTION, INSTALL, NPM, REPO, SITE_NAME, SITE_URL, VERSION } from '$lib/meta';
 
 	let { data } = $props();
 	let copied = $state(false);
@@ -14,6 +14,48 @@
 		}
 	}
 
+	const pageTitle = 'Clayform — a 3D workshop for AI agents';
+	const jsonLd = JSON.stringify({
+		'@context': 'https://schema.org',
+		'@graph': [
+			{
+				'@type': 'WebSite',
+				'@id': `${SITE_URL}/#website`,
+				name: SITE_NAME,
+				url: SITE_URL,
+				description: DEFAULT_DESCRIPTION,
+				inLanguage: 'en'
+			},
+			{
+				'@type': 'SoftwareApplication',
+				'@id': `${SITE_URL}/#software`,
+				name: SITE_NAME,
+				applicationCategory: 'DeveloperApplication',
+				applicationSubCategory: '3D Modeling & Animation MCP Server',
+				operatingSystem: 'Windows, macOS, Linux (Node.js >= 20)',
+				softwareVersion: VERSION,
+				license: 'https://www.apache.org/licenses/LICENSE-2.0',
+				url: SITE_URL,
+				downloadUrl: NPM,
+				codeRepository: REPO,
+				image: `${SITE_URL}/og-card.png`,
+				description: DEFAULT_DESCRIPTION,
+				offers: {
+					'@type': 'Offer',
+					price: '0',
+					priceCurrency: 'USD'
+				},
+				featureList: [
+					'Model, sculpt, rig and animate 3D assets from declarative JSON parts',
+					'Built-in software renderer with shaded, wireframe, and part-ID views',
+					'Automated geometric critics with self-healing suggested_ops',
+					'Game-ready glTF 2.0 export for Godot, Unity, Unreal Engine, and three.js',
+					'47 verified starter templates and 28 modular parts'
+				]
+			}
+		]
+	});
+
 	const edit = `// new_scene { "name": "Goblin", "template": "biped" }, then one edit:
 [
   { "op": "set_palette", "set": { "skin": "#7fb04a", "shirt": "#6b4a2b", "pants": "#3d3322" } },
@@ -26,11 +68,14 @@
 </script>
 
 <svelte:head>
-	<title>Clayform — a 3D workshop for AI agents</title>
-	<meta
-		name="description"
-		content="Clayform lets AI agents model, rig, animate and export game-ready glTF by editing a scene document, looking at renders and reading critics. Open source, no Blender, no GPU."
-	/>
+	<title>{pageTitle}</title>
+	<meta name="description" content={DEFAULT_DESCRIPTION} />
+	<meta property="og:type" content="website" />
+	<meta property="og:title" content={pageTitle} />
+	<meta property="og:description" content={DEFAULT_DESCRIPTION} />
+	<meta name="twitter:title" content={pageTitle} />
+	<meta name="twitter:description" content={DEFAULT_DESCRIPTION} />
+	{@html `<script type="application/ld+json">${jsonLd}</script>`}
 </svelte:head>
 
 <main id="main">
@@ -308,6 +353,7 @@
 		gap: var(--s7);
 	}
 	.step {
+		min-width: 0;
 		border-left: 2px solid var(--line);
 		padding-left: var(--s5);
 	}
@@ -341,6 +387,7 @@
 	}
 	.step pre {
 		margin: 0;
+		max-width: 100%;
 		background: var(--wash);
 		border: 1px solid var(--line);
 		border-radius: var(--radius);
@@ -351,8 +398,12 @@
 	}
 	.pair {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
 		gap: var(--s3);
+	}
+	.pair > * {
+		min-width: 0;
+		width: 100%;
 	}
 	.flow img,
 	.actions img {
@@ -397,10 +448,11 @@
 	.more dl {
 		margin: 0;
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
 		gap: 0 var(--s7);
 	}
 	.more dl div {
+		min-width: 0;
 		padding: var(--s4) 0;
 		border-top: 1px solid var(--line);
 	}
@@ -421,7 +473,10 @@
 			padding: 0 var(--s4);
 		}
 		.lead {
-			padding-top: var(--s7);
+			padding: var(--s6) 0 var(--s6);
+		}
+		.sub {
+			font-size: 17px;
 		}
 		.sheet ul {
 			margin: 0 calc(-1 * var(--s4));
@@ -439,8 +494,28 @@
 			border-left: 0;
 			border-top: 1px solid var(--ink);
 		}
+		.flow,
+		.actions,
+		.made,
+		.more {
+			padding-top: var(--s7);
+		}
+		section h2 {
+			font-size: 24px;
+		}
+		.step {
+			margin-left: 12px;
+			padding-left: var(--s4);
+		}
 		.n {
-			margin-left: calc(-1 * var(--s5) - 13px);
+			margin-left: calc(-1 * var(--s4) - 13px);
+		}
+		.step h3 {
+			font-size: 18px;
+		}
+		.step pre {
+			padding: var(--s3);
+			font-size: 12px;
 		}
 	}
 </style>
