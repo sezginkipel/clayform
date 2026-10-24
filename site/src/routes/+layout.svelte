@@ -66,9 +66,9 @@
 		<a href="/docs/templates">Templates</a>
 		<a href="/benchmark" aria-current={page.url.pathname.startsWith('/benchmark') ? 'page' : undefined}>Benchmarks</a>
 		<a href="/showcase" aria-current={page.url.pathname.startsWith('/showcase') ? 'page' : undefined}>Showcase</a>
-		<a href={`${REPO}/blob/main/CHANGELOG.md`} rel="noopener">v{VERSION}</a>
-		<a href={REPO} rel="noopener">GitHub</a>
-		<a href={NPM} rel="noopener">npm</a>
+		<a href={`${REPO}/blob/main/CHANGELOG.md`} target="_blank" rel="noopener noreferrer">v{VERSION}</a>
+		<a href={REPO} target="_blank" rel="noopener noreferrer">GitHub</a>
+		<a href={NPM} target="_blank" rel="noopener noreferrer">npm</a>
 	</nav>
 </header>
 
@@ -80,9 +80,11 @@
 		every example marked <span class="tag">checked by the tests</span> is built by the test suite on each change.
 	</p>
 	<p>
-		<a href={REPO} rel="noopener">Source</a> · <a href={`${REPO}/issues`} rel="noopener">Issues</a> ·
-		<a href={`${REPO}/blob/main/ROADMAP.md`} rel="noopener">Roadmap</a> · <a href="/llms.txt">llms.txt</a> ·
-		<a href="/sitemap.xml">Sitemap</a>
+		<a href={REPO} target="_blank" rel="noopener noreferrer">Source</a> ·
+		<a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer">Issues</a> ·
+		<a href={`${REPO}/blob/main/ROADMAP.md`} target="_blank" rel="noopener noreferrer">Roadmap</a> ·
+		<a href="/llms.txt" target="_blank" rel="noopener">llms.txt</a> ·
+		<a href="/sitemap.xml" target="_blank" rel="noopener">Sitemap</a>
 	</p>
 </footer>
 

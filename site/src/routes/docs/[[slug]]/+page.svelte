@@ -106,7 +106,7 @@
 		<article class="prose">
 			{@html data.page.html}
 		</article>
-		<p class="edit"><a href={data.page.source} rel="noopener">Improve this page on GitHub</a></p>
+		<p class="edit"><a href={data.page.source} target="_blank" rel="noopener noreferrer">Improve this page on GitHub</a></p>
 	</main>
 
 	{#if toc.length > 2}

@@ -51,13 +51,13 @@
 	<ol class="list">
 		{#each data.entries as e (e.slug)}
 			<li id={e.slug}>
-				<a class="shot" href={e.url} rel="noopener">
+				<a class="shot" href={e.url} target="_blank" rel="noopener noreferrer">
 					<img src={e.image} alt={e.imageAlt} loading="lazy" />
 				</a>
 				<div class="text">
-					<h2><a href={e.url} rel="noopener">{e.name}</a></h2>
+					<h2><a href={e.url} target="_blank" rel="noopener noreferrer">{e.name}</a></h2>
 					<p class="by">
-						by {#if e.byUrl}<a href={e.byUrl} rel="noopener">{e.by}</a>{:else}{e.by}{/if} · {host(e.url)}
+						by {#if e.byUrl}<a href={e.byUrl} target="_blank" rel="noopener noreferrer">{e.by}</a>{:else}{e.by}{/if} · {host(e.url)}
 					</p>
 					<p>{e.summary}</p>
 					<h3>What Clayform made</h3>
@@ -68,8 +68,8 @@
 						</ul>
 					{/if}
 					<p class="go">
-						<a class="button" href={e.url} rel="noopener">Visit {e.name}</a>
-						{#if e.repo}<a href={e.repo} rel="noopener">Source</a>{/if}
+						<a class="button" href={e.url} target="_blank" rel="noopener noreferrer">Visit {e.name}</a>
+						{#if e.repo}<a href={e.repo} target="_blank" rel="noopener noreferrer">Source</a>{/if}
 					</p>
 				</div>
 			</li>
@@ -83,7 +83,7 @@
 			with a small JSON file, and the tests check it for you.
 		</p>
 		<p class="go">
-			<a class="button" href={data.submit} rel="noopener">Send your project</a>
+			<a class="button" href={data.submit} target="_blank" rel="noopener noreferrer">Send your project</a>
 			<a href="/docs/showcase">Read the rules</a>
 		</p>
 	</section>

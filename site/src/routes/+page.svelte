@@ -216,7 +216,7 @@
 			</div>
 		</dl>
 		<p class="source">
-			Read the <a href="/docs">documentation</a> or the <a href={REPO} rel="noopener">source on GitHub</a>.
+			Read the <a href="/docs">documentation</a> or the <a href={REPO} target="_blank" rel="noopener noreferrer">source on GitHub</a>.
 		</p>
 	</section>
 </main>

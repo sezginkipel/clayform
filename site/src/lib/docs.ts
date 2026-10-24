@@ -136,7 +136,7 @@ function render(source: string, slug: string, docRelPath: string): Page {
 			link({ href, title: t, tokens }: Tokens.Link) {
 				const url = rewriteHref(href);
 				const external = /^https?:/.test(url);
-				return `<a href="${escapeAttr(url)}"${t ? ` title="${escapeAttr(t)}"` : ''}${external ? ' rel="noopener"' : ''}>${this.parser.parseInline(tokens)}</a>`;
+				return `<a href="${escapeAttr(url)}"${t ? ` title="${escapeAttr(t)}"` : ''}${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${this.parser.parseInline(tokens)}</a>`;
 			},
 			image({ href, text }: Tokens.Image) {
 				return `<img src="${escapeAttr(rewriteSrc(href))}" alt="${escapeAttr(text)}" loading="lazy">`;

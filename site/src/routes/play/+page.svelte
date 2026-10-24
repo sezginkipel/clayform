@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import * as THREE from 'three';
+	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+	import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+	import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 	import { SITE_URL } from '$lib/meta';
 
 	let { data } = $props();
@@ -40,7 +44,7 @@
 		rebuild: (doc: any) => void;
 		exportGlb: (name: string) => void;
 		setOptions: (opts: { wire: boolean; partColors: boolean; sockets: boolean; bounds: boolean; clip: string; paused: boolean; speed: number }) => void;
-	} | null = null;
+	} | null = $state(null);
 
 	function selectTemplate(id: string, pushUndo = false) {
 		const found = data.templates.find((t) => t.id === id);
@@ -234,22 +238,21 @@
 	}
 
 	$effect(() => {
+		const opts = {
+			wire: showWire,
+			partColors: showPartColors,
+			sockets: showSockets,
+			bounds: showBounds,
+			clip: activeClip,
+			paused: isPaused,
+			speed
+		};
 		if (viewerApi) {
-			viewerApi.setOptions({
-				wire: showWire,
-				partColors: showPartColors,
-				sockets: showSockets,
-				bounds: showBounds,
-				clip: activeClip,
-				paused: isPaused,
-				speed
-			});
+			viewerApi.setOptions(opts);
 		}
 	});
 
 	onMount(() => {
-		let disposed = false;
-
 		// Check if URL has a shared scene hash (#s=...) or template deep-link (?template=... or #template=...)
 		const hash = window.location.hash;
 		const queryTpl = new URLSearchParams(window.location.search).get('template');
@@ -271,38 +274,26 @@
 			selectTemplate('knight');
 		}
 
-		const importCdn = (url: string): Promise<any> => import(/* @vite-ignore */ url);
+		if (!viewportEl) return;
 
-		(async () => {
-			// Dynamically load Three.js, OrbitControls, and GLTFExporter in the browser
-			const THREE = await importCdn('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
-			const { OrbitControls } = await importCdn(
-				'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js'
-			);
-			const { GLTFExporter } = await importCdn(
-				'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/exporters/GLTFExporter.js'
-			);
-			const { RoomEnvironment } = await importCdn(
-				'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/environments/RoomEnvironment.js'
-			);
+		const initW = Math.max(320, viewportEl.clientWidth || 640);
+		const initH = Math.max(320, viewportEl.clientHeight || 480);
 
-			if (disposed || !viewportEl) return;
+		const renderer = new THREE.WebGLRenderer({ antialias: true });
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		renderer.setSize(initW, initH);
+		renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		renderer.shadowMap.enabled = true;
+		viewportEl.appendChild(renderer.domElement);
 
-			const renderer = new THREE.WebGLRenderer({ antialias: true });
-			renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-			renderer.setSize(viewportEl.clientWidth, viewportEl.clientHeight);
-			renderer.toneMapping = THREE.ACESFilmicToneMapping;
-			renderer.shadowMap.enabled = true;
-			viewportEl.appendChild(renderer.domElement);
+		const scene3d = new THREE.Scene();
+		scene3d.background = new THREE.Color(0xf4f6f8);
+		scene3d.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 
-			const scene3d = new THREE.Scene();
-			scene3d.background = new THREE.Color(0xf4f6f8);
-			scene3d.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+		const camera = new THREE.PerspectiveCamera(36, initW / initH, 0.01, 200);
+		camera.position.set(1.6, 1.2, 2.2);
 
-			const camera = new THREE.PerspectiveCamera(36, viewportEl.clientWidth / viewportEl.clientHeight, 0.01, 200);
-			camera.position.set(1.6, 1.2, 2.2);
-
-			const controls = new OrbitControls(camera, renderer.domElement);
+		const controls = new OrbitControls(camera, renderer.domElement);
 			controls.enableDamping = true;
 			controls.dampingFactor = 0.06;
 			controls.target.set(0, 0.55, 0);
@@ -644,8 +635,9 @@
 				const exporter = new GLTFExporter();
 				exporter.parse(
 					modelRoot,
-					(result: ArrayBuffer) => {
-						const blob = new Blob([result], { type: 'model/gltf-binary' });
+					(result) => {
+						const bin = result instanceof ArrayBuffer ? result : new TextEncoder().encode(JSON.stringify(result)).buffer;
+						const blob = new Blob([bin], { type: 'model/gltf-binary' });
 						const a = document.createElement('a');
 						a.href = URL.createObjectURL(blob);
 						a.download = `${name}.glb`;
@@ -709,15 +701,21 @@
 
 			const onResize = () => {
 				if (!viewportEl) return;
-				camera.aspect = viewportEl.clientWidth / viewportEl.clientHeight;
+				const w = Math.max(320, viewportEl.clientWidth || 640);
+				const h = Math.max(320, viewportEl.clientHeight || 480);
+				camera.aspect = w / h;
 				camera.updateProjectionMatrix();
-				renderer.setSize(viewportEl.clientWidth, viewportEl.clientHeight);
+				renderer.setSize(w, h);
 			};
 			window.addEventListener('resize', onResize);
-		})();
+			const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onResize) : null;
+			ro?.observe(viewportEl);
 
 		return () => {
-			disposed = true;
+			window.removeEventListener('resize', onResize);
+			ro?.disconnect();
+			renderer.setAnimationLoop(null);
+			renderer.dispose();
 		};
 	});
 
