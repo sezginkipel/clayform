@@ -21,6 +21,11 @@ Wherever a command takes a scene, you can also give a template id.
 | `clayform view <scene\|template\|file.glb> [--port 5231] [--watch]` | local three.js viewer that plays clips. `--watch` reloads when the scene file changes, and when an edit is invalid it keeps the last good version and shows the error |
 | `clayform compare <scene> <reference.png> [--view front] [-o overlay.png]` | fit a model to a reference image |
 | `clayform layout <file.layout.json> [--render out.png] [--export out.glb] [--triangles N]` | check, render and export a [layout](layouts.md) |
+| `clayform auto-fix <scene> [-o out.clay.json]` | atomically apply self-healing `suggested_ops` from the critics |
+| `clayform validate-engine <file.glb> [--engine godot\|unity\|unreal]` | verify `.glb` binary structure, `SOCKET_*` nodes, and engine collision conventions |
+| `clayform eval [--templates] [--bench dir] [--engine godot\|unity\|unreal] [-o report.md]` | run the automated evaluation harness and emit a markdown/JSON benchmark report |
+| `clayform sync <scene> --engine <godot\|unity\|unreal> --project <dir> [--watch]` | live-sync `.glb` + engine sidecar (`.glb.import` / `.clayform.json`) into a game project |
+| `clayform pack <name> <item...> [-o dir] [--style file] [--shading toon\|flat]` | build a cohesive multi-asset pack with a shared atlas and physics-settled layout |
 | `clayform guide` | print the agent manual |
 
 ## Library
@@ -58,4 +63,8 @@ Main entry points:
 | `bakeAtlas(sources, { size?, padding?, bakeAo?, toonBands? })` | `{ size, png, meshes, charts, coverage, texelsPerMeter }` |
 | `bakeEffect(resolveEffect(scene, effect))` | `{ sheet, preview, meta }` |
 | `fitReference(build, png, view)` | `{ iou, aspect, advice, overlay }` |
+| `syncToEngineProject(build, { engine, projectDir, … })` | `{ glbPath, sidecarPath, validation, stats }` |
+| `buildAssetPack({ name, assets, dir, … })` | `{ dir, files, atlasPath, layoutGlbPath, previewPngPath, manifestPath }` |
+| `generate3DMesh(prompt, { provider, apiKey?, endpoint? })` | `{ format, data }` (free local endpoint or BYOK cloud API) |
 | `Workspace` | named scenes on disk with undo/redo and snapshots, as the MCP server uses them |
+

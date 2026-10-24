@@ -92,6 +92,8 @@
 		</div>
 		<p class="then">
 			Then ask for something: <em>"Make a goblin from the biped template, green skin, pointy ears, with a walk cycle."</em>
+			<a href="/play">Open 3D Playground →</a>
+			<a href="/benchmark">Benchmarks</a>
 			<a href="/docs/getting-started">Getting started</a>
 		</p>
 	</section>
@@ -110,7 +112,7 @@
 		</ul>
 		<p class="caption">
 			{data.templates.length} templates, each passing every critic, all drawn by Clayform's own renderer. Agents start from the closest
-			one and edit it.
+			one and edit it — or <a href="/play">try all 47 templates live in the browser 3D Playground</a>.
 		</p>
 	</section>
 
@@ -177,8 +179,28 @@
 		<h2 id="more-title">What else is in the box</h2>
 		<dl>
 			<div>
-				<dt><a href="/docs/critics">Critics</a></dt>
-				<dd>Floating parts, carves that split a model, detail too thin to mesh, colours that blend together, limbs that will stretch, feet that slide.</dd>
+				<dt><a href="/play">3D Playground</a></dt>
+				<dd>Interactive browser 3D viewport: edit scene JSON live, apply 1-click agent ops, inspect sockets, and export <code>.glb</code> client-side.</dd>
+			</div>
+			<div>
+				<dt><a href="/benchmark">Benchmarks</a></dt>
+				<dd>Reproducible verification across all 47 templates, self-healing critic matrix, and architectural comparison against Blender MCP.</dd>
+			</div>
+			<div>
+				<dt><a href="/docs/critics">Self-healing critics</a></dt>
+				<dd>Floating parts, carves that split a model, detail too thin to mesh, colours that blend, limbs that stretch, and <code>auto_fix</code> ops.</dd>
+			</div>
+			<div>
+				<dt><a href="/docs/mcp-tools#sync_engine">Live engine sync</a></dt>
+				<dd><code>sync_engine</code> and <code>clayform sync --watch</code> write validated <code>.glb</code> + Godot/Unity/Unreal sidecars directly into your project.</dd>
+			</div>
+			<div>
+				<dt><a href="/docs/mcp-tools#create_asset_pack">Biome asset packs</a></dt>
+				<dd><code>create_asset_pack</code> builds multi-asset kits sharing a style sheet, one baked texture atlas, and a physics-settled layout.</dd>
+			</div>
+			<div>
+				<dt><a href="/docs/mcp-tools#generate_part">Hybrid AI + rig bridge</a></dt>
+				<dd><code>generate_part</code> attaches local open-weight (free) or BYOK (<code>meshy</code> / <code>tripo</code>) meshes onto procedural skeletons and sockets.</dd>
 			</div>
 			<div>
 				<dt><a href="/docs/matching-a-reference">Matching a reference</a></dt>
@@ -187,14 +209,6 @@
 			<div>
 				<dt><a href="/docs/parts">Part library</a></dt>
 				<dd>28 ready eyes, ears, horns, wings, wheels, doors and hats, placed with one edit.</dd>
-			</div>
-			<div>
-				<dt><a href="/docs/layouts">Layouts</a></dt>
-				<dd>Rows, grids, circles and scatters of models, checked for overlaps, exported as one scene.</dd>
-			</div>
-			<div>
-				<dt><a href="/docs/export#kits">Kits</a></dt>
-				<dd>A set of models painted from one shared texture, so an engine draws them all with one material.</dd>
 			</div>
 			<div>
 				<dt><a href="/docs/mcp-tools#hosting-over-http">Hosting</a></dt>

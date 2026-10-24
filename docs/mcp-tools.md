@@ -201,3 +201,26 @@ is one undo step. Snapshots are named and also saved to disk.
 ## `import_scene`
 
 `{ path? , json?, name? }`. Loads a `.clay.json` into the workspace.
+
+## `auto_fix`
+
+`{ scene }`. Extracts and atomically applies non-conflicting `suggested_ops` returned by the geometric and readability critics (`buried`, `too-small`, `cloth`, `colors-blend`, `over-budget`), then returns the updated critic report.
+
+## `generate_part`
+
+`{ scene, id, prompt, provider?, api_key?, endpoint?, role?, attach?, size?, keep?, socket? }`.
+Generates a detailed 3D mesh from a text prompt or image URL and attaches it into the procedural scene as a `shape: { type: "mesh" }` part:
+
+- **`provider: "local"` (default, 100% free):** Calls a local open-weight server (`TripoSR`, `Hunyuan3D`, `TRELLIS`) at `endpoint` or `CLAYFORM_3D_ENDPOINT`.
+- **`provider: "meshy"` or `"tripo"` (BYOK / pay-as-you-use):** Uses the caller's own `api_key` parameter (or `MESHY_API_KEY` / `TRIPO_API_KEY` env var). Zero shared or hosted API keys are required.
+
+## `sync_engine`
+
+`{ scene, engine: "godot" | "unity" | "unreal", project_dir, subdir?, triangles?, lods?, collision?, skeleton?, texture? }`.
+Exports an engine-configured `.glb` with collision hulls (`-convcolonly` for Godot 4, `_collider` for Unity, `UCX_` for Unreal), writes engine sidecars (`.glb.import` for Godot 4, `.clayform.json` manifest for Unity/Unreal), and runs `validateEngineExport`.
+
+## `create_asset_pack`
+
+`{ name, assets, dir?, style?, palette?, shading?, outline?, atlas?, triangles?, collision?, engine?, auto_fix? }`.
+Builds a cohesive multi-asset biome or world pack sharing one `clayform-style/1` stylesheet, runs `auto_fix` on each asset, bakes a single shared PBR texture atlas (`atlas.png`), and exports both individual `.glb` files and a physics-settled showcase layout (`<name>_layout.glb` + `pack_preview.png`).
+
