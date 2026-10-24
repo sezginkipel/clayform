@@ -212,13 +212,14 @@ export class Workspace {
 	}
 
 	layout(id: string): Layout {
-		const hit = this.layouts.get(id);
+		const safeId = id.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'layout';
+		const hit = this.layouts.get(safeId);
 		if (hit) return hit;
-		const file = join(this.dir, 'layouts', `${id}.layout.json`);
+		const file = join(this.dir, 'layouts', `${safeId}.layout.json`);
 		if (existsSync(file)) {
 			const r = parseLayout(JSON.parse(readFileSync(file, 'utf8')));
 			if (r.ok) {
-				this.layouts.set(id, r.layout);
+				this.layouts.set(safeId, r.layout);
 				return r.layout;
 			}
 		}

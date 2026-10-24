@@ -36,6 +36,7 @@ export function parseGlbJson(bytes: Uint8Array): Record<string, any> {
 	const jsonLen = view.getUint32(12, true);
 	const jsonType = view.getUint32(16, true);
 	if (jsonType !== 0x4e4f534a) throw new Error('First glTF chunk is not JSON');
+	if (20 + jsonLen > bytes.byteLength) throw new Error('glTF JSON chunk length exceeds file size');
 
 	const jsonBytes = bytes.subarray(20, 20 + jsonLen);
 	const text = new TextDecoder().decode(jsonBytes);

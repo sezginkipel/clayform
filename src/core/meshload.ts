@@ -43,9 +43,13 @@ export function resolveAsset(src: string): string {
 
 /* -------------------------------------------------------------- loaders */
 
+const MAX_MESH_BYTES = 64 * 1024 * 1024;
+
 export function loadTriMesh(path: string): TriMesh {
 	const file = resolveAsset(path);
 	if (!existsSync(file)) throw new Error(`mesh file not found: ${path} (looked in ${file}) — give an absolute path or one relative to where the server runs`);
+	const st = statSync(file);
+	if (st.size > MAX_MESH_BYTES) throw new Error(`mesh file exceeds ${MAX_MESH_BYTES >> 20} MB limit: ${path}`);
 	const lower = file.toLowerCase();
 	if (lower.endsWith('.glb')) return readGlb(new Uint8Array(readFileSync(file)));
 	if (lower.endsWith('.obj')) return readObj(readFileSync(file, 'utf8'));
@@ -84,13 +88,15 @@ export function readObj(text: string): TriMesh {
 }
 
 export function readGlb(bytes: Uint8Array): TriMesh {
+	if (bytes.byteLength < 20) throw new Error('not a GLB file (too short)');
 	const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 	if (dv.getUint32(0, true) !== 0x46546c67) throw new Error('not a GLB file (bad magic)');
 	let off = 12;
 	let json: Record<string, any> | null = null;
 	let bin: Uint8Array | null = null;
-	while (off < bytes.byteLength) {
+	while (off + 8 <= bytes.byteLength) {
 		const len = dv.getUint32(off, true), type = dv.getUint32(off + 4, true);
+		if (off + 8 + len > bytes.byteLength) throw new Error('corrupted GLB file (chunk exceeds file size)');
 		const body = bytes.subarray(off + 8, off + 8 + len);
 		if (type === 0x4e4f534a) json = JSON.parse(new TextDecoder().decode(body));
 		else if (type === 0x004e4942) bin = body;
@@ -165,9 +171,12 @@ interface Node {
 	count: number;
 }
 
+let cxOut = 0, cyOut = 0, czOut = 0;
+
 class Bvh {
 	nodes: Node[] = [];
 	order: Uint32Array;
+	private stack = new Int32Array(128);
 	constructor(private P: Float32Array, private I: Uint32Array) {
 		const n = I.length / 3;
 		this.order = new Uint32Array(n);
@@ -205,67 +214,77 @@ class Bvh {
 	/** nearest distance² and the face normal's sign of (p - closest) */
 	nearest(px: number, py: number, pz: number): { d2: number; side: number } {
 		let best = Infinity, side = 1;
-		const stack = [0];
+		const stack = this.stack;
+		stack[0] = 0;
+		let sp = 1;
 		const P = this.P, I = this.I;
-		while (stack.length) {
-			const n = this.nodes[stack.pop()!];
+		while (sp > 0) {
+			const n = this.nodes[stack[--sp]];
 			const dx = Math.max(n.min[0] - px, 0, px - n.max[0]), dy = Math.max(n.min[1] - py, 0, py - n.max[1]), dz = Math.max(n.min[2] - pz, 0, pz - n.max[2]);
 			if (dx * dx + dy * dy + dz * dz >= best) continue;
 			if (n.count) {
 				for (let i = n.start; i < n.start + n.count; i++) {
 					const t = this.order[i];
 					const a = I[t * 3] * 3, b = I[t * 3 + 1] * 3, c = I[t * 3 + 2] * 3;
-					const r = closest(px, py, pz, P[a], P[a + 1], P[a + 2], P[b], P[b + 1], P[b + 2], P[c], P[c + 1], P[c + 2]);
-					const d2 = (px - r[0]) ** 2 + (py - r[1]) ** 2 + (pz - r[2]) ** 2;
+					closest(px, py, pz, P[a], P[a + 1], P[a + 2], P[b], P[b + 1], P[b + 2], P[c], P[c + 1], P[c + 2]);
+					const rx = cxOut, ry = cyOut, rz = czOut;
+					const d2 = (px - rx) ** 2 + (py - ry) ** 2 + (pz - rz) ** 2;
 					if (d2 < best) {
 						best = d2;
 						// face normal
 						const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
 						const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
 						const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
-						side = (px - r[0]) * nx + (py - r[1]) * ny + (pz - r[2]) * nz >= 0 ? 1 : -1;
+						side = (px - rx) * nx + (py - ry) * ny + (pz - rz) * nz >= 0 ? 1 : -1;
 					}
 				}
-			} else stack.push(n.left, n.right);
+			} else {
+				stack[sp++] = n.left;
+				stack[sp++] = n.right;
+			}
 		}
 		return { d2: best, side };
 	}
 }
 
-/** Closest point on triangle (Ericson, Real-Time Collision Detection 5.1.5). */
-function closest(px: number, py: number, pz: number, ax: number, ay: number, az: number, bx: number, by: number, bz: number, cx: number, cy: number, cz: number): [number, number, number] {
+/** Closest point on triangle (Ericson, Real-Time Collision Detection 5.1.5) written to cxOut/cyOut/czOut. */
+function closest(px: number, py: number, pz: number, ax: number, ay: number, az: number, bx: number, by: number, bz: number, cx: number, cy: number, cz: number): void {
 	const abx = bx - ax, aby = by - ay, abz = bz - az, acx = cx - ax, acy = cy - ay, acz = cz - az;
 	const apx = px - ax, apy = py - ay, apz = pz - az;
 	const d1 = abx * apx + aby * apy + abz * apz, d2 = acx * apx + acy * apy + acz * apz;
-	if (d1 <= 0 && d2 <= 0) return [ax, ay, az];
+	if (d1 <= 0 && d2 <= 0) { cxOut = ax; cyOut = ay; czOut = az; return; }
 	const bpx = px - bx, bpy = py - by, bpz = pz - bz;
 	const d3 = abx * bpx + aby * bpy + abz * bpz, d4 = acx * bpx + acy * bpy + acz * bpz;
-	if (d3 >= 0 && d4 <= d3) return [bx, by, bz];
+	if (d3 >= 0 && d4 <= d3) { cxOut = bx; cyOut = by; czOut = bz; return; }
 	const vc = d1 * d4 - d3 * d2;
 	if (vc <= 0 && d1 >= 0 && d3 <= 0) {
 		const v = d1 / (d1 - d3);
-		return [ax + abx * v, ay + aby * v, az + abz * v];
+		cxOut = ax + abx * v; cyOut = ay + aby * v; czOut = az + abz * v;
+		return;
 	}
 	const cpx = px - cx, cpy = py - cy, cpz = pz - cz;
 	const d5 = abx * cpx + aby * cpy + abz * cpz, d6 = acx * cpx + acy * cpy + acz * cpz;
-	if (d6 >= 0 && d5 <= d6) return [cx, cy, cz];
+	if (d6 >= 0 && d5 <= d6) { cxOut = cx; cyOut = cy; czOut = cz; return; }
 	const vb = d5 * d2 - d1 * d6;
 	if (vb <= 0 && d2 >= 0 && d6 <= 0) {
 		const w = d2 / (d2 - d6);
-		return [ax + acx * w, ay + acy * w, az + acz * w];
+		cxOut = ax + acx * w; cyOut = ay + acy * w; czOut = az + acz * w;
+		return;
 	}
 	const va = d3 * d6 - d5 * d4;
 	if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) {
 		const w = (d4 - d3) / (d4 - d3 + (d5 - d6));
-		return [bx + (cx - bx) * w, by + (cy - by) * w, bz + (cz - bz) * w];
+		cxOut = bx + (cx - bx) * w; cyOut = by + (cy - by) * w; czOut = bz + (cz - bz) * w;
+		return;
 	}
 	const denom = 1 / (va + vb + vc);
 	const v = vb * denom, w = vc * denom;
-	return [ax + abx * v + acx * w, ay + aby * v + acy * w, az + abz * v + acz * w];
+	cxOut = ax + abx * v + acx * w; cyOut = ay + aby * v + acy * w; czOut = az + abz * v + acz * w;
 }
 
 /* ------------------------------------------------------------ SDF grid */
 
+const MAX_CACHE_ENTRIES = 24;
 const cache = new Map<string, MeshField>();
 
 /**
@@ -287,7 +306,11 @@ export function meshField(src: string, size: number | undefined, res: number): M
 	const file = resolveAsset(src);
 	const key = `${file}|${existsSync(file) ? statSync(file).mtimeMs : 0}|${size ?? ''}|${res}`;
 	const hit = cache.get(key);
-	if (hit) return hit;
+	if (hit) {
+		cache.delete(key);
+		cache.set(key, hit);
+		return hit;
+	}
 	const m = loadTriMesh(src);
 	const ext = [m.max[0] - m.min[0], m.max[1] - m.min[1], m.max[2] - m.min[2]];
 	const longest = Math.max(...ext, 1e-9);
@@ -297,6 +320,10 @@ export function meshField(src: string, size: number | undefined, res: number): M
 	for (let i = 0; i < P.length; i += 3) for (let a = 0; a < 3; a++) P[i + a] = (m.positions[i + a] - c[a]) * k;
 	const half = ext.map((e) => (e * k) / 2);
 	const f = bake(P, m.indices, half as [number, number, number], res);
+	if (cache.size >= MAX_CACHE_ENTRIES) {
+		const oldest = cache.keys().next().value;
+		if (oldest !== undefined) cache.delete(oldest);
+	}
 	cache.set(key, f);
 	return f;
 }

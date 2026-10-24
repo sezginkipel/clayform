@@ -9,7 +9,8 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { isAbsolute, relative, resolve } from 'node:path';
+import { existsSync, realpathSync } from 'node:fs';
+import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
 const jail = new AsyncLocalStorage<string>();
 
@@ -23,12 +24,35 @@ export function fileRoot(): string | undefined {
 	return jail.getStore();
 }
 
+function inside(base: string, target: string): boolean {
+	const rel = relative(base, target);
+	return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+}
+
+function realAncestor(p: string): string {
+	let cur = p;
+	while (!existsSync(cur)) {
+		const parent = dirname(cur);
+		if (parent === cur) return cur;
+		cur = parent;
+	}
+	try {
+		return realpathSync(cur);
+	} catch {
+		return cur;
+	}
+}
+
 /** Resolve a path an agent gave: as usual locally, inside the workspace in a hosted session. */
 export function userPath(p: string): string {
 	const root = jail.getStore();
 	if (!root) return resolve(p);
 	const full = resolve(root, p);
-	const rel = relative(root, full);
-	if (rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))) return full;
+	if (inside(root, full)) {
+		const realRoot = existsSync(root) ? realpathSync(root) : root;
+		const realTarget = realAncestor(full);
+		if (inside(realRoot, realTarget)) return full;
+	}
 	throw new Error(`"${p}" is outside this session's workspace — a hosted session reads and writes only inside it; use a relative path such as exports/model.glb`);
 }
+

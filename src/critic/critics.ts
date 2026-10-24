@@ -66,7 +66,8 @@ export function critique(b: Build): Report {
 	let islands = 0;
 	let watertight = true;
 	if (body) {
-		const comps = components(body);
+		const w = welded(body);
+		const comps = components(body, w);
 		islands = comps.length;
 		const mainParts = new Set(comps[0] ? [...comps[0].prims.keys()] : []);
 		for (const comp of comps.slice(1)) {
@@ -86,7 +87,7 @@ export function critique(b: Build): Report {
 				at: r3(comp.center)
 			});
 		}
-		const open = openEdges(body);
+		const open = openEdges(body, w);
 		watertight = open.bad === 0;
 		if (open.bad / Math.max(1, open.total) > 0.002)
 			issues.push({ severity: 'info', code: 'open-edges', message: `${open.bad} non-manifold edges (${((open.bad / open.total) * 100).toFixed(2)}%) where surfaces meet within one cell; harmless for games, raise resolution if you need a watertight print` });
@@ -366,8 +367,8 @@ function welded(m: MeshData): { at: (i: number) => number; n: number } {
 	return { at: (i) => w[i], n };
 }
 
-function components(m: MeshData): Comp[] {
-	const { at: W, n } = welded(m);
+function components(m: MeshData, w = welded(m)): Comp[] {
+	const { at: W, n } = w;
 	const parent = new Int32Array(n);
 	for (let i = 0; i < n; i++) parent[i] = i;
 	const find = (x: number): number => {
@@ -404,9 +405,9 @@ function components(m: MeshData): Comp[] {
 		.sort((a, b) => b.tris - a.tris);
 }
 
-function openEdges(m: MeshData): { bad: number; total: number } {
+function openEdges(m: MeshData, w = welded(m)): { bad: number; total: number } {
 	const edges = new Map<number, number>();
-	const { at: W, n } = welded(m);
+	const { at: W, n } = w;
 	const idx = m.indices;
 	for (let t = 0; t < idx.length; t += 3)
 		for (let e = 0; e < 3; e++) {

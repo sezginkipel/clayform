@@ -170,6 +170,14 @@ let morphMeshes = [];
 function load(first) {
   new GLTFLoader().load('/model.glb?v=' + Date.now(), (gltf) => {
     if (root) {
+      root.traverse((o) => {
+        if (o.isMesh) {
+          if (o.geometry) o.geometry.dispose();
+          if (o.userData.__origMat) o.userData.__origMat.dispose();
+          if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
+          else if (o.material) o.material.dispose();
+        }
+      });
       scene.remove(root);
       if (mixer) mixer.stopAllAction();
       if (skeletonHelper) { scene.remove(skeletonHelper); skeletonHelper = null; }
@@ -470,18 +478,19 @@ export interface ViewerModel {
 
 export function serveViewer(model: ViewerModel, title: string, port: number): Promise<string> {
 	const page = PAGE(title.replace(/[<>&"]/g, ''));
+	const baseHeaders = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
 	const server = createServer((req, res) => {
 		if (req.url?.startsWith('/model.glb')) {
-			res.writeHead(200, { 'content-type': 'model/gltf-binary', 'cache-control': 'no-store' });
+			res.writeHead(200, { ...baseHeaders, 'content-type': 'model/gltf-binary' });
 			res.end(model.glb);
 		} else if (req.url === '/version') {
-			res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+			res.writeHead(200, { ...baseHeaders, 'content-type': 'application/json' });
 			res.end(JSON.stringify({ version: model.version, error: model.error, diagnostics: model.diagnostics }));
 		} else if (req.url === '/' || req.url?.startsWith('/?')) {
-			res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+			res.writeHead(200, { ...baseHeaders, 'content-type': 'text/html; charset=utf-8' });
 			res.end(page);
 		} else {
-			res.writeHead(404).end();
+			res.writeHead(404, baseHeaders).end();
 		}
 	});
 	return new Promise((ok, bad) => {
